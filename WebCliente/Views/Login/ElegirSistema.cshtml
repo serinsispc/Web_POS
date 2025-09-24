@@ -1,0 +1,22 @@
+﻿@{
+    ViewBag.Title = "Elegir Sistema";
+    Layout = "~/Views/Shared/_LayoutLogin.cshtml"; // O usa otro layout si prefieres
+}
+
+<div class="selector-container">
+    <h2 class="titulo-principal">¿Qué sistema deseas usar?</h2>
+
+    <div class="botones-opciones">
+        <a href="@Url.Action("Index", "Login")" class="opcion-sistema pos">
+            <i class="bi bi-shop"></i><br />
+            Sistema POS
+        </a>
+
+        <a href="@Url.Action("Index", "LoginParqueadero")" class="opcion-sistema parqueadero">
+            <i class="bi bi-car-front-fill"></i><br />
+            Sistema Parqueadero
+        </a>
+    </div>
+</div>
+
+

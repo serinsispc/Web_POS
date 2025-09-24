@@ -1,0 +1,37 @@
+﻿@{
+    ViewBag.Title = "Login Parqueadero";
+    Layout = "~/Views/Shared/_LayoutLogin.cshtml";
+}
+
+<div class="top-bar text-center fw-bold">
+    🅿️ Acceso al Sistema de Parqueadero
+</div>
+
+<form action="@Url.Action("Index", "LoginParqueadero")" method="post" class="login-form">
+    <div class="login-container shadow-lg">
+        <img src="@Url.Content("~/Archivos/IMG/Logo.png")" alt="Logo" class="logo mb-3" />
+
+        <div class="input-group">
+            <label><span class="icon"><i class="bi bi-person-circle"></i></span></label>
+            <input type="text" id="usuario" name="usuario" placeholder="Usuario" required />
+        </div>
+
+        <div class="input-group">
+            <label><span class="icon"><i class="bi bi-key-fill"></i></span></label>
+            <input type="password" id="clave" name="clave" placeholder="Contraseña" required />
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 mt-3">
+            <i class="bi bi-box-arrow-in-right"></i> Ingresar
+        </button>
+
+        @if (!string.IsNullOrEmpty(ViewBag.Mensaje as string))
+        {
+            <div class="text-danger mt-3">@ViewBag.Mensaje</div>
+        }
+    </div>
+</form>
+
+<div class="bottom-bar text-center">
+    &copy; @DateTime.Now.Year - Serinsis PC · Sistema Parqueadero
+</div>

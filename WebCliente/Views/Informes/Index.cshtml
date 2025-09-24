@@ -1,0 +1,273 @@
+﻿@model  WebCliente.ViewModels.InformesViewModels
+@{
+    Layout = "~/Views/Shared/_LayoutMenu.cshtml";
+}
+
+<link rel="stylesheet" href="~/Content/VistaInforme.css" />
+
+<div class="container-fluid mt-3">
+    <h4 class="mb-3 text-primary">Datos para Filtrar</h4>
+
+    <!-- Filtros -->
+    <div class="row g-2">
+        <div class="col-12 col-md-4">
+            <label>Año</label>
+            <select class="form-select">
+                @foreach (var year in new List<int> { 2025, 2024 })
+                {
+                    <option value="@year" @(year == Model.yearSeleccionado ? "selected" : "")>@year</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <label>Mes</label>
+            <select class="form-select">
+                @foreach (var meses in Model.tablaMeses)
+                {
+                    <option value="@meses.numeroMes" @(meses.numeroMes == Model.monthSeleccionado ? "selected" : "")>
+                        @meses.nombreMes
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="col-6 col-md-2">
+            <label>Día 1</label>
+            <input type="number" class="form-control" value="@DateTime.Now.Day" />
+        </div>
+        <div class="col-6 col-md-2">
+            <label>Día 2</label>
+            <input type="number" class="form-control" value="@DateTime.Now.Day" />
+        </div>
+
+    </div>
+    @* botones para filtrar *@
+    <div class="row g-2 mt-2">
+        <div class="col-12 col-md-2 d-flex align-items-end">
+            <button class="btn btn-serinsis btn-app">
+                <i class="bi bi-funnel text-primary"></i>
+                <span>Filtrar año</span>
+            </button>
+        </div>
+        <div class="col-12 col-md-2 d-flex align-items-end">
+            <button class="btn btn-serinsis btn-app">
+                <i class="bi bi-funnel text-primary"></i>
+                <span>Filtrar mes</span>
+            </button>
+        </div>
+        <div class="col-12 col-md-2 d-flex align-items-end">
+            <button class="btn btn-serinsis btn-app">
+                <i class="bi bi-funnel text-primary"></i>
+                <span>Filtrar días</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Pestañas -->
+    <ul class="nav nav-tabs mt-4" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">General</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="turnos-tab" data-bs-toggle="tab" data-bs-target="#turnos" type="button" role="tab">Turnos</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="gastos-tab" data-bs-toggle="tab" data-bs-target="#gastos" type="button" role="tab">Gastos</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="categorias-tab" data-bs-toggle="tab" data-bs-target="#categorias" type="button" role="tab">Categorias</button>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-3" id="myTabContent">
+        <!-- General -->
+        <div class="tab-pane fade show active" id="general" role="tabpanel">
+            <div class="table-responsive">
+                <table class="table table-bordered text-center">
+                    <thead class="table-dark-serinsis">
+                        <tr>
+                            <th>Total Ventas</th>
+                            <th>Total Impuesto</th>
+                            <th>Venta Neta</th>
+                            <th>Total Costo</th>
+                            <th>Total Utilidad</th>
+                            <th>Total Propina</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>$0</td>
+                            <td>$0</td>
+                            <td>$0</td>
+                            <td>$0</td>
+                            <td>$0</td>
+                            <td>$0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="text-end mt-3">
+                <button class="btn btn-serinsis btn-app">
+                    <i class="bi bi-printer text-primary"></i>
+                    <span>Imprimir Informe</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Turnos -->
+        <div class="tab-pane fade" id="turnos" role="tabpanel">
+            <div class="table-responsive">
+                <table class="table table-bordered text-center table-sm">
+                    <thead class="table-dark-serinsis">
+                        <tr>
+                            <th>Estado</th>
+                            <th>Aperturas Cajón</th>
+                            <th>Apertura</th>
+                            <th>Cierre</th>
+                            <th>Cajero</th>
+                            <th>Base</th>
+                            <th>Ventas Crédito</th>
+                            <th>Total Efectivo</th>
+                            <th>Efectivo + Base</th>
+                            <th>Abono C.C. Efectivo</th>
+                            <th>Abono C.C. Tarjeta</th>
+                            <th>Abono C.P. Efectivo</th>
+                            <th>Gastos Efectivo</th>
+                            <th>Ventas Efectivo</th>
+                            <th>Ventas Tarjeta</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="15" class="bg-secondary text-white">Sin datos</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Botones estilo app -->
+            <div class="d-grid gap-2 gap-md-3 d-md-flex justify-content-md-start mt-3">
+                <button class="btn btn-serinsis btn-app">
+                    <i class="bi bi-cash-stack text-success"></i>
+                    <span>Gastos</span>
+                </button>
+                <button class="btn btn-serinsis btn-app">
+                    <i class="bi bi-printer text-primary"></i>
+                    <span>Imprimir Cierre</span>
+                </button>
+                <button class="btn btn-serinsis btn-app">
+                    <i class="bi bi-bag-check text-warning"></i>
+                    <span>Ventas</span>
+                </button>
+                <button class="btn btn-serinsis btn-app">
+                    <i class="bi bi-wallet2 text-info"></i>
+                    <span>Pagos Internos</span>
+                </button>
+                <button class="btn btn-serinsis btn-app">
+                    <i class="bi bi-door-open text-danger"></i>
+                    <span>Ver Aperturas</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Gastos -->
+        <div class="tab-pane fade" id="gastos" role="tabpanel">
+            <div class="table-responsive">
+                <table class="table table-bordered text-center table-sm">
+                    <thead class="table-dark-serinsis">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Concepto</th>
+                            <th>Valor</th>
+                            <th>Bolsillo</th>
+                            <th>TipoGasto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="5" class="bg-secondary text-white">Sin datos</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Botón imprimir reporte -->
+            <div class="text-center mt-3">
+                <button class="btn btn-serinsis btn-app">
+                    <i class="bi bi-printer text-primary"></i>
+                    <span>Imprimir Reporte Gastos Generales</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Categorías -->
+        <div class="tab-pane fade" id="categorias" role="tabpanel">
+            <!-- Filtro de Categoría y Botón -->
+            <div class="row mb-3 align-items-end">
+                <div class="col-12 col-md-8">
+                    <label>Filtrar Categoría</label>
+                    <select class="form-select">
+                        <option>Todas</option>
+                        <option>Categoría 1</option>
+                        <option>Categoría 2</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-4 text-md-end mt-2 mt-md-0">
+                    <button class="btn btn-serinsis btn-app">
+                        <i class="bi bi-download text-success"></i>
+                        <span>Descargar Productos</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tablas -->
+            <div class="row g-3">
+                <!-- Tabla principal -->
+                <div class="col-12 col-md-9">
+                    <div class="table-responsive">
+                        <table class="table table-bordered text-center table-sm">
+                            <thead class="table-dark-serinsis">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nombre</th>
+                                    <th>Categoría</th>
+                                    <th>Cantidad</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" class="bg-secondary text-white">Sin datos</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tabla secundaria -->
+                <div class="col-12 col-md-3">
+                    <div class="table-responsive">
+                        <table class="table table-bordered text-center table-sm">
+                            <thead class="table-dark-serinsis">
+                                <tr>
+                                    <th>Categoría</th>
+                                    <th>UND</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="3" class="bg-secondary text-white">Sin datos</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</div>

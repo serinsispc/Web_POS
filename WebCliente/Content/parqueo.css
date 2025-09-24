@@ -1,0 +1,209 @@
+﻿/* FUENTE GENERAL */
+body {
+    font-size: 1.1rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    height: 100%;
+}
+
+/* ESTILOS GENERALES */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.full-height {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.row.h-100 {
+    flex-direction: row;
+    height: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+    flex: 1;
+    margin: 0;
+}
+
+.border-box {
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #f9f9f9;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.valor-total {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #444;
+    background: #e1e1e1;
+    border: 2px solid #999;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.btn-vehiculo {
+    width: 100%;
+    border: 2px solid #333;
+    padding: 5px;
+    font-weight: bold;
+    text-align: center;
+    height: 100px;
+}
+
+.btn-vehiculo-texto {
+    font-size: 0.95rem;
+}
+
+.btn-vehiculo-icono {
+    font-size: 2rem;
+}
+
+.form-section {
+    border: 1px solid #bbb;
+    border-radius: 5px;
+    padding: 15px;
+    background-color: #fff;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.detalle-tarifa {
+    color: red;
+    font-weight: bold;
+}
+
+/* CAMPO PLACA */
+.input-placa {
+    font-size: 3rem;
+    text-align: center;
+    font-weight: bold;
+    height: 80px;
+    padding: 12px 20px;
+    text-transform: uppercase;
+}
+
+/* LIMPIEZA DE LÍNEAS RESIDUALES */
+.row-cols-2 > .col,
+.row-cols-md-4 > .col,
+.row > .col {
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* REFINAR FORMULARIOS */
+.form-control {
+    box-shadow: none !important;
+    border: 1px solid #ccc;
+}
+
+/* SEPARACIÓN ENTRE BOTONES */
+.boton-separado {
+    margin-bottom: 10px;
+}
+
+/* ESTILOS DE ACTIVACIÓN */
+.btn-activo {
+    background-color: #0d6efd !important;
+    color: white !important;
+    border-color: #0a58ca !important;
+}
+
+.pulse-animation {
+    animation: pulse 0.6s ease-in-out;
+}
+
+.tecla-activa {
+    box-shadow: 0 0 10px 3px #007bff;
+    transform: scale(1.05);
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.08);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* RESPONSIVE PARA DISPOSITIVOS MÓVILES */
+@media (max-width: 768px) {
+    html, body {
+        height: auto;
+    }
+
+    .row.h-100 {
+        flex-direction: column !important;
+        height: auto !important;
+        overflow-y: visible !important;
+    }
+
+    .col-md-6,
+    .col {
+        max-width: 100% !important;
+        flex: 0 0 auto !important;
+        border-right: none !important;
+        border-bottom: none !important;
+        height: auto !important;
+    }
+
+    .btn-vehiculo {
+        height: auto;
+    }
+
+    .input-placa {
+        font-size: 4rem !important;
+        height: 90px !important;
+        padding: 15px 20px !important;
+        text-transform: uppercase;
+    }
+
+    .valor-total {
+        font-size: 2rem;
+        padding: 10px;
+    }
+
+    .btn-vehiculo-icono {
+        font-size: 1.5rem;
+    }
+
+    .form-control {
+        font-size: 1rem;
+    }
+
+    label,
+    .btn-vehiculo-texto {
+        font-size: 1rem;
+    }
+
+    .row > .col {
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+
+
+#botonFlotante {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    display: none; /* Oculto al inicio */
+}

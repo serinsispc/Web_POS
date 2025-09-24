@@ -1,0 +1,77 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>SERINSIS PC S.A.S.</title>
+    <link rel="icon" type="image/png" href="~/Archivos/IMG/Logo.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="~/Content/estilos.css" rel="stylesheet">
+</head>
+<body>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid px-4 px-lg-5">
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <a class="navbar-brand d-flex align-items-center" href="#">
+                    <img src="~/Archivos/IMG/Logo.png" alt="Logo SERINSIS" style="height: 50px; width: 50px; border-radius: 50%; object-fit: cover; margin-right: 10px;">
+                    <span class="fw-bold fs-5" style="color: #1e237e;">SERINSIS PC S.A.S.</span>
+                </a>
+                <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+            <div class="collapse navbar-collapse mt-2 mt-lg-0" id="navbarResponsive">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="@Url.Action("Index","Tienda")">Tienda</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#soluciones">Soluciones</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#planes">Planes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="@Url.Action("ElegirSistema","Login")" target="_blank">Ingresar</a></li>
+                </ul>
+                <a href="#" target="_blank" class="btn btn-demo ms-lg-3 py-1 px-3 mt-2 mt-lg-0 align-self-center">Empieza gratis</a>
+            </div>
+        </div>
+    </nav>
+
+    @RenderBody()
+
+
+    <!-- FOOTER -->
+    <footer class="py-4" style="background-color: #1e237e; color: white;">
+        <div class="container px-4 px-lg-5">
+            <div class="row text-center text-lg-start">
+                <div class="col-lg-6 mb-3 mb-lg-0">
+                    <h5 class="fw-bold">SERINSIS PC S.A.S.</h5>
+                    <p class="mb-1">Software de facturación electrónica, inventario y control empresarial.</p>
+                    <p class="mb-1">WhatsApp: <a href="https://wa.me/573144628361" style="color: #b3d7f2;">+57 314 462 8361</a></p>
+                    <p>Email: <a href="mailto:soporte@serinsispc.com" style="color: #b3d7f2;">soporte@serinsispc.com</a></p>
+                </div>
+                <div class="col-lg-6">
+                    <h6 class="fw-bold">Navegación</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white text-decoration-none">Inicio</a></li>
+                        <li><a href="#soluciones" class="text-white text-decoration-none">Soluciones</a></li>
+                        <li><a href="#planes" class="text-white text-decoration-none">Planes</a></li>
+                        <li><a href="#contacto" class="text-white text-decoration-none">Contacto</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr style="border-color: #b3d7f2;">
+            <p class="text-center mb-0" style="font-size: 0.9rem;">&copy; 2025 SERINSIS PC S.A.S. - Todos los derechos reservados</p>
+        </div>
+    </footer>
+
+    <!-- Botones flotantes -->
+    <a href="https://wa.me/573144628361" class="btn-whatsapp" target="_blank" aria-label="WhatsApp">
+        <i class="bi bi-whatsapp"></i>
+    </a>
+    <button class="btn-top" onclick="scrollToTop()" id="btnSubir" aria-label="Ir arriba">
+        <i class="bi bi-arrow-up-short"></i>
+    </button>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/Scripts/funciones.js"></script>
+</body>
+</html>

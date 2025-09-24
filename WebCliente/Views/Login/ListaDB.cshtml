@@ -1,0 +1,37 @@
+﻿@model List<RunApi.Models.Admin.V_UsuarioDB>
+
+@{
+    ViewBag.Title = "ListaDB";
+    Layout = "~/Views/Shared/_LayoutLogin.cshtml";
+}
+
+
+
+
+<div class="top-bar">Lista de Bases de Datos ...</div>
+
+    <div class="login-container">
+        @foreach (var lista in Model)
+        {
+            <form action="@Url.Action("SeleccionarDB", "Login")" method="post">
+                <input type="hidden" name="dbName" value="@lista.nombreDB" />
+                <button type="submit" class="btn btn-primary m-1">
+                    @lista.nombreDB - @lista.nombreEstablecimiento
+                </button>
+            </form>
+        }
+    </div>
+
+
+
+
+<div class="bottom-bar"></div>
+
+
+
+
+
+
+
+
+

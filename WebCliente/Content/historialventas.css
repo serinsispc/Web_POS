@@ -1,0 +1,118 @@
+﻿/* ============================
+   HISTORIAL VENTAS – ESTILOS
+   Coherente con tu página de Informes (chips/píldoras + tabla sticky)
+   ============================ */
+
+:root {
+    --azul-oscuro: #0b1f3a;
+    --azul: #102a4d;
+    --azul-clarito: #18407a;
+    --celeste: #e8f1ff;
+    --borde: #cfe2ff;
+    --gris-head: #e9ecef;
+    --pill-bg: #0d3b66;
+    --pill-bg-2: #123e75;
+    --pill-text: #e8f1ff;
+    --ok: #16a34a;
+    --danger: #b42318;
+}
+
+.page-wrap {
+    padding: .75rem;
+}
+
+.card-filter {
+    border: 1px solid var(--borde);
+    background: #fff;
+}
+
+.btn-chip {
+    background: var(--celeste);
+    border: 1px solid var(--borde);
+    color: #0b294b;
+    padding: .45rem .9rem;
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+    .btn-chip:hover {
+        background: #d9e9ff;
+    }
+
+.btn-pill {
+    background: var(--pill-bg);
+    color: var(--pill-text);
+    border: none;
+    border-radius: 999px;
+    padding: .5rem 1rem;
+    font-weight: 600;
+}
+
+    .btn-pill:hover {
+        background: var(--pill-bg-2);
+        color: #fff;
+    }
+
+.btn-pill-secondary {
+    background: #eef3ff;
+    color: #0b294b;
+    border: 1px solid var(--borde);
+    border-radius: 999px;
+    padding: .5rem 1rem;
+    font-weight: 600;
+}
+
+    .btn-pill-secondary:hover {
+        background: #e4ecff;
+    }
+
+.btn-pill-danger {
+    background: var(--danger);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: .5rem 1rem;
+    font-weight: 600;
+}
+
+    .btn-pill-danger:hover {
+        filter: brightness(.95);
+    }
+
+.actions-wrap .card {
+    border: 1px solid var(--borde);
+}
+
+.table-scroll {
+    max-height: calc(100vh - 340px);
+    overflow: auto;
+}
+
+table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--gris-head);
+    border-bottom: 1px solid #ced4da;
+    white-space: nowrap;
+}
+
+table tbody td {
+    white-space: nowrap;
+}
+
+table tbody tr.selected {
+    background: #fff3cd !important;
+}
+
+.table-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Responsivo */
+@media (max-width: 992px) {
+    .table-scroll {
+        max-height: calc(100vh - 420px);
+    }
+}

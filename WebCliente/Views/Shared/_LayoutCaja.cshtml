@@ -1,0 +1,58 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Caja</title>
+    <link rel="icon" type="image/png" href="~/Archivos/IMG/Logo.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/Content/caja.css">
+</head>
+<body>
+    <header class="header-bar">
+        <div class="header-container">
+            <button id="toggleMenuBtn" class="d-md-none ms-auto" title="Mostrar/Ocultar menú">
+                <i class="bi bi-list"></i>
+            </button>
+            <div class="header-left">
+                <label for="codigo"><strong>F1 - Código:</strong></label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="codigo" placeholder="Buscar código...">
+                    <button class="btn btn-light"><i class="bi bi-search"></i></button>
+                </div>
+            </div>
+            <div class="header-center">
+                <span class="total-span" id="total">$ 0.00</span>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-success w-100"><i class="bi bi-currency-dollar"></i> F12 - Cobrar</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container-fluid">
+        <div class="row">
+            <aside class="col-md-3 menu-lateral" id="menuLateral">
+                <select class="form-select mb-3">
+                    <option selected>Selecciona categoría</option>
+                    <option value="1">Comidas</option>
+                    <option value="2">Bebidas</option>
+                </select>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" placeholder="Buscar producto...">
+                    <button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
+                </div>
+                <button class="producto-btn">TRUCHA FDS $ 27.000</button>
+                <button class="producto-btn">PASTA FDS $ 27.000</button>
+                <button class="producto-btn">COCA-COLA $ 5.000</button>
+                <button class="producto-btn">JUGO NATURAL $ 6.000</button>
+            </aside>
+            @RenderBody()
+        </div>
+    </div>
+
+    <script src="~/Scripts/caja.js"></script>
+</body>
+</html>

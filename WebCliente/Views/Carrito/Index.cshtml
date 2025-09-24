@@ -1,0 +1,42 @@
+﻿
+@{
+    ViewBag.Title = "Carrito";
+    Layout = "~/Views/Shared/_LayoutCarrito.cshtml";
+}
+
+
+<section class="py-5">
+    <div class="container">
+        <h2 class="titulo-azul text-center mb-4">Tu Carrito</h2>
+        <div id="carrito-container" class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Producto</th>
+                        <th>Precio</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="carrito-items"></tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2" class="text-end"><strong>Total:</strong></td>
+                        <td id="total-carrito" class="fw-bold">$0</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="text-center mt-4">
+            <button class="btn btn-danger me-2" onclick="vaciarCarrito()">Vaciar Carrito</button>
+        </div>
+        <div class="text-center mt-4">
+            <a href="@Url.Action("Index","Tienda")" class="btn btn-outline-primary me-2">
+                <i class="bi bi-shop"></i> Volver a la tienda
+            </a>
+            <a href="@Url.Action("Index","Home")" class="btn btn-outline-secondary">
+                <i class="bi bi-house"></i> Página principal
+            </a>
+        </div>
+
+    </div>
+</section>

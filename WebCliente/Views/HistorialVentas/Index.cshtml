@@ -1,0 +1,154 @@
+﻿@using System
+@using System.Text
+@{
+    ViewBag.Title = "Historial Ventas";
+    Layout = "~/Views/Shared/_LayoutMenu.cshtml";
+    // Inyecta aquí tus datos (lista de facturas) en JSON. Puede venir por Session o ViewBag.
+    var jsonFacturas = (string)(Session["HistorialVentasJson"] ?? ViewBag.HistorialVentasJson ?? "[]");
+    var jsonBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(jsonFacturas));
+}
+
+<!-- Usa el layout global de tu sitio; si ya tienes otro, puedes omitir esta línea
+     y dejar que _ViewStart seleccione el layout por defecto -->
+@* Layout = "~/Views/Shared/_Layout.cshtml"; *@
+
+<link href="~/Content/historialventas.css?v=1.0.0" rel="stylesheet" />
+
+<div class="page-wrap">
+
+    <!-- Encabezado / Filtros (mismo estilo que imagen 1) -->
+    <div class="card card-filter shadow-sm mb-3">
+        <div class="card-body">
+            <h5 class="mb-3 fw-semibold">Datos para Filtrar</h5>
+
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Fecha base</label>
+                    <input id="f-fecha" type="date" class="form-control" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Rango</label>
+                    <div class="btn-group w-100" role="group" aria-label="Rango">
+                        <input type="radio" class="btn-check" name="rango" id="r-anio" autocomplete="off" checked>
+                        <label class="btn btn-chip" for="r-anio"><i class="bi bi-calendar3 me-1"></i>Año</label>
+
+                        <input type="radio" class="btn-check" name="rango" id="r-mes" autocomplete="off">
+                        <label class="btn btn-chip" for="r-mes"><i class="bi bi-calendar-event me-1"></i>Mes</label>
+
+                        <input type="radio" class="btn-check" name="rango" id="r-dia" autocomplete="off">
+                        <label class="btn btn-chip" for="r-dia"><i class="bi bi-calendar-day me-1"></i>Día</label>
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Número factura</label>
+                    <input id="f-numero" type="text" class="form-control" placeholder="Ej: 10234" />
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Cliente</label>
+                    <input id="f-cliente" type="text" class="form-control" placeholder="Nombre / NIT" />
+                </div>
+
+                <div class="col-12 d-flex flex-wrap gap-2 mt-2">
+                    <div class="form-check me-3">
+                        <input class="form-check-input" type="checkbox" id="f-fe-pendientes">
+                        <label class="form-check-label" for="f-fe-pendientes">F.E. Pendientes</label>
+                    </div>
+
+                    <div class="form-check me-3">
+                        <input class="form-check-input" type="checkbox" id="f-solo-electronicas">
+                        <label class="form-check-label" for="f-solo-electronicas">Factura Electrónica</label>
+                    </div>
+
+                    <button id="btn-filtrar" class="btn btn-pill">
+                        <i class="bi bi-funnel me-1"></i>Filtrar
+                    </button>
+
+                    <button id="btn-eliminar-filtro" class="btn btn-pill-secondary">
+                        <i class="bi bi-x-circle me-1"></i>Eliminar Filtro
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de acciones (equivalente a la columna derecha del WinForms) -->
+    <div class="actions-wrap mb-3">
+        <div class="card shadow-sm">
+            <div class="card-body d-flex flex-wrap gap-2">
+                <button class="btn btn-pill" id="a-imprimir"><i class="bi bi-printer me-1"></i>Imprimir</button>
+                <button class="btn btn-pill" id="a-detalle"><i class="bi bi-file-earmark-text me-1"></i>Ver Detalle</button>
+                <button class="btn btn-pill-danger" id="a-anular"><i class="bi bi-slash-circle me-1"></i>Anular</button>
+
+                <div class="vr d-none d-lg-block"></div>
+
+                <button class="btn btn-pill" id="a-crear-fe"><i class="bi bi-file-earmark-check me-1"></i>Crear F.E.</button>
+                <button class="btn btn-pill" id="a-enviar-dian"><i class="bi bi-cloud-upload me-1"></i>Enviar DIAN</button>
+                <button class="btn btn-pill" id="a-enviar-correo"><i class="bi bi-envelope-paper me-1"></i>Enviar Correo</button>
+                <button class="btn btn-pill" id="a-descargar-fe"><i class="bi bi-download me-1"></i>Descargar</button>
+
+                <div class="vr d-none d-lg-block"></div>
+
+                <button class="btn btn-pill" id="a-editar-cliente"><i class="bi bi-person-gear me-1"></i>Editar/Agregar Cliente</button>
+
+                <div class="d-flex align-items-center ms-auto gap-2">
+                    <div class="input-group input-group-sm w-auto">
+                        <span class="input-group-text">Fecha F.E.</span>
+                        <input id="a-fecha-fe" type="date" class="form-control">
+                        <button id="a-editar-fecha" class="btn btn-outline-secondary">Editar</button>
+                    </div>
+                    <span class="badge bg-success fs-6" id="a-total-seleccion">$ 0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla principal -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive table-scroll">
+                <table class="table table-hover align-middle mb-0" id="tabla-facturas">
+                    <thead>
+                        <tr>
+                            <th>Cuenta</th>
+                            <th>Fecha</th>
+                            <th>Factura / Recibo</th>
+                            <th>Prefijo</th>
+                            <th>ID Resolución DIAN</th>
+                            <th>Cliente</th>
+                            <th>CUFE</th>
+                            <th>Número</th>
+                            <th>Descuento</th>
+                            <th>SubTotal</th>
+                            <th>baseIva_5</th>
+                            <th>baseIva_19</th>
+                            <th>IVA_5</th>
+                            <th>IVA_19</th>
+                            <th>INC</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llena por JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-footer d-flex justify-content-between align-items-center px-3 py-2">
+                <div><span id="status-seleccion">0 filas</span></div>
+                <div class="text-muted small">
+                    <i class="bi bi-person-badge me-1"></i>@(Session["Usuario"] ?? "Super Administrador")
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Pasa datos al JS
+    window.__FACTURAS_BASE64__ = "@jsonBase64";
+</script>
+<script src="~/Scripts/historialventas.js?v=1.0.0"></script>
+
+

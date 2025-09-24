@@ -1,0 +1,62 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Vehículos Diarios</title>
+    <link rel="icon" type="image/png" href="~/Archivos/IMG/Logo.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="~/Content/parqueo.css" rel="stylesheet" />
+</head>
+
+<body>
+    <!-- Barra superior fija -->
+    <div class="container-fluid bg-dark text-white py-2">
+        <div class="d-flex justify-content-between align-items-center px-3">
+            <div>
+                <strong>@ViewBag.Title</strong>
+            </div>
+            <div>
+                <form action="@Url.Action("CerrarSesion","Parqueo")" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-box-arrow-right"></i> Salir
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
+    @RenderBody()
+
+
+
+
+    <!-- Botón flotante -->
+    <a href="#" id="botonFlotante" class="btn btn-primary rounded-circle shadow-lg">
+        <i class="bi bi-arrow-up"></i>
+    </a>
+    <!-- CDN oficial de SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @if (ViewBag.MensajeAlerta != null)
+    {
+        <script>
+        Swal.fire({
+            icon: '@ViewBag.icono',
+            title: '@ViewBag.title',
+            text: '@ViewBag.MensajeAlerta',
+            confirmButtonText: 'Aceptar'
+        });
+        </script>
+    }
+
+    <!-- BOOTSTRAP Y EVENTOS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/Scripts/parqueo.js"></script>
+
+</body>
+</html>

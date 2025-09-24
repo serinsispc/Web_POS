@@ -1,0 +1,232 @@
+﻿
+@{
+    Layout = "~/Views/Shared/_LayoutParqueo.cshtml";
+    ViewBag.Title = "Ingreso Vehículos";
+}
+
+<div class="container-fluid full-height">
+    <div class="row h-100">
+        <!-- COLUMNA IZQUIERDA -->
+        <div class="col-md-6 border-box">
+            <div class="form-section">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <button class="btn btn-danger">Vetar</button>
+                    <span><strong>PLACA / TIKET</strong></span>
+                    <a href="#" class="text-primary">Liberar Tarjeta</a>
+                </div>
+                <form id="formPlaca" action="@Url.Action("AccionPlaca","Parqueo")" method="post">
+                    <input id="placa" name="placa" type="text" class="form-control input-placa mb-3" />
+                </form>
+
+
+                <div class="row row-cols-2 row-cols-md-4 text-center mb-2">
+                    <div class="col">MOTO<br><strong>7</strong></div>
+                    <div class="col">AUTOMÓVIL<br><strong>32</strong></div>
+                    <div class="col">CAMIONETA<br><strong>19</strong></div>
+                    <div class="col">CAMIÓN<br><strong>0</strong></div>
+                </div>
+
+                <!-- Observación con acordeón -->
+                <div class="mb-3">
+                    <button id="toggleObservacionBtn" class="btn btn-outline-secondary w-100 d-flex justify-content-between align-items-center">
+                        <span>Observación</span>
+                        <i id="iconObservacion" class="bi bi-chevron-down"></i>
+                    </button>
+                    <div id="observacionContainer" class="mt-2" style="display: none;">
+                        <textarea id="observacion" class="form-control" placeholder="Escribe tu observación..." style="min-height: 150px;"></textarea>
+                    </div>
+                </div>
+
+                <div class="row g-2 text-center mb-3">
+                    <div class="col">
+                        <button class="btn btn-outline-dark btn-vehiculo">
+                            <div class="btn-vehiculo-texto">MOTO (F1)</div>
+                            <div class="btn-vehiculo-icono"><i class="bi bi-bicycle"></i></div>
+                        </button>
+                    </div>
+                    <div class="col">
+                        <button class="btn btn-outline-dark btn-vehiculo">
+                            <div class="btn-vehiculo-texto">AUTOMÓVIL (F2)</div>
+                            <div class="btn-vehiculo-icono"><i class="bi bi-car-front"></i></div>
+                        </button>
+                    </div>
+                    <div class="col">
+                        <button class="btn btn-outline-dark btn-vehiculo">
+                            <div class="btn-vehiculo-texto">CAMIONETA (F3)</div>
+                            <div class="btn-vehiculo-icono"><i class="bi bi-truck"></i></div>
+                        </button>
+                    </div>
+                    <div class="col">
+                        <button class="btn btn-outline-dark btn-vehiculo">
+                            <div class="btn-vehiculo-texto">CAMIÓN (F4)</div>
+                            <div class="btn-vehiculo-icono"><i class="bi bi-truck-front"></i></div>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn btn-secondary w-100 mb-2">Ventas Tienda</button>
+                <button class="btn btn-secondary w-100 mb-3">Factura Personalizada</button>
+
+                <!-- VEHÍCULOS PARQUEADOS -->
+                <div class="d-none d-md-block mt-4">
+                    <h5 class="text-center text-secondary">Vehículos Parqueados</h5>
+                    <table class="table table-sm table-bordered text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Placa</th>
+                                <th>Tipo</th>
+                                <th>Entrada</th>
+                                <th>Opciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>ABC123</td>
+                                <td>Automóvil</td>
+                                <td>06/06/2025 1:15 p. m.</td>
+                                <td>
+                                    <button class="btn btn-sm btn-success me-1" title="Cobrar" data-placa="ABC123">
+                                        <i class="bi bi-cash-coin"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary" title="Reimprimir Ticket" data-placa="ABC123">
+                                        <i class="bi bi-printer"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>XYZ789</td>
+                                <td>Moto</td>
+                                <td>06/06/2025 12:45 p. m.</td>
+                                <td>
+                                    <button class="btn btn-sm btn-success me-1" title="Cobrar" data-placa="XYZ789">
+                                        <i class="bi bi-cash-coin"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary" title="Reimprimir Ticket" data-placa="XYZ789">
+                                        <i class="bi bi-printer"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA -->
+        <div class="col-md-6 border-box">
+            <div class="form-section">
+                <div class="text-center mb-3">
+                    <div><strong>Valor Total A Pagar</strong></div>
+                    <div class="valor-total my-2">$ 8.000</div>
+                    <div class="detalle-tarifa">Parqueo: $ 6.722,69 | Iva: $ 1.277,31</div>
+                </div>
+
+                <div class="row mb-2 text-center">
+                    <div class="col">
+                        <strong>Inicio</strong><br>
+                        <span id="fechaInicio">6/06/2025 1:13:15 p. m.</span>
+                    </div>
+                    <div class="col">
+                        <strong>Fin</strong><br>
+                        <span id="fechaFin">6/06/2025 2:58:03 p. m.</span>
+                    </div>
+                </div>
+
+                <div class="text-center mb-3">
+                    <strong>Total Tiempo Parqueado:</strong><br>
+                    <div id="horasParqueadas" class="text-primary fs-5">
+                        Días: 0 | Horas: 1 | Minutos: 44
+                    </div>
+                </div>
+
+                <div class="row mb-2">
+                    <div class="col">
+                        <label><strong>Efectivo</strong></label>
+                        <input type="number" class="form-control" value="8000">
+                    </div>
+                    <div class="col">
+                        <label><strong>Cambio</strong></label>
+                        <div class="form-control bg-light text-end">$0</div>
+                    </div>
+                </div>
+
+                <div class="row mb-2">
+                    <div class="col">
+                        <label><strong>Cascos</strong></label>
+                        <input type="text" class="form-control" placeholder="0">
+                    </div>
+                    <div class="col">
+                        <label><strong>Puesto</strong></label>
+                        <input type="text" class="form-control" placeholder="-">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col d-grid">
+                        <button class="btn btn-outline-dark boton-separado">
+                            <i class="bi bi-car-front"></i><br>Parqueados (F10)
+                        </button>
+                    </div>
+                    <div class="col d-grid">
+                        <button class="btn btn-outline-dark boton-separado">
+                            <i class="bi bi-clock-history"></i><br>Historial (F11)
+                        </button>
+                    </div>
+                    <div class="col d-grid">
+                        <button class="btn btn-success boton-separado">
+                            <i class="bi bi-tag-fill"></i><br>Descuento (F12)
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary w-100">F9 - Aplicar Tarifa Especial</button>
+
+                <!-- VEHÍCULOS RETIRADOS -->
+                <div class="d-none d-md-block mt-4">
+                    <h5 class="text-center text-secondary">Vehículos Retirados</h5>
+                    <table class="table table-sm table-bordered text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Placa</th>
+                                <th>Entrada</th>
+                                <th>Salida</th>
+                                <th>Valor</th>
+                                <th>Opciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>JKL456</td>
+                                <td>06/06/2025 11:00 a. m.</td>
+                                <td>06/06/2025 2:58 p. m.</td>
+                                <td>$8.000</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary me-1" title="Facturar" data-placa="JKL456">
+                                        <i class="bi bi-receipt-cutoff"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary" title="Reimprimir" data-placa="JKL456">
+                                        <i class="bi bi-printer"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>MNO321</td>
+                                <td>06/06/2025 12:15 p. m.</td>
+                                <td>06/06/2025 2:30 p. m.</td>
+                                <td>$6.000</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary me-1" title="Facturar" data-placa="MNO321">
+                                        <i class="bi bi-receipt-cutoff"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary" title="Reimprimir" data-placa="MNO321">
+                                        <i class="bi bi-printer"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

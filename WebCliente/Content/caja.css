@@ -1,0 +1,186 @@
+
+    :root {
+      --azul-suave: #f1f4f9;
+      --azul-claro: #0073e6;
+      --azul-intermedio: #005bb5;
+      --azul-logo: #0d1b3d;
+      --fondo-pagina: #ffffff;
+      --color-precio: #ffffff;
+      --boton-cobrar-bg: #28a745;
+      --boton-cobrar-text: #ffffff;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    body {
+      background-color: var(--fondo-pagina);
+    }
+
+    .header-bar {
+      background-color: var(--azul-logo);
+      color: white;
+      padding: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-container {
+      display: flex;
+      flex-wrap: wrap;
+      width: 100%;
+      align-items: center;
+    }
+
+    .header-left, .header-center, .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-center {
+      justify-content: center;
+      flex: 1;
+    }
+
+    .total-span {
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--color-precio);
+    }
+
+    .btn-success {
+      background-color: var(--boton-cobrar-bg);
+      color: var(--boton-cobrar-text);
+      font-weight: bold;
+    }
+
+    .btn-custom {
+      background-color: var(--azul-claro);
+      color: white;
+      border: none;
+    }
+
+    .btn-custom:hover {
+      background-color: var(--azul-intermedio);
+      color: white;
+    }
+
+    .menu-lateral {
+      background-color: var(--azul-suave);
+      padding: 15px;
+      min-height: 100vh;
+    }
+
+    .menu-lateral select {
+      margin-top: 15px;
+    }
+
+    .producto-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      margin-bottom: 10px;
+      padding: 10px;
+      background-color: var(--azul-logo);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      white-space: normal;
+    }
+
+    .zona-central {
+      flex: 1;
+      padding: 30px 20px 20px;
+      background-color: #ffffff;
+      margin-top: 20px;
+    }
+
+    .acciones, .acciones-finales {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    th {
+      background-color: var(--azul-logo);
+      color: white;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    td, th {
+      text-align: center;
+      padding: 12px;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    .active-cuenta {
+      border: 2px solid #0d6efd !important;
+      background-color: #e6f0ff;
+    }
+
+    @media (max-width: 768px) {
+      .menu-lateral {
+        position: fixed;
+        transform: translateX(-100%);
+        opacity: 0;
+        top: 60px;
+        left: 0;
+        width: 80vw;
+        z-index: 1050;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .menu-lateral.mostrar {
+        display: block;
+        transform: translateX(0);
+        opacity: 1;
+      }
+
+      .toggle-visible {
+        display: inline-flex !important;
+      }
+
+      .header-bar, .header-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .header-left, .header-right, .header-center {
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 10px;
+      }
+
+      .header-left .input-group,
+      .header-right button {
+        width: 100%;
+      }
+
+      #toggleMenuBtn {
+        display: inline-flex;
+        background-color: transparent;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+      }
+    }

@@ -1,0 +1,125 @@
+html, body {
+  height: 100%;
+  margin: 0;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+#sidebar {
+  min-height: 100vh;
+  background-color: #0d1b3d;
+  color: white;
+  transition: width 0.3s ease;
+  overflow: hidden;
+}
+.sidebar-collapsed {
+  width: 60px !important;
+}
+.sidebar-expanded {
+  width: 250px;
+}
+.hide-text span {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.sidebar-expanded span {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+#main-content {
+  padding-top: 56px;
+  flex-grow: 1;
+}
+.footer {
+  background-color: #0d1b3d;
+  color: white;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  z-index: 100;
+}
+.menu-toggle {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+}
+.content-wrapper {
+  flex: 1;
+  display: flex;
+  margin-bottom: 2rem;
+}
+@media (max-width: 768px) {
+  #sidebar {
+    position: absolute;
+    z-index: 1000;
+    height: 100%;
+  }
+  #sidebar:not(.active) {
+    display: none;
+  }
+}
+#sidebar ul li i {
+  margin-right: 10px;
+}
+#manualToggle {
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+#manualToggle:hover {
+  background-color: #1c2d5a;
+}
+#sidebar .nav-link {
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.3s, color 0.3s;
+}
+#sidebar .nav-link:hover {
+  background-color: #1c2d5a;
+  color: #e0e0e0;
+}
+#sidebar .nav-link:active,
+#sidebar .nav-link:focus {
+  background-color: #2a3b6e;
+  color: #ffffff;
+}
+
+/* Submenú Contabilidad */
+.submenu-container {
+  background-color: #152654;
+}
+.submenu-link {
+  color: #ffffff;
+  padding: 0.3rem 1rem;
+  display: block;
+  border-radius: 0.25rem;
+  transition: background-color 0.3s;
+}
+.submenu-link:hover {
+  background-color: #1f3870;
+}
+
+/* === Agregado para el fondo oscuro en móviles === */
+#sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+.d-none {
+  display: none !important;
+}
+@media (max-width: 575.98px) {
+  #nombreEmpresa {
+    display: none !important;
+  }
+}
+

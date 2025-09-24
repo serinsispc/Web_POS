@@ -1,0 +1,124 @@
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f8f9fc;
+}
+
+.navbar {
+  background-color: white;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.navbar-nav .nav-link {
+  color: #1e237e;
+  font-weight: 500;
+  margin-right: 1rem;
+}
+
+.btn-demo {
+  background-color: #1e237e;
+  color: white;
+  border-radius: 25px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.btn-demo:hover {
+  background-color: #142062;
+  color: #ffffff;
+}
+
+.hero-section {
+  padding: 3rem 0;
+  background-color: #e9f1fb;
+}
+
+.hero-text h1 {
+  color: #1e237e;
+  font-size: 2.8rem;
+  font-weight: 700;
+}
+
+.hero-text h1 span {
+  color: #63a4db;
+}
+
+.hero-text p {
+  font-size: 1.2rem;
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+  color: #333;
+}
+
+.rating {
+  font-size: 1.1rem;
+  color: #1e237e;
+}
+
+.titulo-azul {
+  color: #1e237e;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
+
+.btn-whatsapp {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #25d366;
+  color: white;
+  font-size: 1.8rem;
+  border: none;
+  border-radius: 50%;
+  padding: 0.6rem 0.8rem;
+  z-index: 1000;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  transition: transform 0.3s;
+}
+
+.btn-whatsapp:hover {
+  transform: scale(1.1);
+  color: white;
+}
+
+.btn-top {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  background-color: #1e237e;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  padding: 0.5rem 0.7rem;
+  display: none;
+  z-index: 1000;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.btn-top:hover {
+  background-color: #142062;
+}
+
+@media (max-width: 768px) {
+  .hero-text h1 {
+    font-size: 2rem;
+  }
+
+  .hero-text p {
+    font-size: 1rem;
+  }
+}
+
+.card-img-top {
+  height: 180px;
+  object-fit: contain;
+  background-color: #fff;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+}

@@ -1,0 +1,63 @@
+﻿
+@{
+    ViewBag.Title = "Tienda";
+    Layout = "~/Views/Shared/_LayoutTienda.cshtml";
+}
+
+<section class="py-5" id="tienda">
+    <div class="container">
+
+        <div class="row g-4">
+            <div class="col-sm-6 col-md-4 col-lg-3">
+                <div class="card h-100">
+                    <img src="~/Archivos/IMG/impresora.png" class="card-img-top" alt="Impresora térmica">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Impresora térmica 80mm</h5>
+                        <p class="card-text">$350.000</p>
+                        <button class="btn btn-demo w-100">Agregar al carrito</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4 col-lg-3">
+                <div class="card h-100">
+                    <img src="~/Archivos/IMG/cajon.png" class="card-img-top" alt="Cajón monedero">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Cajón monedero metálico</h5>
+                        <p class="card-text">$250.000</p>
+                        <button class="btn btn-demo w-100">Agregar al carrito</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4 col-lg-3">
+                <div class="card h-100">
+                    <img src="~/Archivos/IMG/pantalla.png" class="card-img-top" alt="Pantalla táctil">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Pantalla táctil 15"</h5>
+                        <p class="card-text">$2.300.000</p>
+                        <button class="btn btn-demo w-100">Agregar al carrito</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4 col-lg-3">
+                <div class="card h-100">
+                    <img src="~/Archivos/IMG/escaner.png" class="card-img-top" alt="Escáner">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Escáner código de barras láser</h5>
+                        <p class="card-text">$130.000</p>
+                        <button class="btn btn-demo w-100">Agregar al carrito</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mt-4">
+            <a href="@Url.Action("Index","Home")" class="btn btn-outline-primary me-2">
+                <i class="bi bi-house-door"></i> Volver al inicio
+            </a>
+            <a href="@Url.Action("Index","Carrito")" class="btn btn-outline-dark">
+                <i class="bi bi-cart"></i> Ver carrito
+            </a>
+        </div>
+
+    </div>
+</section>
+

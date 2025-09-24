@@ -1,0 +1,36 @@
+﻿
+@{
+    ViewBag.Title = "Login";
+    Layout = "~/Views/Shared/_LayoutLogin.cshtml";
+}
+
+
+<div class="top-bar text-center fw-bold" style="margin-left:20px">
+    <i class="bi bi-shop-window"></i> Acceso al Sistema POS
+</div>
+
+<form action="@Url.Action("Index", "Login")" method="post">
+    <div class="login-container">
+        <img src="~/Archivos/IMG/Logo.png" alt="Logo" class="logo" />
+
+        <div class="input-group">
+            <label><span class="icon">👤</span></label>
+            <input type="text" id="usuario" name="usuario" placeholder="Usuario">
+        </div>
+
+        <div class="input-group">
+            <label><span class="icon">🔑</span></label>
+            <input type="password" id="clave" name="clave" placeholder="Contraseña">
+        </div>
+
+        <button type="submit">
+            <i class="bi bi-box-arrow-in-right"></i> Ingresar
+        </button>
+
+        <a href="#" class="recuperar">Recuperar usuario</a>
+    </div>
+</form>
+
+
+
+<div class="bottom-bar"></div>

@@ -1,0 +1,103 @@
+:root {
+    --azul-oscuro: #0d1b3d;
+    --azul-claro: #71a6d2;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.top-bar, .bottom-bar {
+    background-color: var(--azul-oscuro);
+    color: white;
+    width: 100%;
+    padding: 8px 12px;
+    font-weight: bold;
+    text-align: left;
+}
+
+.login-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.logo {
+    width: 120px;
+    margin-bottom: 30px;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+    width: 250px;
+    background-color: #f4f4f4;
+    border-radius: 8px;
+    padding: 5px 10px;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+}
+
+.input-group .icon {
+    font-size: 20px;
+    margin-right: 10px;
+}
+
+.input-group input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 16px;
+    padding: 8px 12px;
+    background-color: transparent;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus {
+    border: 2px solid var(--azul-oscuro);
+    background-color: #ffffff;
+    box-shadow: 0 0 5px rgba(13, 27, 61, 0.5);
+}
+
+button {
+    margin-top: 20px;
+    padding: 10px 30px;
+    background-color: var(--azul-oscuro);
+    color: white;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+    background-color: var(--azul-claro);
+    transform: scale(1.03);
+}
+
+button i {
+    margin-right: 8px;
+    font-size: 18px;
+    vertical-align: middle;
+}
+
+.recuperar {
+    margin-top: 10px;
+    color: var(--azul-oscuro);
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.recuperar:hover {
+    text-decoration: underline;
+}
