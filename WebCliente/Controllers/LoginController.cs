@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.UI.WebControls;
+using System.Xml.Linq;
 
 namespace WebCliente.Controllers
 {
@@ -61,6 +62,7 @@ namespace WebCliente.Controllers
                         loginEnviar.idTipoSistema = 1;
                         aPI = new ClassAPI();
                         LoginRespuesta respuesta  = await aPI.Login(loginEnviar);
+                        Session["db"] = loginEnviar.nombreDB;
                         Session["usuario"] = JsonConvert.SerializeObject(respuesta);
                         return RedirectToAction("Index", "Menu");
                     }
@@ -92,6 +94,7 @@ namespace WebCliente.Controllers
             ClassAPI aPI = new ClassAPI();
             LoginRespuesta respuesta = await aPI.Login(loginEnviar);
             Session["usuario"] = JsonConvert.SerializeObject(respuesta);
+            Session["db"] = dbName;
             return RedirectToAction("Index", "Menu");
         }
         [HttpGet]

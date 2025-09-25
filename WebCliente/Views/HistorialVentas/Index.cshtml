@@ -1,12 +1,30 @@
 ﻿@using System
 @using System.Text
+@using Newtonsoft.Json.Linq
 @{
     ViewBag.Title = "Historial Ventas";
     Layout = "~/Views/Shared/_LayoutMenu.cshtml";
 
-    var rawJson = (string)(Session["HistorialVentasJson"] ?? "[]");
+    var rawJsonObj = Session["HistorialVentasJson"];
+    var rawJson = rawJsonObj as string ?? "{}"; // ← toma string de sesión o "{}" si viene null/ vacío
     var jsonBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(rawJson));
+
+    JObject filtros = null;
+    try { filtros = string.IsNullOrWhiteSpace(rawJson) ? null : JObject.Parse(rawJson); }
+    catch { filtros = null; }
+
+    string fecha1Input = filtros?["Fecha1"] != null
+        ? DateTime.Parse(filtros["Fecha1"].ToString()).ToString("yyyy-MM-dd")
+        : "";
+
+    string fecha2Input = filtros?["Fecha2"] != null
+        ? DateTime.Parse(filtros["Fecha2"].ToString()).ToString("yyyy-MM-dd")
+        : "";
+
+    string numeroInput = filtros?["NumeroFactura"]?.ToString() ?? "";
+    string clienteInput = filtros?["NombreCliente"]?.ToString() ?? "";
 }
+
 
 <link href="~/Content/historialventas.css?v=1.2.1" rel="stylesheet" />
 
@@ -14,46 +32,74 @@
     <!-- JSON base64 para que el JS lo lea -->
     <div id="hv-data" data-json="@jsonBase64"></div>
 
-    <!-- FILTROS (alineados y compactos) -->
+    <!-- FILTROS -->
     <div class="card card-filter shadow-sm mb-3">
         <div class="card-body">
 
-            <!-- Fila 1: Fecha, Número Factura, Cliente (horizontal) -->
-            <div class="row g-3 align-items-end">
-                <div class="col-12 col-lg-4">
-                    <label class="form-label">Fecha</label>
-                    <input type="date" id="fFechaBase" class="form-control" />
+            <!-- Fila: Fechas | Número | Cliente (cada uno con su formulario) -->
+            <div class="row g-2 align-items-end">
+
+                <!-- FORM 1: Fechas -> Filtar(fecha1, fecha2, nombreCliente) -->
+                <div class="col-12 col-lg-6">
+                    @using (Html.BeginForm("Filtar", "HistorialVentas", FormMethod.Post, new { id = "formFechas" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <div class="row g-2">
+                            <div class="col-12 col-lg-6">
+                                <label class="form-label">Fecha desde</label>
+                                <input type="date" id="fFechaDesde" name="fecha1" class="form-control" value="@fecha1Input" required />
+                            </div>
+                            <div class="col-12 col-lg-6">
+                                <label class="form-label">Fecha hasta</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="date" id="fFechaHasta" name="fecha2" class="form-control" value="@fecha2Input" required />
+                                    <button id="btnFiltrarFechas" class="btn btn-outline-secondary" type="submit" title="Filtrar por rango de fechas">
+                                        <i class="bi bi-funnel"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
                 </div>
 
-                <div class="col-12 col-lg-4">
-                    <label class="form-label">Número Factura</label>
-                    <input type="text" id="fNumeroFactura" class="form-control" placeholder="CJ-123, 123…" />
+                <!-- FORM 2: Número de Factura -> FiltarNumeroFactura(numerofactura) -->
+                <div class="col-12 col-lg-3">
+                    @using (Html.BeginForm("FiltarNumeroFactura", "HistorialVentas", FormMethod.Post, new { id = "formNumero" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <label class="form-label">Número Factura</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" id="fNumeroFactura" name="numerofactura" class="form-control" placeholder="123…" value="@numeroInput" min="0" step="1" required />
+                            <button id="btnBuscarNumero" class="btn btn-outline-secondary" type="submit" title="Buscar por número">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    }
                 </div>
 
-                <div class="col-12 col-lg-4">
-                    <label class="form-label">Filtrar Cliente</label>
-                    <input type="text" id="fClienteTexto" class="form-control" placeholder="Nombre / NIT…" />
+                <!-- FORM 3: Cliente -> FiltarNombreCliente(nombreCliente) -->
+                <div class="col-12 col-lg-3">
+                    @using (Html.BeginForm("FiltarNombreCliente", "HistorialVentas", FormMethod.Post, new { id = "formCliente" }))
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <label class="form-label">Filtrar Cliente</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="fClienteTexto" name="nombreCliente" class="form-control" placeholder="Nombre / NIT…" value="@clienteInput" required />
+                            <button id="btnBuscarCliente" class="btn btn-outline-secondary" type="submit" title="Buscar cliente/NIT">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    }
                 </div>
+
+
             </div>
 
-            <!-- Fila 2: Año/Mes/Día + switches FE (izq)  |  Acciones (der) -->
+            <!-- Fila: Switches FE y Acciones -->
             <div class="row mt-3 g-2 align-items-center">
                 <div class="col-12 col-lg-8">
-                    <div class="d-flex flex-wrap align-items-center gap-2">
-                        <!-- Macros de fecha -->
-                        <button id="btnFiltroAnio" class="btn btn-outline-secondary hv-icon-btn" type="button" title="Filtrar por año">
-                            <i class="bi bi-funnel-fill me-1"></i> Año
-                        </button>
-                        <button id="btnFiltroMes" class="btn btn-outline-secondary hv-icon-btn" type="button" title="Filtrar por mes">
-                            <i class="bi bi-funnel-fill me-1"></i> Mes
-                        </button>
-                        <button id="btnFiltroDia" class="btn btn-outline-secondary hv-icon-btn" type="button" title="Filtrar por día">
-                            <i class="bi bi-funnel-fill me-1"></i> Día
-                        </button>
-
-                        <span class="vr d-none d-lg-inline mx-1"></span>
-
-                        <!-- Switches FE en horizontal -->
+                    <div class="d-flex flex-wrap align-items-center gap-3">
                         <div class="form-check form-switch d-flex align-items-center gap-2">
                             <input class="form-check-input" type="checkbox" role="switch" id="chkFEPendientes">
                             <label class="form-check-label mb-0" for="chkFEPendientes">F.E. Pendientes</label>
@@ -67,19 +113,16 @@
 
                 <div class="col-12 col-lg-4">
                     <div class="d-flex gap-2 flex-wrap justify-content-lg-end">
-                        <button id="btnLimpiar" class="btn btn-outline-secondary" type="button">Limpiar</button>
-                        <button id="btnEliminarFiltro" class="btn btn-outline-dark" type="button">
-                            <i class="bi bi-x-circle me-1"></i> Eliminar Filtro
-                        </button>
-                        <button id="btnExportar" class="btn btn-success" type="button">
+                        <button id="btnExportar" class="btn btn-success btn-sm" type="button">
                             <i class="bi bi-filetype-csv me-1"></i> Exportar CSV
                         </button>
-                        <button id="btnImprimir" class="btn btn-outline-primary" type="button">
+                        <button id="btnImprimir" class="btn btn-outline-primary btn-sm" type="button">
                             <i class="bi bi-printer me-1"></i> Imprimir
                         </button>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 
@@ -182,4 +225,5 @@
     </div>
 </div>
 
-<script src="~/Scripts/historialventas.js?v=1.5.0"></script>
+<!-- JS principal -->
+<script src="~/Scripts/historialventas.js?v=1.6.5"></script>

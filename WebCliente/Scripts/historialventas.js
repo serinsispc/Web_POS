@@ -1,14 +1,13 @@
 ﻿/* ======================================
    HISTORIAL VENTAS – LÓGICA DE FRONTEND
+   (rango de fechas + filtros embebidos)
+   v1.6.5
    ====================================== */
 (function () {
     "use strict";
 
     // ===== Utils
-    var fmtCOP = new Intl.NumberFormat("es-CO", {
-        style: "currency", currency: "COP", maximumFractionDigits: 0,
-    });
-
+    var fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
     function parseDate(val) { var d = val ? new Date(val) : null; return isNaN(d) ? null : d; }
     function formatDate(d) {
         if (!d) return "";
@@ -35,45 +34,36 @@
     var data = [], filtered = [], sortCol = null, sortDir = 1, selected = null;
 
     function normalizaItem(it) {
-        // Campos visibles
         var fecha = parseDate(it.fechaVenta || it.Fecha || it.fecha || it.FechaEmision) || null;
         var tipo = (it.tipoFactura || it.Tipo || "").toString().trim();
         var prefijo = (it.prefijo || it.Prefijo || "").toString().trim();
         var numero = it.numeroVenta ?? it.number ?? it.Numero ?? it.numero ?? "";
         var totalVenta = Number(it.totalVenta ?? it.totalFactura ?? it.Total ?? 0) || 0;
-        var formaPago = (it.formaDePago || it.FormaDePago || "").toString().trim();
+        var formaPago = (it.formaDePago || it.FormaDePago || it.namePayment_method || it.namePayment_form || "").toString().trim();
         var estado = (it.estadoVenta || it.Estado || "").toString().trim();
         var nit = (it.nit || it.NIT || "").toString().trim();
         var cliente = (it.nombreCliente || it.Cliente || "").toString().trim();
 
-        // CUFE y estado visual
         var cufeRaw = (it.cufe || it.CUFE || "--").toString().trim();
         var tipoMayus = tipo.toUpperCase();
-        var cufeDisplay = "N/A";
-        var cufeStatus = "na"; // aceptada | rechazada | na
+        var cufeDisplay = "N/A", cufeStatus = "na";
         if (tipoMayus === "FACTURA ELECTRONICA DE VENTA") {
-            if (cufeRaw && cufeRaw !== "--") {
-                cufeDisplay = "Factura aceptada"; cufeStatus = "aceptada";
-            } else {
-                cufeDisplay = "Factura rechazada"; cufeStatus = "rechazada";
-            }
+            if (cufeRaw && cufeRaw !== "--") { cufeDisplay = "Factura aceptada"; cufeStatus = "aceptada"; }
+            else { cufeDisplay = "Factura rechazada"; cufeStatus = "rechazada"; }
         }
 
-        // Para filtros existentes (búsqueda por "consecutivo")
         var consecutivo = (prefijo ? prefijo + "-" : "") + (numero || "");
 
-        // Totales del footer
         var subtotal = Number(it.subtotalVenta || it.Subtotal || it.totalBase || 0) || 0;
         var impuestos = 0;
         impuestos += Number(it.IVA || it.iva || it.ivaVenta || it.totalImpuestos || 0) || 0;
         impuestos += Number(it.INC || it.inc || 0) || 0;
         impuestos += Number(it.INCBolsas || it.incBolsas || 0) || 0;
 
-        var propina = Number(it.propina ?? 0) || 0;
+        var propina = Number(it.propina ?? it.propinaVenta ?? 0) || 0;
 
         return {
             raw: it,
-            // columnas visibles
             fechaVenta: fecha,
             tipoFactura: tipo,
             prefijo: prefijo,
@@ -86,8 +76,6 @@
             cufe: cufeDisplay,
             cufeStatus: cufeStatus,
             cufeRaw: cufeRaw,
-
-            // soporte filtros/orden y footer
             consecutivo: consecutivo,
             subtotal: subtotal,
             impuestos: impuestos,
@@ -123,7 +111,6 @@
                 tr.appendChild(el);
             }
 
-            // Orden y columnas solicitadas
             td(formatDate(x.fechaVenta));
             td(x.tipoFactura || "");
             td(x.prefijo || "");
@@ -131,7 +118,6 @@
             td(fmtCOP.format(x.total || 0), "text-end");
             td(x.formaDePago || "");
 
-            // Estado como badge
             var est = document.createElement("span");
             est.className = "badge rounded-pill " + estadoClass(x.estadoVenta);
             est.textContent = x.estadoVenta || "--";
@@ -140,12 +126,11 @@
             td(x.nit || "");
             td(x.nombreCliente || "");
 
-            // CUFE badge con tooltip si aceptada
             var badge = document.createElement("span");
             var cls = "badge rounded-pill ";
-            if (x.cufeStatus === "aceptada") { cls += "bg-success"; }
-            else if (x.cufeStatus === "rechazada") { cls += "bg-danger"; }
-            else { cls += "bg-secondary"; }
+            if (x.cufeStatus === "aceptada") cls += "bg-success";
+            else if (x.cufeStatus === "rechazada") cls += "bg-danger";
+            else cls += "bg-secondary";
             badge.className = cls;
             badge.textContent = x.cufe || "N/A";
             if (x.cufeStatus === "aceptada" && x.cufeRaw && x.cufeRaw !== "--") {
@@ -162,7 +147,6 @@
         while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
         tbody.appendChild(frag);
 
-        // Inicializar tooltips Bootstrap cada vez que renderizamos
         if (window.bootstrap && typeof bootstrap.Tooltip === "function") {
             var triggers = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             triggers.forEach(function (el) { new bootstrap.Tooltip(el); });
@@ -202,7 +186,7 @@
         renderTable(); renderTotals(); updateSidePanel();
     }
 
-    // ===== Filtros (simplificados)
+    // ===== Filtros (cliente-side)
     function trueish(obj, keys) {
         for (var i = 0; i < keys.length; i++) {
             var v = obj[keys[i]];
@@ -218,14 +202,26 @@
         return false;
     }
 
+    function endOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999); }
+
     function applyFilters() {
-        var numFac = normalizeText(byId("fNumeroFactura").value);
-        var clienteTxt = normalizeText(byId("fClienteTexto").value);
-        var fePend = byId("chkFEPendientes").checked;
-        var feOnly = byId("chkFacturaElectronica").checked;
+        var numFac = normalizeText(byId("fNumeroFactura")?.value || "");
+        var clienteTxt = normalizeText(byId("fClienteTexto")?.value || "");
+        var fePend = byId("chkFEPendientes")?.checked;
+        var feOnly = byId("chkFacturaElectronica")?.checked;
+
+        var dDesde = byId("fFechaDesde")?.value ? new Date(byId("fFechaDesde").value + "T00:00:00") : null;
+        var dHasta = byId("fFechaHasta")?.value ? endOfDay(new Date(byId("fFechaHasta").value + "T00:00:00")) : null;
 
         filtered = data.filter(function (x) {
             var r = x.raw || {};
+
+            if (x.fechaVenta) {
+                if (dDesde && x.fechaVenta < dDesde) return false;
+                if (dHasta && x.fechaVenta > dHasta) return false;
+            } else {
+                if (dDesde || dHasta) return false;
+            }
 
             if (numFac) {
                 var c = normalizeText(x.consecutivo);
@@ -255,25 +251,6 @@
         sortAndRender();
     }
 
-    function limpiarFiltros() {
-        ["fNumeroFactura", "fClienteTexto", "fFechaBase"].forEach(function (id) {
-            var el = byId(id); if (!el) return; el.value = "";
-        });
-        byId("chkFEPendientes").checked = false;
-        byId("chkFacturaElectronica").checked = false;
-        applyFilters();
-    }
-
-    function filtroMacro(from, to) {
-        filtered = data.filter(function (x) {
-            if (!x.fechaVenta) return false;
-            var d = x.fechaVenta;
-            return d >= from && d <= new Date(to.getFullYear(), to.getMonth(), to.getDate(), 23, 59, 59);
-        });
-        if (selected && filtered.indexOf(selected) < 0) selected = null;
-        sortAndRender();
-    }
-
     // ===== Selección y panel lateral
     function selectRow(item) { selected = item; renderTable(); updateSidePanel(); }
     function setEnabled(id, en) { var b = byId(id); if (b) b.disabled = !en; }
@@ -295,7 +272,6 @@
 
     // ===== Acciones (placeholders + export)
     function requireSel() { if (!selected) { alert("Selecciona una venta primero."); return false; } return true; }
-
     function exportCSV() {
         if (!filtered.length) { alert("No hay datos para exportar."); return; }
         var sep = ";";
@@ -303,16 +279,10 @@
         var rows = [headers.join(sep)];
         filtered.forEach(function (x) {
             rows.push([
-                formatDate(x.fechaVenta),
-                x.tipoFactura || "",
-                x.prefijo || "",
-                String(x.numeroVenta || ""),
-                String(x.total || 0).replace(/\./g, ","),
-                x.formaDePago || "",
-                x.estadoVenta || "",
-                x.nit || "",
-                x.nombreCliente || "",
-                x.cufe || "N/A",
+                formatDate(x.fechaVenta), x.tipoFactura || "", x.prefijo || "",
+                String(x.numeroVenta || ""), String(x.total || 0).replace(/\./g, ","),
+                x.formaDePago || "", x.estadoVenta || "", x.nit || "", x.nombreCliente || "",
+                x.cufe || "N/A"
             ].join(sep));
         });
         var csv = rows.join("\n");
@@ -323,92 +293,116 @@
         var hoy = new Date(), stamp = hoy.getFullYear() + String(hoy.getMonth() + 1).padStart(2, "0") + String(hoy.getDate()).padStart(2, "0");
         a.download = "historial_ventas_" + stamp + ".csv"; a.click(); URL.revokeObjectURL(url);
     }
-
     function imprimir() { window.print(); }
 
+    // === Autocompletar rango de fechas y mantener coherencia ===
+    function wireDateRange() {
+        var desde = byId('fFechaDesde');
+        var hasta = byId('fFechaHasta');
+        if (!desde || !hasta) return;
+
+        function syncMinMax() {
+            if (desde.value) { hasta.min = desde.value; } else { hasta.removeAttribute('min'); }
+            if (hasta.value) { desde.max = hasta.value; } else { desde.removeAttribute('max'); }
+        }
+        desde.addEventListener('change', function () {
+            if (!hasta.value && desde.value) hasta.value = desde.value;
+            if (hasta.value && desde.value && new Date(hasta.value) < new Date(desde.value)) {
+                hasta.value = desde.value;
+            }
+            syncMinMax();
+        });
+        hasta.addEventListener('change', function () {
+            if (!desde.value && hasta.value) desde.value = hasta.value;
+            if (hasta.value && desde.value && new Date(desde.value) > new Date(hasta.value)) {
+                desde.value = hasta.value;
+            }
+            syncMinMax();
+        });
+        syncMinMax();
+    }
+
+    // === Prellenar desde el JSON de sesión ===
+    function setDateInput(id, iso) {
+        if (!iso) return;
+        var el = byId(id);
+        if (!el) return;
+        var d = new Date(iso);
+        if (isNaN(d)) return;
+        el.value = ymd(d);
+    }
+    function setTextInput(id, val) {
+        if (val == null || val === "") return;
+        var el = byId(id); if (!el) return;
+        el.value = val;
+    }
+    function prefillFromSession(root) {
+        setDateInput('fFechaDesde', root.Fecha1 || root.fecha1);
+        setDateInput('fFechaHasta', root.Fecha2 || root.fecha2);
+        setTextInput('fClienteTexto', root.NombreCliente || root.nombreCliente);
+        // setTextInput('fNumeroFactura', root.NumeroFactura || root.numeroFactura); // si quieres precargar
+    }
+
+    // ===== Listeners y arranque
     function hookActions() {
-        // Botones de filtros
-        byId("btnLimpiar")?.addEventListener("click", limpiarFiltros);
-        byId("btnEliminarFiltro")?.addEventListener("click", limpiarFiltros);
+        var formFechas = byId("formFechas");
+        var formNumero = byId("formNumero");
+        var formCliente = byId("formCliente");
+
+        // Rango fechas
+        wireDateRange();
+
+        // === NUMERO: submit al servidor
+        // (el botón ya es type="submit"; esto asegura Enter también)
+        byId("fNumeroFactura")?.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") {
+                // deja que el form se envíe de forma natural
+                // (si algún navegador no envía, forzamos)
+                if (formNumero) {
+                    e.preventDefault();
+                    if (typeof formNumero.requestSubmit === "function") formNumero.requestSubmit();
+                    else formNumero.submit();
+                }
+            }
+        });
+
+        // === CLIENTE: antes de enviar, sincronizar fechas ocultas con lo visible
+        if (formCliente) {
+            formCliente.addEventListener("submit", function () {
+                var f1 = byId("fFechaDesde")?.value || "";
+                var f2 = byId("fFechaHasta")?.value || "";
+                var h1 = byId("hFecha1"), h2 = byId("hFecha2");
+                if (h1 && f1) h1.value = f1;
+                if (h2 && f2) h2.value = f2;
+            });
+        }
+
+        // Switches FE (cliente-side)
+        byId("chkFEPendientes")?.addEventListener("change", applyFilters);
+        byId("chkFacturaElectronica")?.addEventListener("change", applyFilters);
+
+        // Enter en CLIENTE sin JS adicional (submit natural del form)
+
+        // Exportar/Imprimir
         byId("btnExportar")?.addEventListener("click", exportCSV);
         byId("btnImprimir")?.addEventListener("click", imprimir);
-
-        // Macros de fecha
-        byId("btnFiltroAnio")?.addEventListener("click", function () {
-            var base = byId("fFechaBase").value ? new Date(byId("fFechaBase").value + "T00:00:00") : new Date();
-            filtroMacro(new Date(base.getFullYear(), 0, 1), new Date(base.getFullYear(), 11, 31));
-        });
-        byId("btnFiltroMes")?.addEventListener("click", function () {
-            var base = byId("fFechaBase").value ? new Date(byId("fFechaBase").value + "T00:00:00") : new Date();
-            var start = new Date(base.getFullYear(), base.getMonth(), 1);
-            var end = new Date(base.getFullYear(), base.getMonth() + 1, 0);
-            filtroMacro(start, end);
-        });
-        byId("btnFiltroDia")?.addEventListener("click", function () {
-            var base = byId("fFechaBase").value ? new Date(byId("fFechaBase").value + "T00:00:00") : new Date();
-            filtroMacro(base, base);
-        });
 
         // Panel lateral
         byId("actExportar")?.addEventListener("click", exportCSV);
         byId("actImprimir")?.addEventListener("click", imprimir);
 
-        byId("actVerDetalle")?.addEventListener("click", function () {
-            if (!requireSel()) return;
-            alert("Ver detalle de " + (selected.prefijo ? (selected.prefijo + "-") : "") + (selected.numeroVenta ?? ""));
-        });
-        byId("actAnular")?.addEventListener("click", function () {
-            if (!requireSel()) return;
-            if (confirm("¿Anular la venta " + (selected.prefijo ? (selected.prefijo + "-") : "") + (selected.numeroVenta ?? "") + "?")) {
-                console.log("Anular -> conectar a endpoint");
-            }
-        });
-        byId("actCrearFE")?.addEventListener("click", function () {
-            if (!requireSel()) return;
-            alert("Crear Factura Electrónica (placeholder)");
-        });
-        byId("actEnviarCorreo")?.addEventListener("click", function () {
-            if (!requireSel()) return;
-            alert("Enviar Factura por Correo (placeholder)");
-        });
-        byId("actEditarCliente")?.addEventListener("click", function () {
-            if (!requireSel()) return;
-            alert("Editar/Agregar cliente para " + (selected.nombreCliente || "cliente"));
-        });
-        byId("actDevolucion")?.addEventListener("click", function () {
-            if (!requireSel()) return;
-            alert("Devolución (placeholder)");
-        });
-        byId("actPosAElectronica")?.addEventListener("click", function () {
-            if (!requireSel()) return;
-            alert("POS a Electrónica (placeholder)");
-        });
-        byId("actClonar")?.addEventListener("click", function () {
-            if (!requireSel()) return;
-            alert("Clonar Factura (placeholder)");
-        });
-        byId("actResolucion")?.addEventListener("click", function () {
-            if (!requireSel()) return;
-            alert("Resolución (placeholder)");
-        });
-        byId("actAumentarNumero")?.addEventListener("click", function () {
-            if (!requireSel()) return;
-            alert("Aumentar Número (placeholder)");
-        });
-        byId("actEnviarDIAN")?.addEventListener("click", function () {
-            if (!requireSel()) return;
-            alert("Enviar a DIAN (placeholder)");
-        });
-        byId("actDescargarFactura")?.addEventListener("click", function () {
-            if (!requireSel()) return;
-            alert("Descargar Factura (placeholder)");
-        });
-        byId("actEditarFecha")?.addEventListener("click", function () {
-            if (!requireSel()) return;
-            var nueva = byId("fFechaFacturacion").value;
-            if (!nueva) { alert("Selecciona una fecha."); return; }
-            alert("Actualizar fecha de facturación a " + nueva + " (placeholder)");
-        });
+        byId("actVerDetalle")?.addEventListener("click", function () { if (!requireSel()) return; alert("Ver detalle de " + (selected.prefijo ? (selected.prefijo + "-") : "") + (selected.numeroVenta ?? "")); });
+        byId("actAnular")?.addEventListener("click", function () { if (!requireSel()) return; if (confirm("¿Anular la venta " + (selected.prefijo ? (selected.prefijo + "-") : "") + (selected.numeroVenta ?? "") + "?")) { console.log("Anular -> endpoint"); } });
+        byId("actCrearFE")?.addEventListener("click", function () { if (!requireSel()) return; alert("Crear Factura Electrónica (placeholder)"); });
+        byId("actEnviarCorreo")?.addEventListener("click", function () { if (!requireSel()) return; alert("Enviar Factura por Correo (placeholder)"); });
+        byId("actEditarCliente")?.addEventListener("click", function () { if (!requireSel()) return; alert("Editar/Agregar cliente para " + (selected.nombreCliente || "cliente")); });
+        byId("actDevolucion")?.addEventListener("click", function () { if (!requireSel()) return; alert("Devolución (placeholder)"); });
+        byId("actPosAElectronica")?.addEventListener("click", function () { if (!requireSel()) return; alert("POS a Electrónica (placeholder)"); });
+        byId("actClonar")?.addEventListener("click", function () { if (!requireSel()) return; alert("Clonar Factura (placeholder)"); });
+        byId("actResolucion")?.addEventListener("click", function () { if (!requireSel()) return; alert("Resolución (placeholder)"); });
+        byId("actAumentarNumero")?.addEventListener("click", function () { if (!requireSel()) return; alert("Aumentar Número (placeholder)"); });
+        byId("actEnviarDIAN")?.addEventListener("click", function () { if (!requireSel()) return; alert("Enviar a DIAN (placeholder)"); });
+        byId("actDescargarFactura")?.addEventListener("click", function () { if (!requireSel()) return; alert("Descargar Factura (placeholder)"); });
 
         // Sort headers
         var thead = document.querySelector("#tablaHV thead");
@@ -423,11 +417,22 @@
     // ===== INIT
     document.addEventListener("DOMContentLoaded", function () {
         var holder = byId("hv-data"); if (!holder) return;
-        var raw = extractArrayFromModel(JSON.parse(decodeBase64(holder.getAttribute("data-json") || "")));
+
+        var jsonText = decodeBase64(holder.getAttribute("data-json") || "");
+        var root = {};
+        try { root = JSON.parse(jsonText) || {}; } catch (e) { root = {}; }
+
+        var raw = extractArrayFromModel(root);
         data = raw.map(normalizaItem);
         filtered = data.slice();
+
+        prefillFromSession(root);
+
         hookActions();
-        sortCol = "fechaVenta"; sortDir = -1; // recientes primero
+        sortCol = "fechaVenta";
+        sortDir = -1; // recientes primero
+
+        // applyFilters(); // <- si quieres aplicar en cliente al cargar
         sortAndRender();
     });
 })();
