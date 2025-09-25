@@ -94,5 +94,16 @@ namespace WebCliente.Controllers
             ModelView(model);
             return View("Index");
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> ListaResoluciones(int idventa)
+        {
+            var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
+            
+
+            
+            ModelView(model);
+            return View("Index");
+        }
     }
 }
