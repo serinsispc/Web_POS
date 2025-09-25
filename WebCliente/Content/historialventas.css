@@ -1,118 +1,155 @@
-﻿/* ============================
+﻿/* =============================
    HISTORIAL VENTAS – ESTILOS
-   Coherente con tu página de Informes (chips/píldoras + tabla sticky)
-   ============================ */
-
-:root {
-    --azul-oscuro: #0b1f3a;
-    --azul: #102a4d;
-    --azul-clarito: #18407a;
-    --celeste: #e8f1ff;
-    --borde: #cfe2ff;
-    --gris-head: #e9ecef;
-    --pill-bg: #0d3b66;
-    --pill-bg-2: #123e75;
-    --pill-text: #e8f1ff;
-    --ok: #16a34a;
-    --danger: #b42318;
+   ============================= */
+.page-wrap.historial-ventas {
+    padding: 10px;
+    /* Espacio extra para no chocar con el footer fijo */
+    padding-bottom: 6rem;
 }
 
-.page-wrap {
-    padding: .75rem;
-}
-
-.card-filter {
-    border: 1px solid var(--borde);
-    background: #fff;
-}
-
-.btn-chip {
-    background: var(--celeste);
-    border: 1px solid var(--borde);
-    color: #0b294b;
-    padding: .45rem .9rem;
-    border-radius: 999px;
+.card-filter .form-label {
     font-weight: 600;
 }
 
-    .btn-chip:hover {
-        background: #d9e9ff;
+.hv-icon-btn i {
+    pointer-events: none;
+}
+
+/* Bloque de switches FE */
+.hv-fe-card {
+    border-radius: 12px;
+}
+
+    .hv-fe-card .form-switch .form-check-input {
+        width: 2.6rem;
+        height: 1.4rem;
+        cursor: pointer;
     }
 
-.btn-pill {
-    background: var(--pill-bg);
-    color: var(--pill-text);
-    border: none;
-    border-radius: 999px;
-    padding: .5rem 1rem;
-    font-weight: 600;
-}
-
-    .btn-pill:hover {
-        background: var(--pill-bg-2);
-        color: #fff;
+    .hv-fe-card .form-check-input:checked {
+        background-color: #0d1b3d; /* combina con tu paleta */
+        border-color: #0d1b3d;
     }
 
-.btn-pill-secondary {
-    background: #eef3ff;
-    color: #0b294b;
-    border: 1px solid var(--borde);
-    border-radius: 999px;
-    padding: .5rem 1rem;
-    font-weight: 600;
-}
-
-    .btn-pill-secondary:hover {
-        background: #e4ecff;
+    .hv-fe-card .form-check-label {
+        font-weight: 600;
     }
 
-.btn-pill-danger {
-    background: var(--danger);
-    color: #fff;
-    border: none;
-    border-radius: 999px;
-    padding: .5rem 1rem;
-    font-weight: 600;
-}
-
-    .btn-pill-danger:hover {
-        filter: brightness(.95);
-    }
-
-.actions-wrap .card {
-    border: 1px solid var(--borde);
-}
-
-.table-scroll {
-    max-height: calc(100vh - 340px);
-    overflow: auto;
-}
-
-table thead th {
+/* Tabla */
+.table-hv thead th {
     position: sticky;
     top: 0;
-    z-index: 2;
-    background: var(--gris-head);
-    border-bottom: 1px solid #ced4da;
-    white-space: nowrap;
-}
-
-table tbody td {
-    white-space: nowrap;
-}
-
-table tbody tr.selected {
-    background: #fff3cd !important;
-}
-
-.table-footer {
     background: #f8f9fa;
-    border-top: 1px solid #dee2e6;
+    z-index: 1;
 }
 
-/* Responsivo */
-@media (max-width: 992px) {
-    .table-scroll {
-        max-height: calc(100vh - 420px);
+.table-hv tbody tr:nth-child(odd) {
+    background-color: #fcfcfd;
+}
+
+.table-hv td, .table-hv th {
+    white-space: nowrap;
+}
+
+.table-hv .text-end {
+    text-align: right !important;
+}
+
+.table-hv tbody tr {
+    cursor: pointer;
+}
+
+    .table-hv tbody tr.row-selected {
+        background: rgba(13,27,61,.08) !important;
+    }
+
+/* Panel lateral */
+.hv-actions {
+    /* margen inferior extra para que el último botón no quede detrás del footer */
+    margin-bottom: 4.5rem;
+}
+
+    .hv-actions .section-title {
+        font-size: .9rem;
+        font-weight: 700;
+        color: #0d1b3d;
+        margin-bottom: .4rem;
+    }
+
+    .hv-actions .action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        border: 1px solid rgba(0,0,0,.07);
+        background: #fff;
+        border-radius: 12px;
+        padding: .6rem .8rem;
+        transition: transform .08s ease, box-shadow .12s ease, border-color .12s ease;
+        text-align: left;
+    }
+
+        .hv-actions .action-btn i {
+            font-size: 1.05rem;
+        }
+
+        .hv-actions .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(0,0,0,.06);
+            border-color: rgba(13,27,61,.15);
+        }
+
+        .hv-actions .action-btn:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+    .hv-actions .action-danger {
+        border-color: rgba(220,53,69,.2);
+    }
+
+        .hv-actions .action-danger:hover {
+            border-color: rgba(220,53,69,.5);
+        }
+
+.hv-total {
+    border-left: 6px solid #22c55e;
+    background: linear-gradient(180deg, #f6fff8, #ffffff);
+    border-radius: 12px;
+}
+
+.hv-feja {
+    border-radius: 12px;
+}
+/* (typo harmless, keep for backwards if existed) */
+.hv-fecha {
+    border-radius: 12px;
+}
+
+/* Imprimir limpio */
+@media print {
+    .card-filter, .btn, .input-group, select, input, .hv-actions, .col-lg-3 {
+        display: none !important;
+    }
+
+    .card {
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    body {
+        background: #fff !important;
+    }
+}
+
+/* Ajuste en pantallas pequeñas: un poco más de resguardo inferior */
+@media (max-width: 768px) {
+    .page-wrap.historial-ventas {
+        padding-bottom: 7rem;
+    }
+
+    .hv-actions {
+        margin-bottom: 5.5rem;
     }
 }

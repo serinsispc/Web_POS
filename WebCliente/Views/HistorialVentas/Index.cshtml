@@ -3,148 +3,183 @@
 @{
     ViewBag.Title = "Historial Ventas";
     Layout = "~/Views/Shared/_LayoutMenu.cshtml";
-    // Inyecta aquí tus datos (lista de facturas) en JSON. Puede venir por Session o ViewBag.
-    var jsonFacturas = (string)(Session["HistorialVentasJson"] ?? ViewBag.HistorialVentasJson ?? "[]");
-    var jsonBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(jsonFacturas));
+
+    var rawJson = (string)(Session["HistorialVentasJson"] ?? "[]");
+    var jsonBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(rawJson));
 }
 
-<link href="~/Content/historialventas.css?v=1.0.0" rel="stylesheet" />
+<link href="~/Content/historialventas.css?v=1.2.1" rel="stylesheet" />
 
-<div class="page-wrap">
+<div class="page-wrap historial-ventas" data-page="HistorialVentas">
+    <!-- JSON base64 para que el JS lo lea -->
+    <div id="hv-data" data-json="@jsonBase64"></div>
 
-    <!-- Encabezado / Filtros (mismo estilo que imagen 1) -->
+    <!-- FILTROS (alineados y compactos) -->
     <div class="card card-filter shadow-sm mb-3">
         <div class="card-body">
-            <h5 class="mb-3 fw-semibold">Datos para Filtrar</h5>
 
+            <!-- Fila 1: Fecha, Número Factura, Cliente (horizontal) -->
             <div class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label">Fecha base</label>
-                    <input id="f-fecha" type="date" class="form-control" />
+                <div class="col-12 col-lg-4">
+                    <label class="form-label">Fecha</label>
+                    <input type="date" id="fFechaBase" class="form-control" />
                 </div>
 
-                <div class="col-md-4">
-                    <label class="form-label">Rango</label>
-                    <div class="btn-group w-100" role="group" aria-label="Rango">
-                        <input type="radio" class="btn-check" name="rango" id="r-anio" autocomplete="off" checked>
-                        <label class="btn btn-chip" for="r-anio"><i class="bi bi-calendar3 me-1"></i>Año</label>
+                <div class="col-12 col-lg-4">
+                    <label class="form-label">Número Factura</label>
+                    <input type="text" id="fNumeroFactura" class="form-control" placeholder="CJ-123, 123…" />
+                </div>
 
-                        <input type="radio" class="btn-check" name="rango" id="r-mes" autocomplete="off">
-                        <label class="btn btn-chip" for="r-mes"><i class="bi bi-calendar-event me-1"></i>Mes</label>
+                <div class="col-12 col-lg-4">
+                    <label class="form-label">Filtrar Cliente</label>
+                    <input type="text" id="fClienteTexto" class="form-control" placeholder="Nombre / NIT…" />
+                </div>
+            </div>
 
-                        <input type="radio" class="btn-check" name="rango" id="r-dia" autocomplete="off">
-                        <label class="btn btn-chip" for="r-dia"><i class="bi bi-calendar-day me-1"></i>Día</label>
+            <!-- Fila 2: Año/Mes/Día + switches FE (izq)  |  Acciones (der) -->
+            <div class="row mt-3 g-2 align-items-center">
+                <div class="col-12 col-lg-8">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <!-- Macros de fecha -->
+                        <button id="btnFiltroAnio" class="btn btn-outline-secondary hv-icon-btn" type="button" title="Filtrar por año">
+                            <i class="bi bi-funnel-fill me-1"></i> Año
+                        </button>
+                        <button id="btnFiltroMes" class="btn btn-outline-secondary hv-icon-btn" type="button" title="Filtrar por mes">
+                            <i class="bi bi-funnel-fill me-1"></i> Mes
+                        </button>
+                        <button id="btnFiltroDia" class="btn btn-outline-secondary hv-icon-btn" type="button" title="Filtrar por día">
+                            <i class="bi bi-funnel-fill me-1"></i> Día
+                        </button>
+
+                        <span class="vr d-none d-lg-inline mx-1"></span>
+
+                        <!-- Switches FE en horizontal -->
+                        <div class="form-check form-switch d-flex align-items-center gap-2">
+                            <input class="form-check-input" type="checkbox" role="switch" id="chkFEPendientes">
+                            <label class="form-check-label mb-0" for="chkFEPendientes">F.E. Pendientes</label>
+                        </div>
+                        <div class="form-check form-switch d-flex align-items-center gap-2">
+                            <input class="form-check-input" type="checkbox" role="switch" id="chkFacturaElectronica">
+                            <label class="form-check-label mb-0" for="chkFacturaElectronica">Factura Electrónica</label>
+                        </div>
                     </div>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label">Número factura</label>
-                    <input id="f-numero" type="text" class="form-control" placeholder="Ej: 10234" />
-                </div>
-
-                <div class="col-md-3">
-                    <label class="form-label">Cliente</label>
-                    <input id="f-cliente" type="text" class="form-control" placeholder="Nombre / NIT" />
-                </div>
-
-                <div class="col-12 d-flex flex-wrap gap-2 mt-2">
-                    <div class="form-check me-3">
-                        <input class="form-check-input" type="checkbox" id="f-fe-pendientes">
-                        <label class="form-check-label" for="f-fe-pendientes">F.E. Pendientes</label>
+                <div class="col-12 col-lg-4">
+                    <div class="d-flex gap-2 flex-wrap justify-content-lg-end">
+                        <button id="btnLimpiar" class="btn btn-outline-secondary" type="button">Limpiar</button>
+                        <button id="btnEliminarFiltro" class="btn btn-outline-dark" type="button">
+                            <i class="bi bi-x-circle me-1"></i> Eliminar Filtro
+                        </button>
+                        <button id="btnExportar" class="btn btn-success" type="button">
+                            <i class="bi bi-filetype-csv me-1"></i> Exportar CSV
+                        </button>
+                        <button id="btnImprimir" class="btn btn-outline-primary" type="button">
+                            <i class="bi bi-printer me-1"></i> Imprimir
+                        </button>
                     </div>
-
-                    <div class="form-check me-3">
-                        <input class="form-check-input" type="checkbox" id="f-solo-electronicas">
-                        <label class="form-check-label" for="f-solo-electronicas">Factura Electrónica</label>
-                    </div>
-
-                    <button id="btn-filtrar" class="btn btn-pill">
-                        <i class="bi bi-funnel me-1"></i>Filtrar
-                    </button>
-
-                    <button id="btn-eliminar-filtro" class="btn btn-pill-secondary">
-                        <i class="bi bi-x-circle me-1"></i>Eliminar Filtro
-                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Panel de acciones (equivalente a la columna derecha del WinForms) -->
-    <div class="actions-wrap mb-3">
-        <div class="card shadow-sm">
-            <div class="card-body d-flex flex-wrap gap-2">
-                <button class="btn btn-pill" id="a-imprimir"><i class="bi bi-printer me-1"></i>Imprimir</button>
-                <button class="btn btn-pill" id="a-detalle"><i class="bi bi-file-earmark-text me-1"></i>Ver Detalle</button>
-                <button class="btn btn-pill-danger" id="a-anular"><i class="bi bi-slash-circle me-1"></i>Anular</button>
-
-                <div class="vr d-none d-lg-block"></div>
-
-                <button class="btn btn-pill" id="a-crear-fe"><i class="bi bi-file-earmark-check me-1"></i>Crear F.E.</button>
-                <button class="btn btn-pill" id="a-enviar-dian"><i class="bi bi-cloud-upload me-1"></i>Enviar DIAN</button>
-                <button class="btn btn-pill" id="a-enviar-correo"><i class="bi bi-envelope-paper me-1"></i>Enviar Correo</button>
-                <button class="btn btn-pill" id="a-descargar-fe"><i class="bi bi-download me-1"></i>Descargar</button>
-
-                <div class="vr d-none d-lg-block"></div>
-
-                <button class="btn btn-pill" id="a-editar-cliente"><i class="bi bi-person-gear me-1"></i>Editar/Agregar Cliente</button>
-
-                <div class="d-flex align-items-center ms-auto gap-2">
-                    <div class="input-group input-group-sm w-auto">
-                        <span class="input-group-text">Fecha F.E.</span>
-                        <input id="a-fecha-fe" type="date" class="form-control">
-                        <button id="a-editar-fecha" class="btn btn-outline-secondary">Editar</button>
+    <!-- CONTENIDO: tabla + panel lateral -->
+    <div class="row">
+        <div class="col-12 col-lg-9">
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table id="tablaHV" class="table table-sm table-hover table-hv align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th data-col="fechaVenta">Fecha</th>
+                                    <th data-col="tipoFactura">Tipo</th>
+                                    <th data-col="prefijo">Prefijo</th>
+                                    <th data-col="numeroVenta">Número</th>
+                                    <th class="text-end" data-col="total">Total</th>
+                                    <th data-col="formaDePago">Forma de Pago</th>
+                                    <th data-col="estadoVenta">Estado</th>
+                                    <th data-col="nit">NIT</th>
+                                    <th data-col="nombreCliente">Cliente</th>
+                                    <th data-col="cufe">CUFE</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @* filas generadas por JS *@
+                            </tbody>
+                        </table>
                     </div>
-                    <span class="badge bg-success fs-6" id="a-total-seleccion">$ 0</span>
+                </div>
+                <div class="card-footer d-flex justify-content-between flex-wrap gap-2">
+                    <div id="resumenHV" class="small text-muted">0 ventas</div>
+                    <div id="totalesHV" class="fw-semibold"></div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Tabla principal -->
-    <div class="card shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive table-scroll">
-                <table class="table table-hover align-middle mb-0" id="tabla-facturas">
-                    <thead>
-                        <tr>
-                            <th>Cuenta</th>
-                            <th>Fecha</th>
-                            <th>Factura / Recibo</th>
-                            <th>Prefijo</th>
-                            <th>ID Resolución DIAN</th>
-                            <th>Cliente</th>
-                            <th>CUFE</th>
-                            <th>Número</th>
-                            <th>Descuento</th>
-                            <th>SubTotal</th>
-                            <th>baseIva_5</th>
-                            <th>baseIva_19</th>
-                            <th>IVA_5</th>
-                            <th>IVA_19</th>
-                            <th>INC</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Se llena por JS -->
-                    </tbody>
-                </table>
-            </div>
+        <!-- PANEL LATERAL organizado -->
+        <div class="col-12 col-lg-3 mt-3 mt-lg-0">
+            <div class="hv-actions card shadow-sm">
+                <div class="card-body p-3">
+                    <div class="hv-section">
+                        <div class="section-title">Acciones</div>
+                        <div class="d-grid gap-2">
+                            <button id="actImprimir" class="action-btn btn-light"><i class="bi bi-printer"></i> Imprimir</button>
+                            <button id="actVerDetalle" class="action-btn btn-light"><i class="bi bi-eye"></i> Ver Detalle</button>
+                            <button id="actAnular" class="action-btn btn-light action-danger"><i class="bi bi-slash-circle"></i> Anular</button>
+                            <button id="actClonar" class="action-btn btn-light"><i class="bi bi-files"></i> Clonar Factura</button>
+                        </div>
+                    </div>
 
-            <div class="table-footer d-flex justify-content-between align-items-center px-3 py-2">
-                <div><span id="status-seleccion">0 filas</span></div>
-                <div class="text-muted small">
-                    <i class="bi bi-person-badge me-1"></i>@(Session["Usuario"] ?? "Super Administrador")
+                    <div class="hv-section mt-3">
+                        <div class="section-title">Factura Electrónica</div>
+                        <div class="d-grid gap-2">
+                            <button id="actCrearFE" class="action-btn btn-light"><i class="bi bi-file-earmark-plus"></i> Crear Factura Electrónica</button>
+                            <button id="actEnviarDIAN" class="action-btn btn-light"><i class="bi bi-send"></i> Enviar Factura DIAN</button>
+                            <button id="actEnviarCorreo" class="action-btn btn-light"><i class="bi bi-envelope"></i> Enviar Factura Correo</button>
+                            <button id="actPosAElectronica" class="action-btn btn-light"><i class="bi bi-arrow-left-right"></i> POS a ELECTRÓNICA</button>
+                        </div>
+                    </div>
+
+                    <div class="hv-section mt-3">
+                        <div class="section-title">Cliente & Totales</div>
+                        <div class="d-grid gap-2">
+                            <button id="actEditarCliente" class="action-btn btn-light"><i class="bi bi-person"></i> Editar o Agregar Cliente</button>
+                            <div class="card hv-total">
+                                <div class="card-body py-2 px-3 d-flex justify-content-between align-items-center">
+                                    <div class="small text-muted">Total</div>
+                                    <div id="lblTotalSeleccion" class="fw-bold">$ 0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="hv-section mt-3">
+                        <div class="section-title">Fecha Facturación</div>
+                        <div class="hv-fecha card">
+                            <div class="card-body py-2 px-3">
+                                <div class="input-group input-group-sm">
+                                    <input type="date" id="fFechaFacturacion" class="form-control">
+                                    <button id="actEditarFecha" class="btn btn-outline-secondary">Editar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="hv-section mt-3">
+                        <div class="section-title">Otras</div>
+                        <div class="d-grid gap-2">
+                            <button id="actDevolucion" class="action-btn btn-light"><i class="bi bi-arrow-counterclockwise"></i> Devolución</button>
+                            <button id="actResolucion" class="action-btn btn-light"><i class="bi bi-gear"></i> Resolución</button>
+                            <button id="actAumentarNumero" class="action-btn btn-light"><i class="bi bi-plus-square"></i> Aumentar Número</button>
+                            <button id="actDescargarFactura" class="action-btn btn-light"><i class="bi bi-download"></i> Descargar Factura</button>
+                            <button id="actExportar" class="action-btn btn-light"><i class="bi bi-filetype-csv"></i> Exportar</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-    // Pasa datos al JS
-    window.__FACTURAS_BASE64__ = "@jsonBase64";
-</script>
-<script src="~/Scripts/historialventas.js?v=1.0.0"></script>
-
-
+<script src="~/Scripts/historialventas.js?v=1.5.0"></script>

@@ -37,7 +37,7 @@ namespace WebCliente.Controllers
                 UsuarioAdminRespuesta usuarioAdminRespuesta = new UsuarioAdminRespuesta();
                 ClassAPI aPI = new ClassAPI();
                 usuarioAdminRespuesta=await aPI.LoginAdmin(usuarioAdminEnvio);
-                if(usuarioAdminRespuesta != null)
+                if(usuarioAdminRespuesta != null && usuarioAdminRespuesta.v_UsuarioDB!=null)
                 {
                     Session["usuario"] = usuarioAdminRespuesta;
                     if (usuarioAdminRespuesta.v_UsuarioDB.Count > 1)

@@ -18,7 +18,8 @@ namespace WebCliente.Controllers
             //en esta parte enviamos el model en la session HistorialVentasJson
             var model = new HistorialVentasViewModels();
             model.V_TablaVentas =await V_TablaVentasControler.FiltrarDIA();
-            Session["HistorialVentasJson"] = JsonConvert.SerializeObject(model);
+            string json = JsonConvert.SerializeObject(model);
+            Session["HistorialVentasJson"] = json;
             return View();
         
         }
