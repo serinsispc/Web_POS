@@ -18,7 +18,7 @@ namespace RunApi.ApiControlers
             try
             {
                 var aPI = new ClassAPI();
-                var json = new { dbCliente = ClassDBCliente.DBCliente };
+                var json = new { nombreDB = ClassDBCliente.DBCliente };
                 string json_ = JsonSerializer.Serialize(json);
                 string result = await aPI.HttpWebRequestPostAsync("ConfiguracionDian/ConsultarConfiguracionDian",json_,HttpMethod.Post);
                 return JsonSerializer.Deserialize<ConfiguracionDian>(result);

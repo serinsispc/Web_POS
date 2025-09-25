@@ -12,16 +12,7 @@ namespace WebCliente.Controllers
 {
     public class HistorialVentasController : Controller
     {
-        /// <summary>
-        /// función que se encarga de transformar el model y cargarlo a la session
-        /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
-        public void ModelView(HistorialVentasViewModels model)
-        {
-            string json = JsonConvert.SerializeObject(model);
-            Session["HistorialVentasJson"] = json;
-        }
+
         // GET: HistorialVentas
         public async Task<ActionResult> Index()
         {
@@ -31,6 +22,16 @@ namespace WebCliente.Controllers
             ModelView(model);
             return View();
         
+        }
+        /// <summary>
+        /// función que se encarga de transformar el model y cargarlo a la session
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public void ModelView(HistorialVentasViewModels model)
+        {
+            string json = JsonConvert.SerializeObject(model);
+            Session["HistorialVentasJson"] = json;
         }
         public async Task<ActionResult> Filtar(DateTime fecha1, DateTime fecha2,string nombreCliente)
         {
@@ -70,8 +71,7 @@ namespace WebCliente.Controllers
             var raw = Session["HistorialVentasJson"] as string ?? "{}";
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(raw);
 
-            var respTabla = await V_TablaVentasControler
-                .FiltrarNumeroFactura(Session["db"].ToString(), numerofactura.Value);
+            var respTabla = await V_TablaVentasControler.FiltrarNumeroFactura(Session["db"].ToString(), numerofactura.Value);
 
             model.V_TablaVentas = respTabla;
             model.NumeroFactura = numerofactura.Value.ToString();

@@ -8,6 +8,7 @@ namespace RunApi.Envio
 {
     public class UsuarioAdminEnvio
     {
+        public string nombreDB { get; set; }
         public string usuario { get; set; }
         public string clave { get; set; }
         public int idTipoSistema { get; set; }

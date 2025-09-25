@@ -32,6 +32,7 @@ namespace WebCliente.Controllers
             if (usuario != null && clave != null) 
             {
                 UsuarioAdminEnvio usuarioAdminEnvio = new UsuarioAdminEnvio();
+                usuarioAdminEnvio.nombreDB = "DBAdminSerinsisPC";
                 usuarioAdminEnvio.usuario = usuario;
                 usuarioAdminEnvio.clave = clave;
                 usuarioAdminEnvio.idTipoSistema = 1;

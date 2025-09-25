@@ -22,7 +22,7 @@ namespace RunApi.ApiControlers
                 var aPI = new ClassAPI();
                 var json = new
                 {
-                    basedb = db,
+                    nombreDB = db,
                     tabla = $"dbo.V_TablaVentas",
                     columna = "fechaVenta",
                     fecha1 = fecha1,
