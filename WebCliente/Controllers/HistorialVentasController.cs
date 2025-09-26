@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using RunApi.ApiControlers;
 using RunApi.Funciones;
+using RunApi.Models.Cliente;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -151,6 +152,9 @@ namespace WebCliente.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> SeleccionarCliente(int idCliente)
         {
+            // Restaura el modelo de sesión y vuelve al Index
+            var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
+
             // Recupera el idventa por si necesitas asociar el cliente a la venta
             var idventa = 0;
             if (Session["idventa"] != null)
@@ -158,19 +162,16 @@ namespace WebCliente.Controllers
 
             // TODO: tu lógica para asociar el cliente seleccionado a la venta / modelo
             // Por ejemplo:
-            // await HistorialVentasAPI.AsociarClienteAVenta(idventa, idCliente);
-
+            var respuesta= await HistorialVentasAPI.AsociarClienteAVenta(idventa, idCliente);
+            if (respuesta.estado)
+            {
+                model.V_TablaVentas =await V_TablaVentasControler.Filtrar(Session["db"].ToString(),model.Fecha1,model.Fecha2);
+            }
             // Limpia la lista para que el modal no reaparezca al recargar
             Session.Remove("V_Clientes");
 
-            // Restaura el modelo de sesión y vuelve al Index
-            var modelJson = (string)(Session["HistorialVentasJson"] ?? "null");
-            if (!string.IsNullOrEmpty(modelJson) && modelJson != "null")
-            {
-                var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(modelJson);
-                ModelView(model); // tu método existente
-            }
 
+            ModelView(model);
             // Puedes mostrar un toast/alert de éxito en la vista si ya lo manejas
             return View("Index");
         }

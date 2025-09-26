@@ -1,9 +1,7 @@
-﻿//    archivo    historialventas.js
-
-/* ======================================
+﻿/* ======================================
    HISTORIAL VENTAS – LÓGICA DE FRONTEND
-   (rango de fechas + filtros embebidos + modal resoluciones)
-   v1.7.0
+   (rango de fechas + filtros embebidos + modales + overflow "Más")
+   v1.8.8
    ====================================== */
 (function () {
     "use strict";
@@ -41,7 +39,7 @@
         var prefijo = (it.prefijo || it.Prefijo || "").toString().trim();
         var numero = it.numeroVenta ?? it.number ?? it.Numero ?? it.numero ?? "";
         var totalVenta = Number(it.totalVenta ?? it.totalFactura ?? it.Total ?? 0) || 0;
-        var formaPago = (it.formaDePago || it.FormaDePago || it.namePayment_method || it.namePayment_form || "").toString().trim();
+        var formaDePago = (it.formaDePago || it.FormaDePago || it.namePayment_method || it.namePayment_form || "").toString().trim();
         var estado = (it.estadoVenta || it.Estado || "").toString().trim();
         var nit = (it.nit || it.NIT || "").toString().trim();
         var cliente = (it.nombreCliente || it.Cliente || "").toString().trim();
@@ -55,16 +53,13 @@
         }
 
         var consecutivo = (prefijo ? prefijo + "-" : "") + (numero || "");
-
         var subtotal = Number(it.subtotalVenta || it.Subtotal || it.totalBase || 0) || 0;
         var impuestos = 0;
         impuestos += Number(it.IVA || it.iva || it.ivaVenta || it.totalImpuestos || 0) || 0;
         impuestos += Number(it.INC || it.inc || 0) || 0;
         impuestos += Number(it.INCBolsas || it.incBolsas || 0) || 0;
-
         var propina = Number(it.propina ?? it.propinaVenta ?? 0) || 0;
 
-        // idVenta robusto
         var idVenta = it.idVenta ?? it.id ?? it.Id ?? null;
 
         return {
@@ -75,7 +70,7 @@
             prefijo: prefijo,
             numeroVenta: numero,
             total: totalVenta,
-            formaDePago: formaPago,
+            formaDePago: formaDePago,
             estadoVenta: estado,
             nit: nit,
             nombreCliente: cliente,
@@ -99,8 +94,78 @@
         return "bg-secondary";
     }
 
+    // ===== Overflow/Responsive para tabla HV
+    var overflowMode = false;
+    var HIDDEN_COLS = ["nit", "nombreCliente", "cufe"];
+
+    function ensureMoreHeader() {
+        var theadRow = document.querySelector("#tablaHV thead tr");
+        if (!theadRow) return;
+        var hasMore = !!theadRow.querySelector('th[data-col="more"]');
+        if (!hasMore) {
+            var th = document.createElement("th");
+            th.setAttribute("data-col", "more");
+            th.className = "text-center";
+            th.textContent = "Más";
+            theadRow.appendChild(th);
+        }
+    }
+
+    function setHeaderColumnsVisibility() {
+        var ths = document.querySelectorAll("#tablaHV thead th");
+        ths.forEach(function (th) {
+            var col = th.getAttribute("data-col");
+            if (!col) return;
+            if (HIDDEN_COLS.includes(col)) {
+                th.classList.toggle("d-none", overflowMode);
+            } else if (col === "more") {
+                th.classList.toggle("d-none", !overflowMode);
+            }
+        });
+    }
+
+    // Fuerza overflow por breakpoint (mejor UX) o si realmente se desborda
+    function isTableOverflowing() {
+        var container = document.querySelector("#tablaHV")?.closest(".table-responsive");
+        if (!container) return false;
+        var table = container.querySelector("table");
+        if (!table) return false;
+
+        var HYST = 40;
+        var forceByWidth = container.clientWidth < 1260; // puedes ajustar este corte si quieres
+        var realOverflow = table.scrollWidth > (container.clientWidth + HYST);
+
+        return forceByWidth || realOverflow;
+    }
+
+    function visibleHeaderCount() {
+        var ths = document.querySelectorAll("#tablaHV thead th");
+        var count = 0;
+        ths.forEach(function (th) { if (!th.classList.contains("d-none")) count++; });
+        return count || ths.length || 1;
+    }
+
+    function buildDetailsHtml(x) {
+        var cufeText = (x.cufeStatus === "aceptada" && x.cufeRaw && x.cufeRaw !== "--") ? x.cufeRaw : (x.cufe || "N/A");
+        return (
+            '<div class="hv-details-scroll">' +
+            '<div class="hv-details-inline">' +
+            '<span><span class="k">NIT:</span><span class="v">' + (x.nit || "--") + '</span></span>' +
+            '<span><span class="k">Cliente:</span><span class="v">' + (x.nombreCliente || "--") + '</span></span>' +
+            '<span><span class="k">CUFE:</span><span class="v">' + (cufeText || "N/A") + '</span></span>' +
+            '</div>' +
+            '</div>'
+        );
+    }
+
     // ===== Render tabla HV
     function renderTable() {
+        // 1) medir overflow PRIMERO para ocultar columnas antes de pintar
+        overflowMode = isTableOverflowing();
+
+        ensureMoreHeader();
+        setHeaderColumnsVisibility();
+
         var tbody = document.querySelector("#tablaHV tbody");
         if (!tbody) return;
         var frag = document.createDocumentFragment();
@@ -109,50 +174,93 @@
             var tr = document.createElement("tr");
             if (selected && selected === x) tr.classList.add("row-selected");
 
-            function td(content, cls, isNode) {
+            function td(content, cls, isNode, dataCol) {
                 var el = document.createElement("td");
                 if (cls) el.className = cls;
-                if (isNode) el.appendChild(content);
-                else el.textContent = content;
+                if (dataCol) el.setAttribute("data-col", dataCol);
+                if (isNode) el.appendChild(content); else el.textContent = content;
                 tr.appendChild(el);
             }
 
-            td(formatDate(x.fechaVenta));
-            td(x.tipoFactura || "");
-            td(x.prefijo || "");
-            td(String(x.numeroVenta || ""));
-            td(fmtCOP.format(x.total || 0), "text-end");
-            td(x.formaDePago || "");
+            // visibles siempre
+            td(formatDate(x.fechaVenta), "", false, "fechaVenta");
+            td(x.tipoFactura || "", "", false, "tipoFactura");
+            td(x.prefijo || "", "", false, "prefijo");
+            td(String(x.numeroVenta || ""), "", false, "numeroVenta");
+            td(fmtCOP.format(x.total || 0), "text-end", false, "total");
+            td(x.formaDePago || "", "", false, "formaDePago");
 
             var est = document.createElement("span");
             est.className = "badge rounded-pill " + estadoClass(x.estadoVenta);
             est.textContent = x.estadoVenta || "--";
-            td(est, "", true);
+            td(est, "", true, "estadoVenta");
 
-            td(x.nit || "");
-            td(x.nombreCliente || "");
+            if (!overflowMode) {
+                td(x.nit || "", "", false, "nit");
 
-            var badge = document.createElement("span");
-            var cls = "badge rounded-pill ";
-            if (x.cufeStatus === "aceptada") cls += "bg-success";
-            else if (x.cufeStatus === "rechazada") cls += "bg-danger";
-            else cls += "bg-secondary";
-            badge.className = cls;
-            badge.textContent = x.cufe || "N/A";
-            if (x.cufeStatus === "aceptada" && x.cufeRaw && x.cufeRaw !== "--") {
-                badge.setAttribute("data-bs-toggle", "tooltip");
-                badge.setAttribute("data-bs-placement", "top");
-                badge.setAttribute("title", x.cufeRaw);
+                // Cliente con tooltip (nombre completo)
+                (function () {
+                    var txt = x.nombreCliente || "";
+                    var el = document.createElement("span");
+                    el.textContent = txt || "";
+                    if (txt) {
+                        el.setAttribute("title", txt);
+                        el.setAttribute("data-bs-toggle", "tooltip");
+                        el.setAttribute("data-bs-placement", "top");
+                    }
+                    td(el, "", true, "nombreCliente");
+                })();
+
+                var badge = document.createElement("span");
+                var cls = "badge rounded-pill ";
+                if (x.cufeStatus === "aceptada") cls += "bg-success";
+                else if (x.cufeStatus === "rechazada") cls += "bg-danger";
+                else cls += "bg-secondary";
+                badge.className = cls;
+                badge.textContent = x.cufe || "N/A";
+                if (x.cufeStatus === "aceptada" && x.cufeRaw && x.cufeRaw !== "--") {
+                    badge.setAttribute("data-bs-toggle", "tooltip");
+                    badge.setAttribute("data-bs-placement", "top");
+                    badge.setAttribute("title", x.cufeRaw);
+                }
+                td(badge, "", true, "cufe");
+            } else {
+                var btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "btn btn-more btn-sm";
+                btn.title = "Mostrar más detalles";
+                btn.innerHTML = '<i class="bi bi-three-dots"></i><span>Más</span>';
+                btn.addEventListener("click", function (ev) {
+                    ev.stopPropagation();
+                    var detailsRow = tr.nextElementSibling;
+                    if (!detailsRow || !detailsRow.classList.contains("row-details")) return;
+                    detailsRow.classList.toggle("d-none");
+                });
+                var tdMore = document.createElement("td");
+                tdMore.setAttribute("data-col", "more");
+                tdMore.className = "text-center";
+                tdMore.appendChild(btn);
+                tr.appendChild(tdMore);
             }
-            td(badge, "", true);
 
             tr.addEventListener("click", function () { selectRow(x); });
             frag.appendChild(tr);
+
+            if (overflowMode) {
+                var trd = document.createElement("tr");
+                trd.className = "row-details d-none";
+                var tdd = document.createElement("td");
+                tdd.colSpan = visibleHeaderCount();
+                tdd.innerHTML = buildDetailsHtml(x);
+                trd.appendChild(tdd);
+                frag.appendChild(trd);
+            }
         });
 
         while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
         tbody.appendChild(frag);
 
+        // Tooltips bootstrap (cliente truncado y cufe)
         if (window.bootstrap && typeof bootstrap.Tooltip === "function") {
             var triggers = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             triggers.forEach(function (el) { new bootstrap.Tooltip(el); });
@@ -367,17 +475,14 @@
             technical_key: r.technical_key ?? r.llave_tecnica ?? ""
         };
     }
-    function rango(desde, hasta) {
-        if ((desde ?? "") === "" && (hasta ?? "") === "") return "";
-        return (desde ?? "") + " – " + (hasta ?? "");
-    }
+    function rango(desde, hasta) { if ((desde ?? "") === "" && (hasta ?? "") === "") return ""; return (desde ?? "") + " – " + (hasta ?? ""); }
     function estadoBadge(estado, estadoText) {
         var act = Number(estado) === 1 || (estadoText || "").toUpperCase().includes("ACTIV");
         var cls = act ? "bg-success" : "bg-secondary";
         var txt = estadoText || (act ? "ACTIVA" : "INACTIVA");
         return '<span class="badge ' + cls + '">' + txt + '</span>';
     }
-    function btnSeleccionar(idResolucion, estado) {
+    function btnSeleccionarResol(idResolucion, estado) {
         var disabled = (Number(estado) === 1) ? "" : "disabled";
         var id = (idResolucion ?? "").toString();
         return '<button type="button" class="btn btn-primary btn-sm btn-sel-resol" data-id="' + id + '" ' + disabled + '>Seleccionar</button>';
@@ -409,7 +514,7 @@
                 + '<td>' + r.consecutivo + ' <small class="text-muted">(' + r.consecutivoInicial + ' inicial)</small></td>'
                 + '<td>' + estadoBadge(r.estado, r.estadoText) + '</td>'
                 + '<td class="text-truncate" style="max-width:240px;" title="' + (r.technical_key || '') + '">' + (r.technical_key || '') + '</td>'
-                + '<td class="text-end">' + btnSeleccionar(r.idResolucion, r.estado) + '</td>';
+                + '<td class="text-end">' + btnSeleccionarResol(r.idResolucion, r.estado) + '</td>';
             tbody.appendChild(tr);
         });
     }
@@ -435,30 +540,141 @@
             var id = btn.getAttribute("data-id");
             if (!id) return;
 
-            var inp = document.getElementById("inp-idResolucion");
-            var form = document.getElementById("formSelResol");
+            var inp = byId("inp-idResolucion");
+            var form = byId("formSelResol");
 
             if (inp && form) {
                 inp.value = id;
 
-                // ✅ Cerrar el modal inmediatamente (mejor UX)
-                var modalEl = document.getElementById("modalResoluciones");
-                if (modalEl) {
+                var modalEl = byId("modalResoluciones");
+                if (modalEl && window.bootstrap && bootstrap.Modal) {
                     var instance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
                     instance.hide();
                 }
 
-                form.submit(); // POST -> SeleccionarResoluciones
+                form.submit();
             }
         });
     }
 
+    // ===== CLIENTES (Modal) =====
+    function decodeB64ToJson(b64) { try { if (!b64) return null; var txt = atob(b64); return JSON.parse(txt); } catch (e) { return null; } }
 
-    // ===== Listeners y arranque
+    // Solo estos campos (y en este orden) llegan y se muestran
+    function normalizarCliente(c) {
+        return {
+            id: c.id ?? c.idCliente ?? c.Id ?? 0,
+            identificationNumber: (c.identificationNumber ?? "").toString(),
+            nameCliente: (c.nameCliente ?? "").toString(),
+            tradeName: (c.tradeName ?? "").toString(),
+            phone: (c.phone ?? "").toString(),
+            adress: (c.adress ?? "").toString(),
+            email: (c.email ?? "").toString()
+        };
+    }
+
+    function pintarTablaClientes(lista) {
+        var tbody = document.querySelector("#tablaClientes tbody");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        if (!Array.isArray(lista) || lista.length === 0) {
+            var tr = document.createElement("tr");
+            var td = document.createElement("td");
+            td.colSpan = 7;
+            td.className = "text-center text-muted";
+            td.textContent = "No hay clientes para mostrar.";
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+            return;
+        }
+        function safe(v) { v = (v ?? "").toString().trim(); return v === "" ? "-" : v; }
+
+        var frag = document.createDocumentFragment();
+        lista.forEach(function (raw) {
+            var c = normalizarCliente(raw);
+            var tr = document.createElement("tr");
+            tr.innerHTML =
+                '<td>' + safe(c.identificationNumber) + '</td>' +
+                '<td>' + safe(c.nameCliente) + '</td>' +
+                '<td>' + safe(c.tradeName) + '</td>' +
+                '<td>' + safe(c.phone) + '</td>' +
+                '<td>' + safe(c.adress) + '</td>' +
+                '<td>' + safe(c.email) + '</td>' +
+                '<td class="text-center">' +
+                '<button type="button" class="btn btn-primary btn-sm btn-sel-cliente" data-id="' + c.id + '">' +
+                '<i class="bi bi-check2-circle me-1"></i>Seleccionar' +
+                '</button>' +
+                '</td>';
+            frag.appendChild(tr);
+        });
+        tbody.appendChild(frag);
+    }
+
+    function filtrarClientes(lista, texto) {
+        var q = (texto ?? "").toString().trim().toUpperCase();
+        if (!q) return lista.slice();
+        return lista.filter(function (raw) {
+            var c = normalizarCliente(raw);
+            var s = [
+                c.identificationNumber, c.nameCliente, c.tradeName,
+                c.phone, c.adress, c.email
+            ].join(" | ").toUpperCase();
+            return s.indexOf(q) >= 0;
+        });
+    }
+
+    function wireModalClientes() {
+        var modalClientesEl = byId("modalClientes");
+        if (!modalClientesEl) return;
+
+        var base64 = window.ClientesBase64 || "";
+        var clientes = decodeB64ToJson(base64);
+        if (!Array.isArray(clientes)) clientes = [];
+
+        pintarTablaClientes(clientes);
+
+        if (window.DebeMostrarModalClientes === true || window.DebeMostrarModalClientes === "true") {
+            if (window.bootstrap && bootstrap.Modal) {
+                var modalCli = new bootstrap.Modal(modalClientesEl, { backdrop: "static", keyboard: false });
+                modalCli.show();
+            }
+        }
+
+        byId("cliFiltroTexto")?.addEventListener("input", function () {
+            var texto = this.value || "";
+            var lista = filtrarClientes(clientes, texto);
+            pintarTablaClientes(lista);
+        });
+        byId("cliBtnLimpiar")?.addEventListener("click", function () {
+            var inp = byId("cliFiltroTexto");
+            if (inp) { inp.value = ""; }
+            pintarTablaClientes(clientes);
+        });
+
+        document.addEventListener("click", function (ev) {
+            var btn = ev.target.closest(".btn-sel-cliente");
+            if (!btn) return;
+            var idCli = btn.getAttribute("data-id");
+            if (!idCli) return;
+
+            var hid = byId("idClienteSeleccionado");
+            var form = byId("formSeleccionarCliente");
+            if (hid && form) {
+                hid.value = idCli;
+
+                if (window.bootstrap && bootstrap.Modal) {
+                    var inst = bootstrap.Modal.getInstance(modalClientesEl) || new bootstrap.Modal(modalClientesEl);
+                    inst.hide();
+                }
+
+                form.submit();
+            }
+        });
+    }
+
+    // ===== Acciones de UI
     function hookActions() {
-        var formFechas = byId("formFechas");
         var formNumero = byId("formNumero");
-        var formCliente = byId("formCliente");
 
         // Rango fechas
         wireDateRange();
@@ -474,17 +690,6 @@
             }
         });
 
-        // CLIENTE: sincroniza fechas ocultas si existieran
-        if (formCliente) {
-            formCliente.addEventListener("submit", function () {
-                var f1 = byId("fFechaDesde")?.value || "";
-                var f2 = byId("fFechaHasta")?.value || "";
-                var h1 = byId("hFecha1"), h2 = byId("hFecha2");
-                if (h1 && f1) h1.value = f1;
-                if (h2 && f2) h2.value = f2;
-            });
-        }
-
         // Switches FE (cliente-side)
         byId("chkFEPendientes")?.addEventListener("change", applyFilters);
         byId("chkFacturaElectronica")?.addEventListener("change", applyFilters);
@@ -495,15 +700,17 @@
         byId("actExportar")?.addEventListener("click", exportCSV);
         byId("actImprimir")?.addEventListener("click", imprimir);
 
-        // Placeholders
+        // Placeholders simples
         byId("actVerDetalle")?.addEventListener("click", function () { if (!requireSel()) return; alert("Ver detalle de " + (selected.prefijo ? (selected.prefijo + "-") : "") + (selected.numeroVenta ?? "")); });
         byId("actAnular")?.addEventListener("click", function () { if (!requireSel()) return; if (confirm("¿Anular la venta " + (selected.prefijo ? (selected.prefijo + "-") : "") + (selected.numeroVenta ?? "") + "?")) { console.log("Anular -> endpoint"); } });
         byId("actCrearFE")?.addEventListener("click", function () { if (!requireSel()) return; alert("Crear Factura Electrónica (placeholder)"); });
         byId("actEnviarCorreo")?.addEventListener("click", function () { if (!requireSel()) return; alert("Enviar Factura por Correo (placeholder)"); });
-        byId("actEditarCliente")?.addEventListener("click", function () { if (!requireSel()) return; alert("Editar/Agregar cliente para " + (selected.nombreCliente || "cliente")); });
         byId("actDevolucion")?.addEventListener("click", function () { if (!requireSel()) return; alert("Devolución (placeholder)"); });
         byId("actPosAElectronica")?.addEventListener("click", function () { if (!requireSel()) return; alert("POS a Electrónica (placeholder)"); });
         byId("actClonar")?.addEventListener("click", function () { if (!requireSel()) return; alert("Clonar Factura (placeholder)"); });
+        byId("actAumentarNumero")?.addEventListener("click", function () { if (!requireSel()) return; alert("Aumentar Número (placeholder)"); });
+        byId("actEnviarDIAN")?.addEventListener("click", function () { if (!requireSel()) return; alert("Enviar a DIAN (placeholder)"); });
+        byId("actDescargarFactura")?.addEventListener("click", function () { if (!requireSel()) return; alert("Descargar Factura (placeholder)"); });
 
         // Resolución -> POST a ListaResoluciones con idventa seleccionado
         byId("actResolucion")?.addEventListener("click", function () {
@@ -514,15 +721,35 @@
             var idv = selected.idVenta ?? (selected.raw ? (selected.raw.idVenta ?? selected.raw.id ?? selected.raw.Id ?? 0) : 0);
             if (!idv || idv <= 0) { alert("No se pudo determinar el id de la venta seleccionada."); return; }
             input.value = idv;
-            form.submit(); // POST con AntiForgeryToken
+            form.submit();
         });
 
-        byId("actAumentarNumero")?.addEventListener("click", function () { if (!requireSel()) return; alert("Aumentar Número (placeholder)"); });
-        byId("actEnviarDIAN")?.addEventListener("click", function () { if (!requireSel()) return; alert("Enviar a DIAN (placeholder)"); });
-        byId("actDescargarFactura")?.addEventListener("click", function () { if (!requireSel()) return; alert("Descargar Factura (placeholder)"); });
+        // **Editar/Agregar Cliente** -> POST a BotonEditar_AgregarCliente con idventa
+        byId("actEditarCliente")?.addEventListener("click", function () {
+            if (!requireSel()) return;
+            var form = byId("formListaClientes");
+            var inp = byId("inp-idventa-cliente") || byId("actEditarCliente");
+            if (!form || !inp) { alert("No se encontró el formulario para clientes."); return; }
+            var idv = selected.idVenta ?? (selected.raw ? (selected.raw.idVenta ?? selected.raw.id ?? selected.raw.Id ?? 0) : 0);
+            if (!idv || idv <= 0) { alert("No se pudo determinar el id de la venta seleccionada."); return; }
+            inp.value = idv;
+            form.submit();
+        });
 
         // Selección de resolución (desde el modal)
         wireSeleccionResolucion();
+
+        // Modal de clientes
+        wireModalClientes();
+
+        // Redibujar si cambia el ancho (activar/desactivar overflow)
+        window.addEventListener("resize", function () {
+            var now = isTableOverflowing();
+            if (now !== overflowMode) {
+                overflowMode = now;
+                sortAndRender();
+            }
+        });
     }
 
     // ===== INIT
@@ -538,14 +765,12 @@
         filtered = data.slice();
 
         prefillFromSession(root);
-
         hookActions();
-        sortCol = "fechaVenta";
-        sortDir = -1; // recientes primero
 
+        sortCol = "fechaVenta";
+        sortDir = -1;
         sortAndRender();
 
-        // Si el servidor dejó datos en Session["V_Resoluciones"], abre el modal
         abrirModalResolucionesSiHayDatos();
     });
 })();

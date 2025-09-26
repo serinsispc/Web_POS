@@ -76,7 +76,7 @@ namespace RunApi.ApiControlers
                     nombreCliente = NombreCliente
                 };
                 string json_ = System.Text.Json.JsonSerializer.Serialize(json);
-                string result = await aPI.HttpWebRequestPostAsync("HistorialVentas/FiltrarNombreCliente", json_, HttpMethod.Post);
+                string result = await aPI.HttpWebRequestPostAsync("HistorialVentas/FiltroNombreCliente", json_, HttpMethod.Post);
 
                 var ventas = JsonConvert.DeserializeObject<List<V_TablaVentas>>(result); // 2) parsea el array
                 return ventas;

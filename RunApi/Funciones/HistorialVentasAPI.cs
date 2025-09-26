@@ -52,5 +52,22 @@ namespace RunApi.Funciones
                 return new List<V_Clientes>();
             }
         }
+        public static async Task<RespuestaCRUD_api> AsociarClienteAVenta(int idventa, int idCliente)
+        {
+            try
+            {
+                var objeto = new { nombreDB = ClassDBCliente.DBCliente, idventa = idventa, idCliente = idCliente };
+                string json = JsonConvert.SerializeObject(objeto);
+                var api = new ClassAPI();
+                var url = $"HistorialVentas/AsociarClienteAVenta";
+                var respuesta = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Post);
+                return JsonConvert.DeserializeObject<RespuestaCRUD_api>(respuesta);
+            }
+            catch (Exception ex)
+            {
+                string error = ex.Message;
+                return new RespuestaCRUD_api() { estado = false, idAfectado = 0, mensaje = error };
+            }
+        }
     }
 }

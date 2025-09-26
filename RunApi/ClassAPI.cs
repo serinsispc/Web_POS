@@ -15,8 +15,8 @@ namespace RunApi
     public class ClassAPI
     {
         private readonly HttpClient _httpClient;
-        //public string UrlEndPoint { get; set; } = "https://www.serinsispc.com/ApiSerinsisPC/api/";
-        public string UrlEndPoint { get; set; } = "https://localhost:7004/api/";
+        public string UrlEndPoint { get; set; } = "https://www.serinsispc.com/ApiSerinsisPC/api/";
+        //public string UrlEndPoint { get; set; } = "https://localhost:7004/api/";
         //public string UrlEndPoint { get; set; } = "http://localhost/Api/api/";
         public string token { get; set; } = "4007005B-3F7A-4D5B-A6E3-0711DF09FA55";
 

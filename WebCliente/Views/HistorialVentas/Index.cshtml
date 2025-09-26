@@ -39,12 +39,13 @@
     var debeMostrarModalClientes = !string.IsNullOrEmpty(jsonClientesBase64);
 }
 
-<link href="~/Content/historialventas.css?v=1.7.0" rel="stylesheet" />
+<link href="~/Content/historialventas.css?v=1.8.4" rel="stylesheet" />
 
 <div class="page-wrap historial-ventas" data-page="HistorialVentas">
     <!-- JSON base64 para que el JS lo lea -->
     <div id="hv-data" data-json="@jsonBase64"></div>
-    <div id="hv-resol" data-json="@resolBase64"></div> <!-- NUEVO: resoluciones -->
+    <div id="hv-resol" data-json="@resolBase64"></div>
+
     <!-- === FORM oculto para Resolver (POST + AntiForgeryToken) -> ListaResoluciones === -->
     @using (Html.BeginForm("ListaResoluciones", "HistorialVentas", FormMethod.Post, new { id = "formResolucion", style = "display:none;" }))
     {
@@ -59,10 +60,11 @@
         <input type="hidden" name="idResolucion" id="inp-idResolucion" value="0" />
     }
 
+    <!-- === FORM oculto para abrir lista de clientes (rellena Session["V_Clientes"]) === -->
     @using (Html.BeginForm("BotonEditar_AgregarCliente", "HistorialVentas", FormMethod.Post, new { id = "formListaClientes", style = "display:none;" }))
     {
         @Html.AntiForgeryToken()
-        <input type="hidden" name="idventa" id="actEditarCliente" value="" />
+        <input type="hidden" name="idventa" id="inp-idventa-cliente" value="" />
     }
 
     <!-- FILTROS -->
@@ -72,7 +74,7 @@
             <!-- Fila: Fechas | Número | Cliente (cada uno con su formulario) -->
             <div class="row g-2 align-items-end">
 
-                <!-- FORM 1: Fechas -> Filtar(fecha1, fecha2, nombreCliente) -->
+                <!-- FORM 1: Fechas -->
                 <div class="col-12 col-lg-6">
                     @using (Html.BeginForm("Filtar", "HistorialVentas", FormMethod.Post, new { id = "formFechas" }))
                     {
@@ -95,7 +97,7 @@
                     }
                 </div>
 
-                <!-- FORM 2: Número de Factura -> FiltarNumeroFactura(numerofactura) -->
+                <!-- FORM 2: Número de Factura -->
                 <div class="col-12 col-lg-3">
                     @using (Html.BeginForm("FiltarNumeroFactura", "HistorialVentas", FormMethod.Post, new { id = "formNumero" }))
                     {
@@ -110,12 +112,11 @@
                     }
                 </div>
 
-                <!-- FORM 3: Cliente -> FiltarNombreCliente(nombreCliente) -->
+                <!-- FORM 3: Cliente -->
                 <div class="col-12 col-lg-3">
                     @using (Html.BeginForm("FiltarNombreCliente", "HistorialVentas", FormMethod.Post, new { id = "formCliente" }))
                     {
                         @Html.AntiForgeryToken()
-
                         <label class="form-label">Filtrar Cliente</label>
                         <div class="input-group input-group-sm">
                             <input type="text" id="fClienteTexto" name="nombreCliente" class="form-control" placeholder="Nombre / NIT…" value="@clienteInput" required />
@@ -177,6 +178,7 @@
                                     <th data-col="nit">NIT</th>
                                     <th data-col="nombreCliente">Cliente</th>
                                     <th data-col="cufe">CUFE</th>
+                                    @* la col "Más" se inyecta por JS cuando hay overflow *@
                                 </tr>
                             </thead>
                             <tbody>
@@ -256,7 +258,7 @@
         </div>
     </div> <!-- /row -->
 </div> <!-- /page-wrap -->
-<!-- ===== MODAL: Resoluciones ===== -->
+<!-- ========= MODAL: Resoluciones ========= -->
 <div class="modal fade" id="modalResoluciones" tabindex="-1" aria-labelledby="modalResolucionesLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content modal-resoluciones">
@@ -287,9 +289,7 @@
                                 <th class="text-end">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @* filas por JS *@
-                        </tbody>
+                        <tbody><!-- filas por JS --></tbody>
                     </table>
                 </div>
 
@@ -359,112 +359,9 @@
 </div>
 
 <script>
-// Variables globales para Clientes (inyectadas desde servidor)
-window.ClientesBase64 = "@jsonClientesBase64";
-window.DebeMostrarModalClientes = @(debeMostrarModalClientes ? "true" : "false");
+    // Variables globales para Clientes (inyectadas desde servidor)
+    window.ClientesBase64 = "@jsonClientesBase64";
+    window.DebeMostrarModalClientes = @(debeMostrarModalClientes ? "true" : "false");
 </script>
 
-<!-- === Script inline para abrir/llenar Modal Resoluciones y Modal Clientes === -->
-<script>
-    (function () {
-        // Helper: decodificar base64 a objeto/array
-        function decodeB64ToJson(b64) {
-            try {
-                if (!b64) return null;
-                var txt = atob(b64);
-                return JSON.parse(txt);
-            } catch (e) { return null; }
-        }
-
-        // ----- MODAL RESOLUCIONES -----
-        var resolDiv = document.getElementById("hv-resol");
-        var resolB64 = resolDiv ? (resolDiv.dataset.json || "") : "";
-        var resoluciones = decodeB64ToJson(resolB64);
-        var modalResolEl = document.getElementById("modalResoluciones");
-        var alertaSin = document.getElementById("alerta-sin-resoluciones");
-        var tbodyResol = modalResolEl ? modalResolEl.querySelector("#tabla-resoluciones tbody") : null;
-
-        function fmt(val, fallback = "") {
-            return (val === null || val === undefined) ? fallback : String(val);
-        }
-
-        // Render de filas
-        function renderResoluciones(list) {
-            if (!tbodyResol) return;
-            if (!Array.isArray(list) || list.length === 0) {
-                tbodyResol.innerHTML = "";
-                if (alertaSin) alertaSin.classList.remove("d-none");
-                return;
-            } else {
-                if (alertaSin) alertaSin.classList.add("d-none");
-            }
-
-            // Campos esperados según tu JSON:
-            // id, nombreRosolucion, prefijo, numeroResolucion, fechaAvilitacion, vigencia, desde, hasta,
-            // consecutivoInicial, estado, technical_key
-            var rows = list.map(function (r, i) {
-                var rango = (fmt(r.desde) && fmt(r.hasta)) ? (fmt(r.desde) + " - " + fmt(r.hasta)) : "";
-                return (
-                    '<tr>' +
-                    '<td>' + (i + 1) + '</td>' +
-                    '<td>' + fmt(r.nombreRosolucion) + '</td>' +
-                    '<td>' + fmt(r.prefijo) + '</td>' +
-                    '<td>' + fmt(r.numeroResolucion) + '</td>' +
-                    '<td>' + fmt(r.fechaAvilitacion) + '</td>' +
-                    '<td>' + fmt(r.vigencia) + '</td>' +
-                    '<td>' + rango + '</td>' +
-                    '<td>' + fmt(r.consecutivoInicial) + '</td>' +
-                    '<td>' + fmt(r.estado) + '</td>' +
-                    '<td class="text-truncate" style="max-width:220px;">' + fmt(r.technical_key) + '</td>' +
-                    '<td class="text-end">' +
-                    '<button type="button" class="btn btn-sm btn-primary" data-sel-resol="' + fmt(r.id) + '">' +
-                    '<i class="bi bi-check2-circle me-1"></i>Seleccionar' +
-                    '</button>' +
-                    '</td>' +
-                    '</tr>'
-                );
-            }).join("");
-
-            tbodyResol.innerHTML = rows;
-        }
-
-        function wireResoluciones() {
-            if (!tbodyResol) return;
-            tbodyResol.addEventListener("click", function (ev) {
-                var btn = ev.target.closest("[data-sel-resol]");
-                if (!btn) return;
-                var idResol = btn.getAttribute("data-sel-resol") || "0";
-                var inp = document.getElementById("inp-idResolucion");
-                var form = document.getElementById("formSelResol");
-                if (inp && form) {
-                    inp.value = idResol;
-                    form.submit(); // La vista se recarga -> el modal NO se reabrirá si ya limpias Session["V_Resoluciones"] en el controlador
-                }
-            });
-        }
-
-        if (Array.isArray(resoluciones) && resoluciones.length > 0) {
-            renderResoluciones(resoluciones);
-            if (window.bootstrap && modalResolEl) {
-                var modal = new bootstrap.Modal(modalResolEl);
-                modal.show();
-            }
-            wireResoluciones();
-        } else {
-            // Si no hay resoluciones, asegurar alerta vacía
-            renderResoluciones([]);
-        }
-
-        // ----- MODAL CLIENTES -----
-        if (window.DebeMostrarModalClientes === true || window.DebeMostrarModalClientes === "true") {
-            var modalClientesEl = document.getElementById("modalClientes");
-            if (window.bootstrap && modalClientesEl) {
-                var modalCli = new bootstrap.Modal(modalClientesEl, { backdrop: "static", keyboard: false });
-                modalCli.show();
-            }
-        }
-    })();
-</script>
-
-<!-- JS principal -->
-<script src="~/Scripts/historialventas.js?v=1.7.0"></script>
+<script src="~/Scripts/historialventas.js?v=1.8.4"></script>

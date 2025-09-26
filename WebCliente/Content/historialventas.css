@@ -1,6 +1,6 @@
 ﻿/* =============================
    HISTORIAL VENTAS – ESTILOS
-   v1.7.0
+   v1.8.8
    ============================= */
 .page-wrap.historial-ventas {
     padding: 10px;
@@ -42,6 +42,14 @@
     .table-hv tbody tr.row-selected {
         background: rgba(13,27,61,.08) !important;
     }
+
+/* Cliente: flexible en pantallas grandes, truncado elegante */
+.table-hv td[data-col="nombreCliente"] {
+    max-width: clamp(260px, 30vw, 520px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
 /* Panel lateral */
 .hv-actions {
@@ -210,4 +218,64 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* ===== Botón "Más" mejorado ===== */
+.table-hv th[data-col="more"] {
+    text-align: center;
+    width: 70px;
+}
+
+.btn-more {
+    border-radius: 999px;
+    border: 1px solid var(--bs-primary, #0d6efd);
+    background: #fff;
+    padding: .25rem .6rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    box-shadow: 0 2px 8px rgba(13,110,253,.15);
+    font-weight: 600;
+}
+
+    .btn-more:hover {
+        background: rgba(13,110,253,.06);
+        box-shadow: 0 4px 12px rgba(13,110,253,.22);
+    }
+
+/* ===== Fila de detalles (debajo) ===== */
+.row-details > td {
+    background: #eef4ff;
+    border-top: 1px dashed #c8d7ff;
+    border-bottom: 1px dashed #c8d7ff;
+    padding: .5rem .75rem;
+}
+
+/* Contenedor con scroll horizontal para ver nombres MUY largos en una sola línea */
+.hv-details-scroll {
+    overflow-x: auto;
+}
+
+.hv-details-inline {
+    display: inline-flex;
+    gap: 2rem;
+    align-items: center;
+    white-space: nowrap; /* una sola línea */
+    min-width: 700px; /* “ancha” por defecto; crece con scroll */
+}
+
+    /* Etiquetas y valores */
+    .hv-details-inline .k {
+        font-weight: 700;
+        color: #243a6b;
+        margin-right: .25rem;
+    }
+
+    .hv-details-inline .v {
+        display: inline-block;
+    }
+
+/* Grid usado antes (se mantiene off por compatibilidad) */
+.hv-details-grid {
+    display: none;
 }
