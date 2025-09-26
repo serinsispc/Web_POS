@@ -1,5 +1,6 @@
 ﻿/* =============================
    HISTORIAL VENTAS – ESTILOS
+   v1.7.0
    ============================= */
 .page-wrap.historial-ventas {
     padding: 10px;
@@ -44,12 +45,11 @@
 
 /* Panel lateral */
 .hv-actions {
-    position: sticky; /* <-- hace fijo el panel al hacer scroll */
-    top: 12px; /* separación desde el top */
-    z-index: 2; /* sobre la tabla para tooltips/badges */
-    margin-bottom: 4.5rem; /* que no choque con el footer */
+    position: sticky;
+    top: 12px;
+    z-index: 2;
+    margin-bottom: 4.5rem;
 }
-
 
     .hv-actions .section-title {
         font-size: .9rem;
@@ -117,7 +117,7 @@
     }
 }
 
-/* Movil */
+/* Móvil */
 @media (max-width: 768px) {
     .page-wrap.historial-ventas {
         padding-bottom: 7rem;
@@ -128,13 +128,12 @@
     }
 }
 
-
-/* === Toolbar de acciones: todo en una línea (con scroll en móvil) === */
+/* Toolbar y switches */
 .hv-toolbar {
     display: flex;
     gap: .5rem;
-    flex-wrap: nowrap; /* no permite salto de línea */
-    overflow-x: auto; /* si no cabe, desliza horizontal en móvil */
+    flex-wrap: nowrap;
+    overflow-x: auto;
     padding-bottom: 2px;
 }
 
@@ -144,55 +143,12 @@
     }
 }
 
-/* === Switches compactos y "más arriba" === */
-.hv-switches {
-    gap: .5rem !important;
-    margin-top: -4px; /* súbelos un pelín */
-}
-
-    .hv-switches .form-check-input {
-        width: 2.2rem;
-        height: 1.2rem;
-    }
-
-    .hv-switches .form-check-label {
-        font-size: .95rem;
-        line-height: 1;
-    }
-
-/* === Panel de filtros más delgado === */
-.card-filter .card-body {
-    padding-top: 12px;
-    padding-bottom: 10px;
-}
-
-.card-filter .btn {
-    padding: .45rem .75rem; /* botones un poco más bajos */
-}
-
-
-
-/* === Toolbar fina (solo Exportar / Imprimir) === */
 .hv-toolbar--slim .btn {
-    padding: .35rem .6rem; /* más delgados */
+    padding: .35rem .6rem;
     font-size: .92rem;
     line-height: 1.1;
 }
 
-/* === Inputs con botón interno compactos === */
-.input-group.input-group-sm > .form-control {
-    height: 34px;
-}
-
-.input-group.input-group-sm > .btn {
-    height: 34px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: .25rem .5rem;
-}
-
-/* === Switches FE compactos y más arriba === */
 .hv-switches {
     gap: .5rem !important;
     margin-top: -6px;
@@ -207,3 +163,51 @@
         font-size: .95rem;
         line-height: 1;
     }
+
+.card-filter .card-body {
+    padding-top: 12px;
+    padding-bottom: 10px;
+}
+
+.card-filter .btn {
+    padding: .45rem .75rem;
+}
+
+.input-group.input-group-sm > .form-control {
+    height: 34px;
+}
+
+.input-group.input-group-sm > .btn {
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: .25rem .5rem;
+}
+
+/* ===== Modal resoluciones ===== */
+.modal-resoluciones .modal-header {
+    background: #f7f9fc;
+    border-bottom: 1px solid #e9eef6;
+}
+
+.modal-resoluciones .modal-footer {
+    background: #fafbfe;
+    border-top: 1px solid #e9eef6;
+}
+
+#tabla-resoluciones td, #tabla-resoluciones th {
+    vertical-align: middle;
+}
+
+#tabla-resoluciones .badge {
+    font-weight: 600;
+    letter-spacing: .2px;
+}
+
+#tabla-resoluciones td.text-truncate {
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

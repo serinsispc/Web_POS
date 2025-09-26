@@ -76,8 +76,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ApiControlers\ConfiguracionDianControler.cs" />
+    <Compile Include="ApiControlers\ResolucionControler.cs" />
     <Compile Include="ApiControlers\SedeControler.cs" />
     <Compile Include="ApiControlers\TablaMesesControler.cs" />
+    <Compile Include="ApiControlers\V_ResolucionesControler.cs" />
     <Compile Include="ApiControlers\V_TablaVentasControler.cs" />
     <Compile Include="ClassAPI.cs" />
     <Compile Include="Envio\LoginEnviar.cs" />
@@ -86,8 +88,10 @@
     <Compile Include="Models\Admin\V_UsuarioDB.cs" />
     <Compile Include="Models\ClassDBCliente.cs" />
     <Compile Include="Models\Cliente\ConfiguracionDian.cs" />
+    <Compile Include="Models\Cliente\Resolucion.cs" />
     <Compile Include="Models\Cliente\Sede.cs" />
     <Compile Include="Models\Cliente\TablaMeses.cs" />
+    <Compile Include="Models\Cliente\V_Resoluciones.cs" />
     <Compile Include="Models\Cliente\V_TablaVentas.cs" />
     <Compile Include="Models\Cliente\V_Usuario_Parqueadero.cs" />
     <Compile Include="Models\Cliente\v_Usuario_POS.cs" />

@@ -18,6 +18,8 @@ namespace WebCliente.Controllers
         {
             //en esta parte enviamos el model en la session HistorialVentasJson
             var model = new HistorialVentasViewModels();
+            model.Fecha1=DateTime.Now;
+            model.Fecha2=DateTime.Now;
             model.V_TablaVentas =await V_TablaVentasControler.Filtrar(Session["db"].ToString(),DateTime.Now, DateTime.Now);
             ModelView(model);
             return View();
@@ -99,9 +101,26 @@ namespace WebCliente.Controllers
         public async Task<ActionResult> ListaResoluciones(int idventa)
         {
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
-            
 
-            
+            var listaresoluciones =await V_ResolucionesControler.Lista();
+
+            Session["idventa"] = idventa;
+            Session["V_Resoluciones"] = JsonConvert.SerializeObject(listaresoluciones);
+            string json = Session["V_Resoluciones"].ToString();
+            ModelView(model);
+            return View("Index");
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> SeleccionarResoluciones(int idResolucion)
+        {
+            var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
+
+            //en esta parte modificamos el id de la resolución de la table ventas
+
+
+            Session["V_Resoluciones"] = "[]";
+
             ModelView(model);
             return View("Index");
         }

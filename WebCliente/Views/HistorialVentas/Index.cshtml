@@ -1,14 +1,23 @@
-﻿@using System
+﻿//  archivo Index.cshtml
+
+@using System
 @using System.Text
 @using Newtonsoft.Json.Linq
 @{
     ViewBag.Title = "Historial Ventas";
     Layout = "~/Views/Shared/_LayoutMenu.cshtml";
 
+    // JSON base (historial)
     var rawJsonObj = Session["HistorialVentasJson"];
-    var rawJson = rawJsonObj as string ?? "{}"; // ← toma string de sesión o "{}" si viene null/ vacío
+    var rawJson = rawJsonObj as string ?? "{}";
     var jsonBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(rawJson));
 
+    // JSON de resoluciones (para modal)
+    var rawResolObj = Session["V_Resoluciones"];
+    var rawResol = rawResolObj as string ?? "[]";
+    var resolBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(rawResol));
+
+    // Parse de filtros para prellenar inputs
     JObject filtros = null;
     try { filtros = string.IsNullOrWhiteSpace(rawJson) ? null : JObject.Parse(rawJson); }
     catch { filtros = null; }
@@ -25,12 +34,25 @@
     string clienteInput = filtros?["NombreCliente"]?.ToString() ?? "";
 }
 
-
-<link href="~/Content/historialventas.css?v=1.2.1" rel="stylesheet" />
+<link href="~/Content/historialventas.css?v=1.7.0" rel="stylesheet" />
 
 <div class="page-wrap historial-ventas" data-page="HistorialVentas">
     <!-- JSON base64 para que el JS lo lea -->
     <div id="hv-data" data-json="@jsonBase64"></div>
+    <div id="hv-resol" data-json="@resolBase64"></div> <!-- NUEVO: resoluciones -->
+    <!-- === FORM oculto para Resolver (POST + AntiForgeryToken) -> ListaResoluciones === -->
+    @using (Html.BeginForm("ListaResoluciones", "HistorialVentas", FormMethod.Post, new { id = "formResolucion", style = "display:none;" }))
+    {
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="idventa" id="inputIdVenta" value="" />
+    }
+
+    <!-- === FORM oculto para Seleccionar (POST + AntiForgeryToken) -> SeleccionarResoluciones === -->
+    @using (Html.BeginForm("SeleccionarResoluciones", "HistorialVentas", FormMethod.Post, new { id = "formSelResol", style = "display:none;" }))
+    {
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="idResolucion" id="inp-idResolucion" value="0" />
+    }
 
     <!-- FILTROS -->
     <div class="card card-filter shadow-sm mb-3">
@@ -92,7 +114,6 @@
                         </div>
                     }
                 </div>
-
 
             </div>
 
@@ -160,7 +181,7 @@
             </div>
         </div>
 
-        <!-- PANEL LATERAL organizado -->
+        <!-- PANEL LATERAL -->
         <div class="col-12 col-lg-3 mt-3 mt-lg-0">
             <div class="hv-actions card shadow-sm">
                 <div class="card-body p-3">
@@ -222,8 +243,56 @@
                 </div>
             </div>
         </div>
+    </div> <!-- /row -->
+</div> <!-- /page-wrap -->
+<!-- ===== MODAL: Resoluciones ===== -->
+<div class="modal fade" id="modalResoluciones" tabindex="-1" aria-labelledby="modalResolucionesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content modal-resoluciones">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalResolucionesLabel">Resoluciones disponibles</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="mb-2 small text-muted">
+                    Selecciona la resolución para la venta actual.
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle" id="tabla-resoluciones">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Nombre</th>
+                                <th>Prefijo</th>
+                                <th>N° Resolución</th>
+                                <th>Habilitación</th>
+                                <th>Vigencia</th>
+                                <th>Rango</th>
+                                <th>Consecutivo</th>
+                                <th>Estado</th>
+                                <th>Llave técnica</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @* filas por JS *@
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="alert alert-warning d-none" id="alerta-sin-resoluciones">
+                    No hay resoluciones para mostrar.
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- JS principal -->
-<script src="~/Scripts/historialventas.js?v=1.6.5"></script>
+<script src="~/Scripts/historialventas.js?v=1.7.0"></script>

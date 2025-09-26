@@ -1,7 +1,9 @@
-﻿/* ======================================
+﻿//    archivo    historialventas.js
+
+/* ======================================
    HISTORIAL VENTAS – LÓGICA DE FRONTEND
-   (rango de fechas + filtros embebidos)
-   v1.6.5
+   (rango de fechas + filtros embebidos + modal resoluciones)
+   v1.7.0
    ====================================== */
 (function () {
     "use strict";
@@ -47,7 +49,7 @@
         var cufeRaw = (it.cufe || it.CUFE || "--").toString().trim();
         var tipoMayus = tipo.toUpperCase();
         var cufeDisplay = "N/A", cufeStatus = "na";
-        if (tipoMayus === "FACTURA ELECTRONICA DE VENTA") {
+        if (tipoMayus === "FACTURA ELECTRONICA DE VENTA" || tipoMayus === "FACTURA ELECTRÓNICA DE VENTA") {
             if (cufeRaw && cufeRaw !== "--") { cufeDisplay = "Factura aceptada"; cufeStatus = "aceptada"; }
             else { cufeDisplay = "Factura rechazada"; cufeStatus = "rechazada"; }
         }
@@ -62,8 +64,12 @@
 
         var propina = Number(it.propina ?? it.propinaVenta ?? 0) || 0;
 
+        // idVenta robusto
+        var idVenta = it.idVenta ?? it.id ?? it.Id ?? null;
+
         return {
             raw: it,
+            idVenta: idVenta,
             fechaVenta: fecha,
             tipoFactura: tipo,
             prefijo: prefijo,
@@ -93,7 +99,7 @@
         return "bg-secondary";
     }
 
-    // ===== Render
+    // ===== Render tabla HV
     function renderTable() {
         var tbody = document.querySelector("#tablaHV tbody");
         if (!tbody) return;
@@ -201,7 +207,6 @@
         }
         return false;
     }
-
     function endOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999); }
 
     function applyFilters() {
@@ -240,10 +245,10 @@
                 if (!ok) return false;
             }
             if (feOnly) {
-                var esFE = (x.tipoFactura || "").toUpperCase() === "FACTURA ELECTRONICA DE VENTA";
+                var esFE = (x.tipoFactura || "").toUpperCase();
+                esFE = (esFE === "FACTURA ELECTRONICA DE VENTA" || esFE === "FACTURA ELECTRÓNICA DE VENTA");
                 if (!esFE) return false;
             }
-
             return true;
         });
 
@@ -270,7 +275,7 @@
         if (fechaFact) fechaFact.value = hasSel && selected.fechaVenta ? ymd(selected.fechaVenta) : "";
     }
 
-    // ===== Acciones (placeholders + export)
+    // ===== Acciones (placeholders + export + resoluciones)
     function requireSel() { if (!selected) { alert("Selecciona una venta primero."); return false; } return true; }
     function exportCSV() {
         if (!filtered.length) { alert("No hay datos para exportar."); return; }
@@ -295,7 +300,7 @@
     }
     function imprimir() { window.print(); }
 
-    // === Autocompletar rango de fechas y mantener coherencia ===
+    // === Autocompletar rango de fechas y coherencia ===
     function wireDateRange() {
         var desde = byId('fFechaDesde');
         var hasta = byId('fFechaHasta');
@@ -340,8 +345,114 @@
         setDateInput('fFechaDesde', root.Fecha1 || root.fecha1);
         setDateInput('fFechaHasta', root.Fecha2 || root.fecha2);
         setTextInput('fClienteTexto', root.NombreCliente || root.nombreCliente);
-        // setTextInput('fNumeroFactura', root.NumeroFactura || root.numeroFactura); // si quieres precargar
     }
+
+    // ====== RESOLUCIONES (Modal)
+    function normalizarResolucion(r) {
+        return {
+            id: r.id ?? null,
+            nombreResolucion: r.nombreResolucion ?? r.nombreRosolucion ?? r.nombre_rosolucion ?? "",
+            prefijo: r.prefijo ?? "",
+            idResolucion: r.idResolucion ?? null,
+            numeroResolucion: r.numeroResolucion ?? r.numero_resolucion ?? "",
+            fechaHabilitacion: r.fechaHabilitacion ?? r.fechaAvilitacion ?? r.fecha_habilitacion ?? "",
+            vigencia: r.vigencia ?? "",
+            desde: r.desde ?? "",
+            hasta: r.hasta ?? "",
+            caja: r.caja ?? "",
+            consecutivoInicial: r.consecutivoInicial ?? 0,
+            consecutivo: r.consecutivo ?? 0,
+            estado: r.estado ?? 0,
+            estadoText: r.estadoText ?? r.estado_text ?? "",
+            technical_key: r.technical_key ?? r.llave_tecnica ?? ""
+        };
+    }
+    function rango(desde, hasta) {
+        if ((desde ?? "") === "" && (hasta ?? "") === "") return "";
+        return (desde ?? "") + " – " + (hasta ?? "");
+    }
+    function estadoBadge(estado, estadoText) {
+        var act = Number(estado) === 1 || (estadoText || "").toUpperCase().includes("ACTIV");
+        var cls = act ? "bg-success" : "bg-secondary";
+        var txt = estadoText || (act ? "ACTIVA" : "INACTIVA");
+        return '<span class="badge ' + cls + '">' + txt + '</span>';
+    }
+    function btnSeleccionar(idResolucion, estado) {
+        var disabled = (Number(estado) === 1) ? "" : "disabled";
+        var id = (idResolucion ?? "").toString();
+        return '<button type="button" class="btn btn-primary btn-sm btn-sel-resol" data-id="' + id + '" ' + disabled + '>Seleccionar</button>';
+    }
+    function llenarTablaResoluciones(lista) {
+        var tbody = document.querySelector("#tabla-resoluciones tbody");
+        var alerta = byId("alerta-sin-resoluciones");
+        if (!tbody) return;
+
+        tbody.innerHTML = "";
+
+        if (!Array.isArray(lista) || lista.length === 0) {
+            if (alerta) alerta.classList.remove("d-none");
+            return;
+        }
+        if (alerta) alerta.classList.add("d-none");
+
+        lista.forEach(function (raw, i) {
+            var r = normalizarResolucion(raw);
+            var tr = document.createElement("tr");
+            tr.innerHTML = ''
+                + '<td>' + (i + 1) + '</td>'
+                + '<td>' + r.nombreResolucion + '</td>'
+                + '<td>' + r.prefijo + '</td>'
+                + '<td>' + r.numeroResolucion + '</td>'
+                + '<td>' + (r.fechaHabilitacion || '') + '</td>'
+                + '<td>' + (r.vigencia || '') + '</td>'
+                + '<td>' + rango(r.desde, r.hasta) + '</td>'
+                + '<td>' + r.consecutivo + ' <small class="text-muted">(' + r.consecutivoInicial + ' inicial)</small></td>'
+                + '<td>' + estadoBadge(r.estado, r.estadoText) + '</td>'
+                + '<td class="text-truncate" style="max-width:240px;" title="' + (r.technical_key || '') + '">' + (r.technical_key || '') + '</td>'
+                + '<td class="text-end">' + btnSeleccionar(r.idResolucion, r.estado) + '</td>';
+            tbody.appendChild(tr);
+        });
+    }
+    function abrirModalResolucionesSiHayDatos() {
+        var holder = byId("hv-resol");
+        if (!holder) return;
+        var jsonText = decodeBase64(holder.getAttribute("data-json") || "");
+        var lista;
+        try { lista = JSON.parse(jsonText) || []; } catch { lista = []; }
+
+        llenarTablaResoluciones(lista);
+        if (Array.isArray(lista) && lista.length > 0) {
+            var modalEl = byId("modalResoluciones");
+            if (modalEl && window.bootstrap && bootstrap.Modal) {
+                var modal = new bootstrap.Modal(modalEl, { backdrop: "static" });
+                modal.show();
+            }
+        }
+    }
+    function wireSeleccionResolucion() {
+        document.addEventListener("click", function (ev) {
+            var btn = ev.target.closest(".btn-sel-resol"); if (!btn) return;
+            var id = btn.getAttribute("data-id");
+            if (!id) return;
+
+            var inp = document.getElementById("inp-idResolucion");
+            var form = document.getElementById("formSelResol");
+
+            if (inp && form) {
+                inp.value = id;
+
+                // ✅ Cerrar el modal inmediatamente (mejor UX)
+                var modalEl = document.getElementById("modalResoluciones");
+                if (modalEl) {
+                    var instance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                    instance.hide();
+                }
+
+                form.submit(); // POST -> SeleccionarResoluciones
+            }
+        });
+    }
+
 
     // ===== Listeners y arranque
     function hookActions() {
@@ -352,12 +463,9 @@
         // Rango fechas
         wireDateRange();
 
-        // === NUMERO: submit al servidor
-        // (el botón ya es type="submit"; esto asegura Enter también)
+        // NUMERO: submit con Enter
         byId("fNumeroFactura")?.addEventListener("keydown", function (e) {
             if (e.key === "Enter") {
-                // deja que el form se envíe de forma natural
-                // (si algún navegador no envía, forzamos)
                 if (formNumero) {
                     e.preventDefault();
                     if (typeof formNumero.requestSubmit === "function") formNumero.requestSubmit();
@@ -366,7 +474,7 @@
             }
         });
 
-        // === CLIENTE: antes de enviar, sincronizar fechas ocultas con lo visible
+        // CLIENTE: sincroniza fechas ocultas si existieran
         if (formCliente) {
             formCliente.addEventListener("submit", function () {
                 var f1 = byId("fFechaDesde")?.value || "";
@@ -381,16 +489,13 @@
         byId("chkFEPendientes")?.addEventListener("change", applyFilters);
         byId("chkFacturaElectronica")?.addEventListener("change", applyFilters);
 
-        // Enter en CLIENTE sin JS adicional (submit natural del form)
-
         // Exportar/Imprimir
         byId("btnExportar")?.addEventListener("click", exportCSV);
         byId("btnImprimir")?.addEventListener("click", imprimir);
-
-        // Panel lateral
         byId("actExportar")?.addEventListener("click", exportCSV);
         byId("actImprimir")?.addEventListener("click", imprimir);
 
+        // Placeholders
         byId("actVerDetalle")?.addEventListener("click", function () { if (!requireSel()) return; alert("Ver detalle de " + (selected.prefijo ? (selected.prefijo + "-") : "") + (selected.numeroVenta ?? "")); });
         byId("actAnular")?.addEventListener("click", function () { if (!requireSel()) return; if (confirm("¿Anular la venta " + (selected.prefijo ? (selected.prefijo + "-") : "") + (selected.numeroVenta ?? "") + "?")) { console.log("Anular -> endpoint"); } });
         byId("actCrearFE")?.addEventListener("click", function () { if (!requireSel()) return; alert("Crear Factura Electrónica (placeholder)"); });
@@ -399,19 +504,25 @@
         byId("actDevolucion")?.addEventListener("click", function () { if (!requireSel()) return; alert("Devolución (placeholder)"); });
         byId("actPosAElectronica")?.addEventListener("click", function () { if (!requireSel()) return; alert("POS a Electrónica (placeholder)"); });
         byId("actClonar")?.addEventListener("click", function () { if (!requireSel()) return; alert("Clonar Factura (placeholder)"); });
-        byId("actResolucion")?.addEventListener("click", function () { if (!requireSel()) return; alert("Resolución (placeholder)"); });
+
+        // Resolución -> POST a ListaResoluciones con idventa seleccionado
+        byId("actResolucion")?.addEventListener("click", function () {
+            if (!requireSel()) return;
+            var form = byId("formResolucion");
+            var input = byId("inputIdVenta");
+            if (!form || !input) { alert("No se encontró el formulario de Resolución."); return; }
+            var idv = selected.idVenta ?? (selected.raw ? (selected.raw.idVenta ?? selected.raw.id ?? selected.raw.Id ?? 0) : 0);
+            if (!idv || idv <= 0) { alert("No se pudo determinar el id de la venta seleccionada."); return; }
+            input.value = idv;
+            form.submit(); // POST con AntiForgeryToken
+        });
+
         byId("actAumentarNumero")?.addEventListener("click", function () { if (!requireSel()) return; alert("Aumentar Número (placeholder)"); });
         byId("actEnviarDIAN")?.addEventListener("click", function () { if (!requireSel()) return; alert("Enviar a DIAN (placeholder)"); });
         byId("actDescargarFactura")?.addEventListener("click", function () { if (!requireSel()) return; alert("Descargar Factura (placeholder)"); });
 
-        // Sort headers
-        var thead = document.querySelector("#tablaHV thead");
-        if (thead) thead.addEventListener("click", function (ev) {
-            var th = ev.target.closest("th"); if (!th) return;
-            var col = th.getAttribute("data-col"); if (!col) return;
-            if (sortCol === col) sortDir = -sortDir; else { sortCol = col; sortDir = 1; }
-            sortAndRender();
-        });
+        // Selección de resolución (desde el modal)
+        wireSeleccionResolucion();
     }
 
     // ===== INIT
@@ -432,7 +543,9 @@
         sortCol = "fechaVenta";
         sortDir = -1; // recientes primero
 
-        // applyFilters(); // <- si quieres aplicar en cliente al cargar
         sortAndRender();
+
+        // Si el servidor dejó datos en Session["V_Resoluciones"], abre el modal
+        abrirModalResolucionesSiHayDatos();
     });
 })();
