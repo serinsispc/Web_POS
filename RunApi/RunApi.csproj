@@ -84,6 +84,8 @@
     <Compile Include="ClassAPI.cs" />
     <Compile Include="Envio\LoginEnviar.cs" />
     <Compile Include="Envio\UsuarioAdminEnvio.cs" />
+    <Compile Include="Funciones\HistorialVentasAPI.cs" />
+    <Compile Include="Funciones\RespuestaCRUD_api.cs" />
     <Compile Include="Models\Admin\UsuarioAdmin.cs" />
     <Compile Include="Models\Admin\V_UsuarioDB.cs" />
     <Compile Include="Models\ClassDBCliente.cs" />
@@ -91,6 +93,8 @@
     <Compile Include="Models\Cliente\Resolucion.cs" />
     <Compile Include="Models\Cliente\Sede.cs" />
     <Compile Include="Models\Cliente\TablaMeses.cs" />
+    <Compile Include="Models\Cliente\TablaVentas.cs" />
+    <Compile Include="Models\Cliente\V_Clientes.cs" />
     <Compile Include="Models\Cliente\V_Resoluciones.cs" />
     <Compile Include="Models\Cliente\V_TablaVentas.cs" />
     <Compile Include="Models\Cliente\V_Usuario_Parqueadero.cs" />

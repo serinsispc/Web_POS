@@ -1,6 +1,4 @@
-﻿//  archivo Index.cshtml
-
-@using System
+﻿@using System
 @using System.Text
 @using Newtonsoft.Json.Linq
 @{
@@ -32,6 +30,13 @@
 
     string numeroInput = filtros?["NumeroFactura"]?.ToString() ?? "";
     string clienteInput = filtros?["NombreCliente"]?.ToString() ?? "";
+
+    // --- CLIENTES (cuando se regresa de BotonEditar_AgregarCliente) ---
+    var jsonClientes = (string)(Session["V_Clientes"] ?? "");
+    var jsonClientesBase64 = string.IsNullOrEmpty(jsonClientes)
+        ? ""
+        : Convert.ToBase64String(Encoding.UTF8.GetBytes(jsonClientes));
+    var debeMostrarModalClientes = !string.IsNullOrEmpty(jsonClientesBase64);
 }
 
 <link href="~/Content/historialventas.css?v=1.7.0" rel="stylesheet" />
@@ -52,6 +57,12 @@
     {
         @Html.AntiForgeryToken()
         <input type="hidden" name="idResolucion" id="inp-idResolucion" value="0" />
+    }
+
+    @using (Html.BeginForm("BotonEditar_AgregarCliente", "HistorialVentas", FormMethod.Post, new { id = "formListaClientes", style = "display:none;" }))
+    {
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="idventa" id="actEditarCliente" value="" />
     }
 
     <!-- FILTROS -->
@@ -293,6 +304,167 @@
         </div>
     </div>
 </div>
+
+<!-- ========= MODAL: LISTA DE CLIENTES ========= -->
+<div class="modal fade" id="modalClientes" tabindex="-1" aria-labelledby="modalClientesLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="modalClientesLabel" class="modal-title">Seleccionar cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <!-- Filtro opcional -->
+                <div class="row g-2 mb-3">
+                    <div class="col-md-4">
+                        <input id="cliFiltroTexto" class="form-control" placeholder="Buscar por NIT, nombre, comercio, teléfono o correo..." />
+                    </div>
+                    <div class="col-md-3">
+                        <button id="cliBtnLimpiar" class="btn btn-outline-secondary w-100" type="button">Limpiar</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle" id="tablaClientes">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 140px;">NIT</th>
+                                <th>Nombre</th>
+                                <th>Nombre Comercial</th>
+                                <th style="width: 130px;">Teléfono</th>
+                                <th>Dirección</th>
+                                <th>Correo</th>
+                                <th style="width: 120px;" class="text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody><!-- se rellena por JS --></tbody>
+                    </table>
+                </div>
+
+                <!-- Formulario para enviar selección -->
+                @using (Html.BeginForm("SeleccionarCliente", "HistorialVentas", FormMethod.Post, new { id = "formSeleccionarCliente" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="idCliente" id="idClienteSeleccionado" />
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Variables globales para Clientes (inyectadas desde servidor)
+window.ClientesBase64 = "@jsonClientesBase64";
+window.DebeMostrarModalClientes = @(debeMostrarModalClientes ? "true" : "false");
+</script>
+
+<!-- === Script inline para abrir/llenar Modal Resoluciones y Modal Clientes === -->
+<script>
+    (function () {
+        // Helper: decodificar base64 a objeto/array
+        function decodeB64ToJson(b64) {
+            try {
+                if (!b64) return null;
+                var txt = atob(b64);
+                return JSON.parse(txt);
+            } catch (e) { return null; }
+        }
+
+        // ----- MODAL RESOLUCIONES -----
+        var resolDiv = document.getElementById("hv-resol");
+        var resolB64 = resolDiv ? (resolDiv.dataset.json || "") : "";
+        var resoluciones = decodeB64ToJson(resolB64);
+        var modalResolEl = document.getElementById("modalResoluciones");
+        var alertaSin = document.getElementById("alerta-sin-resoluciones");
+        var tbodyResol = modalResolEl ? modalResolEl.querySelector("#tabla-resoluciones tbody") : null;
+
+        function fmt(val, fallback = "") {
+            return (val === null || val === undefined) ? fallback : String(val);
+        }
+
+        // Render de filas
+        function renderResoluciones(list) {
+            if (!tbodyResol) return;
+            if (!Array.isArray(list) || list.length === 0) {
+                tbodyResol.innerHTML = "";
+                if (alertaSin) alertaSin.classList.remove("d-none");
+                return;
+            } else {
+                if (alertaSin) alertaSin.classList.add("d-none");
+            }
+
+            // Campos esperados según tu JSON:
+            // id, nombreRosolucion, prefijo, numeroResolucion, fechaAvilitacion, vigencia, desde, hasta,
+            // consecutivoInicial, estado, technical_key
+            var rows = list.map(function (r, i) {
+                var rango = (fmt(r.desde) && fmt(r.hasta)) ? (fmt(r.desde) + " - " + fmt(r.hasta)) : "";
+                return (
+                    '<tr>' +
+                    '<td>' + (i + 1) + '</td>' +
+                    '<td>' + fmt(r.nombreRosolucion) + '</td>' +
+                    '<td>' + fmt(r.prefijo) + '</td>' +
+                    '<td>' + fmt(r.numeroResolucion) + '</td>' +
+                    '<td>' + fmt(r.fechaAvilitacion) + '</td>' +
+                    '<td>' + fmt(r.vigencia) + '</td>' +
+                    '<td>' + rango + '</td>' +
+                    '<td>' + fmt(r.consecutivoInicial) + '</td>' +
+                    '<td>' + fmt(r.estado) + '</td>' +
+                    '<td class="text-truncate" style="max-width:220px;">' + fmt(r.technical_key) + '</td>' +
+                    '<td class="text-end">' +
+                    '<button type="button" class="btn btn-sm btn-primary" data-sel-resol="' + fmt(r.id) + '">' +
+                    '<i class="bi bi-check2-circle me-1"></i>Seleccionar' +
+                    '</button>' +
+                    '</td>' +
+                    '</tr>'
+                );
+            }).join("");
+
+            tbodyResol.innerHTML = rows;
+        }
+
+        function wireResoluciones() {
+            if (!tbodyResol) return;
+            tbodyResol.addEventListener("click", function (ev) {
+                var btn = ev.target.closest("[data-sel-resol]");
+                if (!btn) return;
+                var idResol = btn.getAttribute("data-sel-resol") || "0";
+                var inp = document.getElementById("inp-idResolucion");
+                var form = document.getElementById("formSelResol");
+                if (inp && form) {
+                    inp.value = idResol;
+                    form.submit(); // La vista se recarga -> el modal NO se reabrirá si ya limpias Session["V_Resoluciones"] en el controlador
+                }
+            });
+        }
+
+        if (Array.isArray(resoluciones) && resoluciones.length > 0) {
+            renderResoluciones(resoluciones);
+            if (window.bootstrap && modalResolEl) {
+                var modal = new bootstrap.Modal(modalResolEl);
+                modal.show();
+            }
+            wireResoluciones();
+        } else {
+            // Si no hay resoluciones, asegurar alerta vacía
+            renderResoluciones([]);
+        }
+
+        // ----- MODAL CLIENTES -----
+        if (window.DebeMostrarModalClientes === true || window.DebeMostrarModalClientes === "true") {
+            var modalClientesEl = document.getElementById("modalClientes");
+            if (window.bootstrap && modalClientesEl) {
+                var modalCli = new bootstrap.Modal(modalClientesEl, { backdrop: "static", keyboard: false });
+                modalCli.show();
+            }
+        }
+    })();
+</script>
 
 <!-- JS principal -->
 <script src="~/Scripts/historialventas.js?v=1.7.0"></script>

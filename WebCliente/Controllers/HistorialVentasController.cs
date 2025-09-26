@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using RunApi.ApiControlers;
+using RunApi.Funciones;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -117,12 +118,62 @@ namespace WebCliente.Controllers
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
 
             //en esta parte modificamos el id de la resolución de la table ventas
+            int idventa = Convert.ToInt32(Session["idventa"]);
+            var respuesta = await HistorialVentasAPI.EditarIdResolucion(idventa,idResolucion);
 
+            if (respuesta.estado)
+            {
+                string db = Session["db"].ToString();
+                model.V_TablaVentas =await V_TablaVentasControler.Filtrar(db,model.Fecha1,model.Fecha2);
+            }
 
             Session["V_Resoluciones"] = "[]";
+            
+            ModelView(model);
+            return View("Index");
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> BotonEditar_AgregarCliente(int idventa)
+        {
+            var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
+
+            var listaClientes = await HistorialVentasAPI.ListaClientes();
+
+            Session["idventa"] = idventa;
+            Session["V_Clientes"] = JsonConvert.SerializeObject(listaClientes);
 
             ModelView(model);
             return View("Index");
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> SeleccionarCliente(int idCliente)
+        {
+            // Recupera el idventa por si necesitas asociar el cliente a la venta
+            var idventa = 0;
+            if (Session["idventa"] != null)
+                int.TryParse(Session["idventa"].ToString(), out idventa);
+
+            // TODO: tu lógica para asociar el cliente seleccionado a la venta / modelo
+            // Por ejemplo:
+            // await HistorialVentasAPI.AsociarClienteAVenta(idventa, idCliente);
+
+            // Limpia la lista para que el modal no reaparezca al recargar
+            Session.Remove("V_Clientes");
+
+            // Restaura el modelo de sesión y vuelve al Index
+            var modelJson = (string)(Session["HistorialVentasJson"] ?? "null");
+            if (!string.IsNullOrEmpty(modelJson) && modelJson != "null")
+            {
+                var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(modelJson);
+                ModelView(model); // tu método existente
+            }
+
+            // Puedes mostrar un toast/alert de éxito en la vista si ya lo manejas
+            return View("Index");
+        }
+
     }
 }
