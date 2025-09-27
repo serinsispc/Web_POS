@@ -20,16 +20,13 @@
 
             <span class="navbar-text text-white" id="nombreEmpresa">@Session["razonSocial"] - Versión: 2.0</span>
 
-
-
-
             <div class="d-flex align-items-center ms-auto">
                 <!-- Notificaciones con dropdown -->
                 <div class="dropdown me-3">
                     <button class="btn btn-dark position-relative dropdown-toggle" type="button" id="notificacionesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-bell"></i>
                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                            3 <!-- Número de notificaciones -->
+                            3
                             <span class="visually-hidden">notificaciones no leídas</span>
                         </span>
                     </button>
@@ -51,7 +48,6 @@
             </div>
         </div>
     </nav>
-
 
     <div class="content-wrapper">
         <div id="sidebar" class="sidebar-expanded">
@@ -166,12 +162,13 @@
                         <ul class="nav flex-column ms-3">
                             <li class="nav-item">
                                 <a class="nav-link submenu-link" href="@Url.Action("Index","Caja")" target="_blank">
-                                <i class="bi bi-shop me-2"></i>Caja POS</a>
+                                    <i class="bi bi-shop me-2"></i>Caja POS
+                                </a>
                             </li>
 
                             <li class="nav-item">
                                 <a class="nav-link submenu-link" href="@Url.Action("Index","HistorialVentas")">
-                                    <i class="bi bi-clock-history me-2"></i>Historial Ventas    
+                                    <i class="bi bi-clock-history me-2"></i>Historial Ventas
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -198,7 +195,6 @@
                         </ul>
                     </div>
                 </li>
-
 
                 <!-- Menú Contabilidad -->
                 <li class="nav-item px-3">
@@ -277,6 +273,9 @@
             </ul>
         </div>
 
+        <!-- Backdrop para sidebar móvil -->
+        <div id="sidebar-backdrop" class="d-none"></div>
+
         <div class="flex-grow-1" id="main-content">
             <main>
                 @RenderBody()
@@ -284,21 +283,24 @@
         </div>
     </div>
 
-
     <footer class="footer d-flex justify-content-between align-items-center">
         <span><i class="bi bi-person-circle"></i> @Session["nombreUsuario"] - @Session["tipoUsuario"]</span>
         <!-- <span>9:38:18 a. m. - 15/05/2025</span> -->
     </footer>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const toggleBtn = document.getElementById("toggleSidebar");
-            const sidebar = document.getElementById("sidebar");
 
-            toggleBtn.addEventListener("click", function () {
-                sidebar.classList.toggle("active");
+    <!-- Script inline duplicado ELIMINADO para no invertir el estado del menú -->
+    @*
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const toggleBtn = document.getElementById("toggleSidebar");
+                const sidebar = document.getElementById("sidebar");
+
+                toggleBtn.addEventListener("click", function () {
+                    sidebar.classList.toggle("active");
+                });
             });
-        });
-    </script>
+        </script>
+    *@
 
     <script>
         // Elimina la caché del navegador para que no regrese con el botón "Atrás"

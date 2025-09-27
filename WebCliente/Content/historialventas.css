@@ -1,6 +1,6 @@
 ﻿/* =============================
    HISTORIAL VENTAS – ESTILOS
-   v1.8.8
+   v1.9.1
    ============================= */
 .page-wrap.historial-ventas {
     padding: 10px;
@@ -13,6 +13,17 @@
 
 .hv-icon-btn i {
     pointer-events: none;
+}
+
+/* === NUEVO: garantizar scroll horizontal fluido en móviles === */
+.table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* === NUEVO: ancho mínimo de la tabla para evitar colapso de columnas (scroll en móviles) === */
+#tablaHV {
+    min-width: 980px; /* ajustable; 900–1000px suele ir bien con tus 10 columnas */
 }
 
 /* Tabla */
@@ -220,7 +231,7 @@
     white-space: nowrap;
 }
 
-/* ===== Botón "Más" mejorado ===== */
+/* ===== Botón "Más" (se mantiene por compatibilidad) ===== */
 .table-hv th[data-col="more"] {
     text-align: center;
     width: 70px;
@@ -260,11 +271,10 @@
     display: inline-flex;
     gap: 2rem;
     align-items: center;
-    white-space: nowrap; /* una sola línea */
-    min-width: 700px; /* “ancha” por defecto; crece con scroll */
+    white-space: nowrap;
+    min-width: 700px;
 }
 
-    /* Etiquetas y valores */
     .hv-details-inline .k {
         font-weight: 700;
         color: #243a6b;
