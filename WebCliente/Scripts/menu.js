@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Contraer/expandir menú manualmente
+    // Contraer/expandir menú manualmente (modo escritorio)
     if (manualToggle && sidebar) {
         manualToggle.addEventListener('click', function () {
             const isCollapsed = sidebar.classList.contains('sidebar-collapsed');
@@ -34,21 +34,30 @@ document.addEventListener('DOMContentLoaded', function () {
                     sidebar.classList.remove('sidebar-collapsed', 'hide-text');
                     sidebar.classList.add('sidebar-expanded');
                     toggleIcon?.classList.replace('bi-arrow-bar-right', 'bi-arrow-bar-left');
-                    toggleText.textContent = ' Contraer';
+                    if (toggleText) toggleText.textContent = ' Contraer';
                 } else {
                     sidebar.classList.remove('sidebar-expanded');
                     sidebar.classList.add('sidebar-collapsed', 'hide-text');
                     toggleIcon?.classList.replace('bi-arrow-bar-left', 'bi-arrow-bar-right');
-                    toggleText.textContent = ' Expandir';
+                    if (toggleText) toggleText.textContent = ' Expandir';
                 }
             }, 50);
         });
     }
 
-    // Cerrar sidebar al hacer clic en enlaces (solo en móviles)
+    // ✅ Cerrar sidebar en móvil SOLO si el enlace navega a otra página (href real)
     document.querySelectorAll('#sidebar .nav-link, #sidebar .submenu-link').forEach(link => {
-        link.addEventListener('click', () => {
-            if (window.innerWidth <= 768 && sidebar && backdrop) {
+        link.addEventListener('click', (e) => {
+            if (!(window.innerWidth <= 768 && sidebar && backdrop)) return;
+
+            const href = (link.getAttribute('href') || '').trim();
+            const isToggle = href.startsWith('#') || link.hasAttribute('data-bs-toggle') || link.getAttribute('role') === 'button';
+
+            // Si es un toggle de colapso/submenú o un ancla interna (#...), NO cerramos
+            if (isToggle) return;
+
+            // Si realmente navega (href absoluto/relativo distinto de "#"), cerramos
+            if (href && href !== '#') {
                 sidebar.classList.remove('active');
                 backdrop.classList.add('d-none');
             }
