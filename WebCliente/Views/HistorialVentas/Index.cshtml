@@ -1,14 +1,14 @@
 ﻿@using System
 @using System.Text
 @using Newtonsoft.Json.Linq
+
 @{
     ViewBag.Title = "Historial Ventas";
     Layout = "~/Views/Shared/_LayoutMenu.cshtml";
 
-    // JSON base (historial)
+    // JSON base (solo para prellenar filtros)
     var rawJsonObj = Session["HistorialVentasJson"];
     var rawJson = rawJsonObj as string ?? "{}";
-    var jsonBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(rawJson));
 
     // JSON de resoluciones (para modal)
     var rawResolObj = Session["V_Resoluciones"];
@@ -37,13 +37,44 @@
         ? ""
         : Convert.ToBase64String(Encoding.UTF8.GetBytes(jsonClientes));
     var debeMostrarModalClientes = !string.IsNullOrEmpty(jsonClientesBase64);
+
+    // ===== Datos de la tabla (render servidor) =====
+    var esCO = new System.Globalization.CultureInfo("es-CO");
+
+    // Evita nulls y tipado
+    var model =new WebCliente.ViewModels.HistorialVentasViewModels();
+    if (rawJsonObj != null)
+    {
+        model = Newtonsoft.Json.JsonConvert.DeserializeObject<WebCliente.ViewModels.HistorialVentasViewModels>(rawJsonObj.ToString());
+    }
+    var listaventas = new List<RunApi.Models.Cliente.V_TablaVentas>();
+    if (model.V_TablaVentas != null)
+    {
+        listaventas = model.V_TablaVentas;
+    }
+    // Totales/resumen en servidor
+    int conteo = listaventas.Count;
+    decimal totSubtotal = 0m, totImpuestos = 0m, totGeneral = 0m, totPropina = 0m;
+
+    foreach (var v in listaventas)
+    {
+        totSubtotal += (decimal)(v.subtotalVenta ?? 0m);
+        // Si tu objeto usa totalImpuestos / IVA / INC, ajusta aquí:
+        var imp = (decimal)(v.IVA ?? 0m) + (decimal)(v.INC ?? 0m) + (decimal)(v.INCBolsas ?? 0m) + (decimal)(v.ivaVenta ?? 0m);
+        totImpuestos += imp;
+        totGeneral += (decimal)(v.totalVenta ?? 0m);
+        totPropina += (decimal)(v.propina ?? 0m);
+    }
+
+    string resumenTexto = $"{conteo} ventas";
+    string totalesTexto = $"Subtotal: {totSubtotal.ToString("C0", esCO)}  |  Impuestos: {totImpuestos.ToString("C0", esCO)}  |  Total: {totGeneral.ToString("C0", esCO)}";
+    if (totPropina > 0) { totalesTexto += $"  |  Propina: {totPropina.ToString("C0", esCO)}"; }
 }
 
-<link href="~/Content/historialventas.css?v=1.8.4" rel="stylesheet" />
+<link href="~/Content/historialventas.css?v=1.9.0" rel="stylesheet" />
 
 <div class="page-wrap historial-ventas" data-page="HistorialVentas">
-    <!-- JSON base64 para que el JS lo lea -->
-    <div id="hv-data" data-json="@jsonBase64"></div>
+    <!-- JSON base64 SOLO para Resoluciones -->
     <div id="hv-resol" data-json="@resolBase64"></div>
 
     <!-- === FORM oculto para Resolver (POST + AntiForgeryToken) -> ListaResoluciones === -->
@@ -70,10 +101,7 @@
     <!-- FILTROS -->
     <div class="card card-filter shadow-sm mb-3">
         <div class="card-body">
-
-            <!-- Fila: Fechas | Número | Cliente (cada uno con su formulario) -->
             <div class="row g-2 align-items-end">
-
                 <!-- FORM 1: Fechas -->
                 <div class="col-12 col-lg-6">
                     @using (Html.BeginForm("Filtar", "HistorialVentas", FormMethod.Post, new { id = "formFechas" }))
@@ -126,22 +154,12 @@
                         </div>
                     }
                 </div>
-
             </div>
 
-            <!-- Fila: Switches FE y Acciones -->
+            <!-- Acciones -->
             <div class="row mt-3 g-2 align-items-center">
                 <div class="col-12 col-lg-8">
-                    <div class="d-flex flex-wrap align-items-center gap-3">
-                        <div class="form-check form-switch d-flex align-items-center gap-2">
-                            <input class="form-check-input" type="checkbox" role="switch" id="chkFEPendientes">
-                            <label class="form-check-label mb-0" for="chkFEPendientes">F.E. Pendientes</label>
-                        </div>
-                        <div class="form-check form-switch d-flex align-items-center gap-2">
-                            <input class="form-check-input" type="checkbox" role="switch" id="chkFacturaElectronica">
-                            <label class="form-check-label mb-0" for="chkFacturaElectronica">Factura Electrónica</label>
-                        </div>
-                    </div>
+                    <!-- (Los switches cliente-side se removieron al no filtrar en JS) -->
                 </div>
 
                 <div class="col-12 col-lg-4">
@@ -164,7 +182,7 @@
         <div class="col-12 col-lg-9">
             <div class="card shadow-sm">
                 <div class="card-body p-0">
-                    <div class="table-responsive">
+                    <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
                         <table id="tablaHV" class="table table-sm table-hover table-hv align-middle mb-0">
                             <thead>
                                 <tr>
@@ -178,18 +196,51 @@
                                     <th data-col="nit">NIT</th>
                                     <th data-col="nombreCliente">Cliente</th>
                                     <th data-col="cufe">CUFE</th>
-                                    @* la col "Más" se inyecta por JS cuando hay overflow *@
+                                    @* la col "Más" ya no se agrega por JS (no hay overflow-mode) *@
                                 </tr>
                             </thead>
                             <tbody>
-                                @* filas generadas por JS *@
+                                @{
+                                    foreach (var lista in listaventas)
+                                    {
+                                        // Estado CUFE según tipo de factura electrónica
+                                        var cufeEstado = "--";
+                                        if (lista.tipoFactura == "FACTURA ELECTRÓNICA DE VENTA")
+                                        {
+                                            if (lista.cufe == "--") { cufeEstado = "RECHAZADA"; }
+                                            else { cufeEstado = "ACEPTADA"; }
+                                        }
+
+                                        // Atributos data-* para el JS (selección de fila)
+                                        var dataIdVenta = lista.id;
+                                        var dataTotal = (lista.totalVenta ?? 0m).ToString(System.Globalization.CultureInfo.InvariantCulture); // valor crudo
+                                        var dataFechaIso = lista.fechaVenta.HasValue ? lista.fechaVenta.Value.ToString("s") : ""; // ISO 8601 "yyyy-MM-ddTHH:mm:ss"
+
+                                        <tr data-idventa="@dataIdVenta"
+                                            data-total="@dataTotal"
+                                            data-fecha="@dataFechaIso"
+                                            data-prefijo="@lista.prefijo"
+                                            data-numero="@lista.numeroVenta">
+                                            <td data-col="fechaVenta">@((lista.fechaVenta ?? DateTime.MinValue).ToString("yyyy-MM-dd HH:mm"))</td>
+                                            <td data-col="tipoFactura">@lista.tipoFactura</td>
+                                            <td data-col="prefijo">@lista.prefijo</td>
+                                            <td data-col="numeroVenta">@lista.numeroVenta</td>
+                                            <td class="text-end" data-col="total">@((lista.totalVenta ?? 0m).ToString("C0", esCO))</td>
+                                            <td data-col="formaDePago">@lista.formaDePago</td>
+                                            <td data-col="estadoVenta">@lista.estadoVenta</td>
+                                            <td data-col="nit">@lista.nit</td>
+                                            <td data-col="nombreCliente" title="@lista.nombreCliente">@lista.nombreCliente</td>
+                                            <td data-col="cufe">@cufeEstado</td>
+                                        </tr>
+                                    }
+                                }
                             </tbody>
                         </table>
                     </div>
                 </div>
                 <div class="card-footer d-flex justify-content-between flex-wrap gap-2">
-                    <div id="resumenHV" class="small text-muted">0 ventas</div>
-                    <div id="totalesHV" class="fw-semibold"></div>
+                    <div id="resumenHV" class="small text-muted">@resumenTexto</div>
+                    <div id="totalesHV" class="fw-semibold">@totalesTexto</div>
                 </div>
             </div>
         </div>
@@ -315,8 +366,6 @@
             </div>
 
             <div class="modal-body">
-
-                <!-- Filtro opcional -->
                 <div class="row g-2 mb-3">
                     <div class="col-md-4">
                         <input id="cliFiltroTexto" class="form-control" placeholder="Buscar por NIT, nombre, comercio, teléfono o correo..." />
@@ -343,7 +392,6 @@
                     </table>
                 </div>
 
-                <!-- Formulario para enviar selección -->
                 @using (Html.BeginForm("SeleccionarCliente", "HistorialVentas", FormMethod.Post, new { id = "formSeleccionarCliente" }))
                 {
                     @Html.AntiForgeryToken()
@@ -359,9 +407,8 @@
 </div>
 
 <script>
-    // Variables globales para Clientes (inyectadas desde servidor)
     window.ClientesBase64 = "@jsonClientesBase64";
     window.DebeMostrarModalClientes = @(debeMostrarModalClientes ? "true" : "false");
 </script>
 
-<script src="~/Scripts/historialventas.js?v=1.8.4"></script>
+<script src="~/Scripts/historialventas.js?v=1.9.0"></script>
