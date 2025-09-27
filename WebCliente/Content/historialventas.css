@@ -249,3 +249,35 @@
 .hv-details-grid {
     display: none;
 }
+
+
+
+
+/* Fila completa positiva */
+#tablaHV tbody tr.fila-positiva:not(.child) > * {
+    --bs-table-bg: #d1e7dd; /* verde claro */
+    --bs-table-color: inherit;
+}
+
+/* Fila completa negativa (más fuerte) */
+#tablaHV tbody tr.fila-negativa:not(.child) > * {
+    --bs-table-bg: #f5c2c7; /* rojo medio, más intenso */
+    --bs-table-color: #58151c; /* texto rojo oscuro para contraste */
+}
+
+/* Hover para tablas con .table-hover */
+#tablaHV.table.table-hover tbody tr.fila-positiva:hover > * {
+    --bs-table-bg: #badbcc; /* verde un poco más oscuro */
+}
+
+#tablaHV.table.table-hover tbody tr.fila-negativa:hover > * {
+    --bs-table-bg: #f1aeb5; /* rojo más fuerte en hover */
+}
+
+
+/* Margen superior para separar controles de la parte superior */
+#tablaHV_wrapper .dt-top {
+    margin-top: 8px; /* Ajusta el valor a tu gusto (6–12px recomendado) */
+}
+
+

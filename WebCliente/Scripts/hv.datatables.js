@@ -1,6 +1,6 @@
 ﻿// hv.datatables.js
 // DataTables para #tablaHV con columnas:
-// 0 Número (prefijo + número) | 1 Fecha | 2 Tipo | 3 Total | 4 Forma | 5 Estado | 6 NIT | 7 Cliente | 8 CUFE
+// 0 Número | 1 Fecha | 2 Tipo | 3 Total | 4 Forma de Pago | 5 Estado | 6 NIT | 7 Cliente | 8 CUFE (OCULTA)
 
 (function () {
     'use strict';
@@ -22,12 +22,18 @@
         if ($tabla.length === 0) return;
 
         var dt = $tabla.DataTable({
+            // Layout con padding y separación entre "Mostrar" y "Buscar"
+            dom:
+                "<'dt-top d-flex flex-wrap align-items-center gap-2 px-2' l f>" +
+                "t" +
+                "<'dt-bottom d-flex flex-wrap justify-content-between align-items-center gap-2 px-2' i p>",
+
             responsive: {
                 details: { type: 'inline', target: 'tr' },
                 breakpoints: [
-                    { name: 'xs', width: 0 },  // <400
-                    { name: 'phone', width: 400 },  // >=400 (Número + Fecha siempre visibles)
-                    { name: 'phone-l', width: 416 },  // >=416 (mantenemos también Total)
+                    { name: 'xs', width: 0 },
+                    { name: 'phone', width: 400 },
+                    { name: 'phone-l', width: 416 },
                     { name: 'sm', width: 576 },
                     { name: 'md', width: 768 },
                     { name: 'lg', width: 992 },
@@ -39,33 +45,30 @@
             pageLength: 25,
             lengthMenu: [10, 25, 50, 100],
 
-            // Ahora la Fecha está en la columna 1
+            // Orden por Fecha (col 1)
             order: [[1, 'desc']],
 
-            // Visibilidad/priors por columna
-            // 'all' = siempre visible; 'min-phone-l' = visible desde >=416px
+            // Definición de columnas visibles (CUFE va oculta)
             columns: [
-                { className: 'all' },          // 0 - Número (prefijo + número) → SIEMPRE
-                { className: 'all' },          // 1 - Fecha → SIEMPRE
-                { className: '' },             // 2 - Tipo
-                { className: 'min-phone-l text-end' }, // 3 - Total → desde 416px
-                { className: '' },             // 4 - Forma de Pago
-                { className: '' },             // 5 - Estado
-                { className: '' },             // 6 - NIT
-                { className: '' },             // 7 - Cliente
-                { className: '' }              // 8 - CUFE
+                { className: 'all' },                   // 0 Número
+                { className: 'all' },                   // 1 Fecha
+                { className: '' },                      // 2 Tipo
+                { className: 'min-phone-l text-end' },  // 3 Total
+                { className: '' },                      // 4 Forma de Pago
+                { className: '' },                      // 5 Estado
+                { className: '' },                      // 6 NIT
+                { className: '' },                      // 7 Cliente
+                { className: '' }                       // 8 CUFE (OCULTA)
             ],
 
             columnDefs: [
-                // Prioridades relativas para cuando hay espacio extra
                 { responsivePriority: 4, targets: 7 }, // Cliente
                 { responsivePriority: 5, targets: 2 }, // Tipo
                 { responsivePriority: 6, targets: 4 }, // Forma
                 { responsivePriority: 7, targets: 5 }, // Estado
                 { responsivePriority: 8, targets: 6 }, // NIT
-                { responsivePriority: 9, targets: 8 }, // CUFE (último)
 
-                // Orden numérico correcto en "Total" (col 3)
+                // Total: orden numérico correcto
                 {
                     targets: 3,
                     render: function (data, type) {
@@ -73,13 +76,34 @@
                         return data;
                     }
                 },
-                // CUFE no participa en búsqueda
-                { targets: 8, searchable: false }
+
+                // CUFE: oculto pero disponible para lógica y sin búsqueda
+                { targets: 8, visible: false, searchable: false }
             ],
 
             language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json' },
             deferRender: true,
-            stateSave: true
+            stateSave: true,
+
+            // === Pintar fila completa SOLO por CUFE (col 8) ===
+            createdRow: function (row, data) {
+                try {
+                    // data[8] existe aunque la columna esté oculta
+                    var cufe = (data[8] || '').toString().trim().toUpperCase();
+
+                    // Tolerante a variantes ("ACEPTADA", "ACEPTADO", "Aceptada por DIAN"...)
+                    var esAceptada = cufe.includes('ACEPT');
+                    var esRechazada = cufe.includes('RECHAZ');
+
+                    if (esRechazada) {
+                        row.classList.add('fila-negativa');
+                    } else if (esAceptada) {
+                        row.classList.add('fila-positiva');
+                    }
+                } catch (e) {
+                    console.error('createdRow (CUFE) error:', e);
+                }
+            }
         });
 
         // Tu selección de filas en historialventas.js sigue funcionando (delegada en <tbody>)
