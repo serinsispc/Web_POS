@@ -42,7 +42,7 @@
     var esCO = new System.Globalization.CultureInfo("es-CO");
 
     // Evita nulls y tipado
-    var model =new WebCliente.ViewModels.HistorialVentasViewModels();
+    var model = new WebCliente.ViewModels.HistorialVentasViewModels();
     if (rawJsonObj != null)
     {
         model = Newtonsoft.Json.JsonConvert.DeserializeObject<WebCliente.ViewModels.HistorialVentasViewModels>(rawJsonObj.ToString());
@@ -186,10 +186,9 @@
                         <table id="tablaHV" class="table table-sm table-hover table-hv align-middle mb-0">
                             <thead>
                                 <tr>
+                                    <th data-col="numeroVenta">Número</th>
                                     <th data-col="fechaVenta">Fecha</th>
                                     <th data-col="tipoFactura">Tipo</th>
-                                    <th data-col="prefijo">Prefijo</th>
-                                    <th data-col="numeroVenta">Número</th>
                                     <th class="text-end" data-col="total">Total</th>
                                     <th data-col="formaDePago">Forma de Pago</th>
                                     <th data-col="estadoVenta">Estado</th>
@@ -216,22 +215,20 @@
                                         var dataTotal = (lista.totalVenta ?? 0m).ToString(System.Globalization.CultureInfo.InvariantCulture); // valor crudo
                                         var dataFechaIso = lista.fechaVenta.HasValue ? lista.fechaVenta.Value.ToString("s") : ""; // ISO 8601 "yyyy-MM-ddTHH:mm:ss"
 
-                                        <tr data-idventa="@dataIdVenta"
-                                            data-total="@dataTotal"
-                                            data-fecha="@dataFechaIso"
-                                            data-prefijo="@lista.prefijo"
-                                            data-numero="@lista.numeroVenta">
-                                            <td data-col="fechaVenta">@((lista.fechaVenta ?? DateTime.MinValue).ToString("yyyy-MM-dd HH:mm"))</td>
-                                            <td data-col="tipoFactura">@lista.tipoFactura</td>
-                                            <td data-col="prefijo">@lista.prefijo</td>
-                                            <td data-col="numeroVenta">@lista.numeroVenta</td>
-                                            <td class="text-end" data-col="total">@((lista.totalVenta ?? 0m).ToString("C0", esCO))</td>
-                                            <td data-col="formaDePago">@lista.formaDePago</td>
-                                            <td data-col="estadoVenta">@lista.estadoVenta</td>
-                                            <td data-col="nit">@lista.nit</td>
-                                            <td data-col="nombreCliente" title="@lista.nombreCliente">@lista.nombreCliente</td>
-                                            <td data-col="cufe">@cufeEstado</td>
-                                        </tr>
+                                                                <tr data-idventa="@dataIdVenta"
+                                                                    data-total="@dataTotal"
+                                                                    data-fecha="@dataFechaIso"
+                                                                    data-numero="@lista.numeroVenta">
+                                                                    <td data-col="numeroVenta">@lista.prefijo @lista.numeroVenta</td>
+                                                                    <td data-col="fechaVenta">@((lista.fechaVenta ?? DateTime.MinValue).ToString("yyyy-MM-dd HH:mm"))</td>
+                                                                    <td data-col="tipoFactura">@lista.tipoFactura</td>
+                                                                    <td class="text-end" data-col="total">@((lista.totalVenta ?? 0m).ToString("C0", esCO))</td>
+                                                                    <td data-col="formaDePago">@lista.formaDePago</td>
+                                                                    <td data-col="estadoVenta">@lista.estadoVenta</td>
+                                                                    <td data-col="nit">@lista.nit</td>
+                                                                    <td data-col="nombreCliente" title="@lista.nombreCliente">@lista.nombreCliente</td>
+                                                                    <td data-col="cufe">@cufeEstado</td>
+                                                                </tr>
                                     }
                                 }
                             </tbody>
@@ -410,5 +407,27 @@
     window.ClientesBase64 = "@jsonClientesBase64";
     window.DebeMostrarModalClientes = @(debeMostrarModalClientes ? "true" : "false");
 </script>
+
+
+
+<!-- jQuery (requerido por DataTables) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+<!-- DataTables + Bootstrap 5 + Responsive -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+<!-- Inicialización específica para #tablaHV -->
+<script src="~/Scripts/hv.datatables.js?v=1.0.0"></script>
+
+<!-- Tu JS existente -->
+<script src="~/Scripts/historialventas.js?v=1.9.0"></script>
+
+
+
 
 <script src="~/Scripts/historialventas.js?v=1.9.0"></script>

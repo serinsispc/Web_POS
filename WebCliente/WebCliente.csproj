@@ -161,6 +161,7 @@
     <Content Include="Scripts\carrito.js" />
     <Content Include="Scripts\funciones.js" />
     <Content Include="Scripts\historialventas.js" />
+    <Content Include="Scripts\hv.datatables.js" />
     <Content Include="Scripts\login.js" />
     <Content Include="Scripts\parqueo.js" />
     <Content Include="Scripts\menu.js" />
