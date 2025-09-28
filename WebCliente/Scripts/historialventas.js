@@ -1,12 +1,12 @@
 ﻿/* ======================================
    HISTORIAL VENTAS – LÓGICA DE FRONTEND (sin render de filas)
-   v1.10.0
+   v1.11.0
    --------------------------------------
    - La tabla (#tablaHV) viene renderizada desde Razor/ASP.
    - Este JS NO crea filas ni columnas.
-   - Funciones activas: selección de fila (persistente en otro archivo), envío de
-     formularios, rango de fechas, exportar CSV desde DOM, impresión,
-     modales de resoluciones y clientes (buscar/editar/DIAN/seleccionar).
+   - Funciones activas: selección de fila, envío de formularios, rango de fechas,
+     exportar CSV desde DOM, impresión, modales de resoluciones y clientes
+     (buscar/editar/DIAN/seleccionar). NIT DIAN: solo números.
    ====================================== */
 (function () {
     "use strict";
@@ -16,13 +16,6 @@
     function byId(id) { return document.getElementById(id); }
     function ymd(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0'); }
     function parseDate(val) { var d = val ? new Date(val) : null; return isNaN(d) ? null : d; }
-    function formatDate(d) {
-        if (!d) return "";
-        var yyyy = d.getFullYear(), mm = String(d.getMonth() + 1).padStart(2, "0"),
-            dd = String(d.getDate()).padStart(2, "0"), hh = String(d.getHours()).padStart(2, "0"),
-            mi = String(d.getMinutes()).padStart(2, "0");
-        return yyyy + "-" + mm + "-" + dd + " " + hh + ":" + mi;
-    }
     function decodeBase64(b64) { try { return atob(b64 || ""); } catch { return "[]"; } }
     function decodeB64ToJson(b64) { try { if (!b64) return null; var txt = atob(b64); return JSON.parse(txt); } catch (e) { return null; } }
 
@@ -101,7 +94,7 @@
         });
     }
 
-    // ===== Acciones (placeholders + export + resoluciones)
+    // ===== Acciones (placeholders + export)
     function requireSel() { if (!selected || !selected.idVenta) { alert("Selecciona una venta primero."); return false; } return true; }
 
     function exportCSV() {
@@ -383,7 +376,6 @@
             var c = normalizarCliente(raw);
             var tr = document.createElement("tr");
 
-            // data-* para precargar editor
             tr.setAttribute("data-idcliente", c.id);
             tr.setAttribute("data-nit", c.identificationNumber);
             tr.setAttribute("data-nombre", c.nameCliente);
@@ -429,15 +421,12 @@
         var modalClientesEl = byId("modalClientes");
         if (!modalClientesEl) return;
 
-        // La lista de clientes viene en base64 desde Razor (string JSON)
         var base64 = window.ClientesBase64 || "";
         var clientes = decodeB64ToJson(base64);
         if (!Array.isArray(clientes)) clientes = [];
 
-        // Pinta de entrada
         pintarTablaClientes(clientes);
 
-        // Mostrar modal al cargar si corresponde
         if (window.DebeMostrarModalClientes === true || window.DebeMostrarModalClientes === "true") {
             if (window.bootstrap && bootstrap.Modal) {
                 var modalCli = new bootstrap.Modal(modalClientesEl, { backdrop: "static", keyboard: false });
@@ -445,7 +434,7 @@
             }
         }
 
-        // === BUSCAR (texto libre)
+        // === BUSCAR general por texto
         $('#cli-buscar').on('input', function () {
             var texto = this.value || "";
             var lista = filtrarClientes(clientes, texto);
@@ -455,34 +444,43 @@
             $('#cli-buscar').val('').trigger('input');
         });
 
-        // === CONSULTAR DIAN
+        // === NIT DIAN: SOLO NÚMEROS (input, keydown, paste)
+        (function () {
+            var $nit = $('#cli-dian-nit');
+
+            $nit.on('input', function () {
+                this.value = this.value.replace(/\D/g, '');
+            });
+
+            $nit.on('keydown', function (e) {
+                var k = e.key;
+                var ctrl = e.ctrlKey || e.metaKey;
+                var allowed =
+                    ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'].includes(k) ||
+                    (ctrl && ['a', 'c', 'v', 'x'].includes(k.toLowerCase())) ||
+                    (/^\d$/.test(k));
+                if (!allowed) e.preventDefault();
+                if (k === 'Enter') $('#cli-dian-btn').trigger('click');
+            });
+
+            $nit.on('paste', function (e) {
+                e.preventDefault();
+                var text = (e.originalEvent || e).clipboardData.getData('text') || '';
+                this.value = (this.value + text.replace(/\D/g, '')).slice(0, this.maxLength || 50);
+                $(this).trigger('input');
+            });
+        })();
+
+        // === CONSULTAR DIAN (POST con AntiForgery, sin AJAX) ===
         $('#cli-dian-btn').on('click', function () {
-            var nit = ($('#cli-dian-nit').val() || '').trim();
+            var nit = ($('#cli-dian-nit').val() || '').replace(/\D/g, '').trim();
             if (!nit) { alert('Ingrese un NIT para consultar.'); return; }
 
-            var $btn = $(this);
-            $btn.prop('disabled', true).text('Consultando...');
-            $.getJSON('/Dian/ConsultarNit', { nit: nit })
-                .done(function (data) {
-                    if (data) {
-                        $('#cli-nit').val(data.nit || nit);
-                        $('#cli-nombre').val(data.razonSocial || '');
-                        $('#cli-comercial').val(data.nombreComercial || '');
-                        $('#cli-direccion').val(data.direccion || '');
-                        $('#cli-telefono').val(data.telefono || '');
-                        $('#cli-correo').val(data.correo || '');
-                        $('#cli-editor').removeClass('d-none');
-                        setTimeout(function () {
-                            document.getElementById('cli-editor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                        }, 50);
-                    }
-                })
-                .fail(function (xhr) {
-                    console.error(xhr.responseText || xhr.statusText);
-                    alert('No fue posible consultar la DIAN.');
-                })
-                .always(function () { $btn.prop('disabled', false).text('Consultar DIAN'); });
+            // Envía el NIT al form oculto que postea a BuscarNIT_DIAN
+            $('#nit_dian_hidden').val(nit);
+            $('#formBuscarNIT_DIAN').trigger('submit');
         });
+
 
         // === EDITAR (abre panel)
         $('#tablaClientes').on('click', '.cli-editar', function () {
@@ -547,7 +545,7 @@
             if (!p.Id) { alert('Seleccione un cliente para editar.'); return; }
 
             $.ajax({
-                url: '/Clientes/EditarClienteAjax', // <--- AJUSTA
+                url: '/Clientes/EditarClienteAjax', // <-- AJUSTA
                 type: 'POST',
                 data: JSON.stringify(p),
                 contentType: 'application/json; charset=utf-8'
@@ -567,12 +565,8 @@
                 });
         }
 
-        $('#cli-guardar').on('click', function () {
-            guardarClienteCore({ seleccionar: false });
-        });
-        $('#cli-guardar-y-seleccionar').on('click', function () {
-            guardarClienteCore({ seleccionar: true });
-        });
+        $('#cli-guardar').on('click', function () { guardarClienteCore({ seleccionar: false }); });
+        $('#cli-guardar-y-seleccionar').on('click', function () { guardarClienteCore({ seleccionar: true }); });
 
         // === Seleccionar cliente (envía al servidor tu id)
         $('#tablaClientes').on('click', '.btn-sel-cliente', function () {
@@ -603,7 +597,6 @@
         abrirModalResolucionesSiHayDatos();
         wireSeleccionResolucion();
 
-        // Modal de clientes (UNIFICADO)
         wireModalClientes();
 
         if (window.bootstrap && typeof bootstrap.Tooltip === "function") {

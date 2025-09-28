@@ -69,5 +69,23 @@ namespace RunApi.Funciones
                 return new RespuestaCRUD_api() { estado = false, idAfectado = 0, mensaje = error };
             }
         }
+
+        public static async Task<string> ConsultarToken()
+        {
+            try
+            {
+                var objeto = new { nombreDB = ClassDBCliente.DBCliente };
+                string json= JsonConvert.SerializeObject(objeto);
+                var api= new ClassAPI();
+                var url = $"TokenEmpresa/ConsultarToken";
+                var respuesta=await api.HttpWebRequestPostAsync(url,json, HttpMethod.Post);
+                return respuesta;
+            }
+            catch(Exception ex)
+            {
+                string err = ex.Message;
+                return err;
+            }
+        }
     }
 }

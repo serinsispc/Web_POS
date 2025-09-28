@@ -98,6 +98,14 @@
         <input type="hidden" name="idventa" id="inp-idventa-cliente" value="" />
     }
 
+    @* formulario oculto para buscar nit en la DIAN *@
+    @using (Html.BeginForm("BuscarNIT_DIAN", "HistorialVentas", FormMethod.Post, new { id = "formBuscarNIT_DIAN" }))
+    {
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="nit" id="nit_dian_hidden" />
+    }
+
+
     <!-- FILTROS -->
     <div class="card card-filter shadow-sm mb-3">
         <div class="card-body">
@@ -376,9 +384,9 @@
                     <!-- NUEVO: búsqueda por NIT + botón DIAN -->
                     <div class="col-12 col-md-auto ms-auto">
                         <div class="input-group">
-                            <input id="cli-dian-nit" 
-                                   class="form-control" 
-                                   type="text" 
+                            <input id="cli-dian-nit"
+                                   class="form-control"
+                                   type="text"
                                    inputmode="numeric"
                                    pattern="[0-9]"
                                    maxlength="15"
@@ -523,6 +531,24 @@
 <!-- Tu JS existente -->
 <script src="~/Scripts/historialventas.js?v=1.9.0"></script>
 
+
+
+@if (TempData["AcquirerB64"] != null || TempData["AcquirerMsg"] != null)
+{
+    <script>
+    window.DebeMostrarModalClientes = true;
+    @* objeto base64 cuando encontró *@
+    @if (TempData["AcquirerB64"] != null)
+    {
+      <text>window.AcquirerB64 = '@TempData["AcquirerB64"]';</text>
+    }
+    @* mensaje de no-encontrado *@
+    @if (TempData["AcquirerMsg"] != null)
+    {
+      <text>window.AcquirerMsg = '@(TempData["AcquirerMsg"]?.ToString()?.Replace("'", "\\'"))';</text>
+    }
+    </script>
+}
 
 
 

@@ -1,13 +1,18 @@
 ﻿using Newtonsoft.Json;
+using RunApi.API_DIAN;
 using RunApi.ApiControlers;
 using RunApi.Funciones;
+using RunApi.Funciones.DIAN_API;
 using RunApi.Models.Cliente;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using System.Web.Helpers;
 using System.Web.Mvc;
+using System.Xml.Linq;
 using WebCliente.ViewModels;
 
 namespace WebCliente.Controllers
@@ -173,6 +178,45 @@ namespace WebCliente.Controllers
 
             ModelView(model);
             // Puedes mostrar un toast/alert de éxito en la vista si ya lo manejas
+            return View("Index");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> BuscarNIT_DIAN(int nit)
+        {
+            // Restaura el modelo de sesión y vuelve al Index
+            var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
+
+            //declaramos la variable del token
+            string token= string.Empty;
+            //consultamos el token
+            token =await HistorialVentasAPI.ConsultarToken();
+            //en esta parte hacemos la consulta a la DIAN
+            var reques = new ConsultarNIT_Request();
+            reques.Environment.TypeEnvironmentId = 1;
+            reques.TypeDocumentIdentificationId = 6;
+            reques.IdentificationNumber = nit;
+            var respuesta = await API_DIAN.ConsultarNIT(reques,token);
+
+            if (respuesta.Message == null)
+            {
+                AcquirerDto acquirerDto = new AcquirerDto();
+                acquirerDto.Message = respuesta.Message;
+                acquirerDto.Email = respuesta.Email;
+                acquirerDto.Name = respuesta.Name;
+                acquirerDto.Nit = nit.ToString();
+                var b64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(acquirerDto)));
+                TempData["AcquirerB64"] = b64;
+                ViewBag.DebeMostrarModalClientes = true;
+            }
+            else
+            {
+                TempData["AcquirerMsg"] = respuesta.Message;
+                ViewBag.DebeMostrarModalClientes = true;
+            }
+
+            ModelView(model);
             return View("Index");
         }
 
