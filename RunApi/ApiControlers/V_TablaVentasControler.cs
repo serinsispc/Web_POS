@@ -87,5 +87,22 @@ namespace RunApi.ApiControlers
                 return new List<V_TablaVentas>();
             }
         }
+        public static async Task<V_TablaVentas> ConsultarID(int idventa)
+        {
+            try
+            {
+                var api = new ClassAPI();
+                var objeto = new { nombreDB=ClassDBCliente.DBCliente, idventa=idventa };
+                string json=JsonConvert.SerializeObject(objeto);
+                var url = $"V_TablaVentas/ConsultarID";
+                var resol = await api.HttpWebRequestPostAsync(url,json,HttpMethod.Get);
+                return JsonConvert.DeserializeObject<V_TablaVentas>(resol);
+            }
+            catch(Exception ex)
+            {
+                string error = ex.Message;
+                return null;
+            }
+        }
     }
 }

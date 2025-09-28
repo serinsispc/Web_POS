@@ -235,5 +235,21 @@ namespace WebCliente.Controllers
             return View("Index");
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> EnviarFacturaDIAN(int idventa)
+        {
+            var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
+
+            //codificamos toda la lógica
+            if (idventa > 0)
+            {
+                //llamamos el endpint que se encarga de enviar la factura a la DIAN
+                var respuesta = await API_DIAN.FacturaElectronica(idventa);
+            }
+
+            ModelView(model);
+            return View("Index");
+        }
     }
 }
