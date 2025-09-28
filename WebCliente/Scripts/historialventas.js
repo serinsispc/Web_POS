@@ -1,6 +1,6 @@
 ﻿/* ======================================
    HISTORIAL VENTAS – LÓGICA DE FRONTEND (sin render de filas)
-   v1.14.1
+   v1.14.2
    --------------------------------------
    - Tabla (#tablaHV) renderizada desde Razor/ASP (este JS no crea filas).
    - Funciones: selección de fila, export/print, rango fechas, resoluciones,
@@ -8,9 +8,9 @@
    - NIT DIAN: solo números.
    - Prefill desde DIAN vía TempData (AcquirerB64 / AcquirerMsg). 
      **El editor de cliente se muestra SIEMPRE tanto si hay datos como si no.**
-   - Ajuste solicitado: si NO hay registro en DIAN, además de alertar,
-     el NIT consultado se coloca en #cli-nit y, si hay Session["acquirer"],
-     se prellenan también el resto de campos.
+   - NUEVO: si NO hay registro en DIAN, se muestra alerta y se prellenan
+     TODOS los campos con lo que traiga Session["acquirer"], incluso
+     si vienen vacíos (""), "0" o "-".
    ====================================== */
 (function () {
     "use strict";
@@ -22,9 +22,18 @@
     function parseDate(val) { var d = val ? new Date(val) : null; return isNaN(d) ? null : d; }
     function decodeBase64(b64) { try { return atob(b64 || ""); } catch { return "[]"; } }
     function decodeB64ToJson(b64) { try { if (!b64) return null; var txt = atob(b64); return JSON.parse(txt); } catch (e) { return null; } }
+
+    // Setea valor SOLO si es no vacío (para casos normales)
     function setIfVal(selector, val) {
         var v = (val === null || val === undefined) ? "" : String(val).trim();
-        if (!v) return;
+        var $el = (window.jQuery ? window.jQuery(selector) : null);
+        if ($el && $el.length) { if (v) $el.val(v); return; }
+        var el = document.querySelector(selector);
+        if (el && v) el.value = v;
+    }
+    // Setea valor SIEMPRE (incluso vacío, "0" o "-") – para reflejar exactamente lo que llegue del acquirer
+    function setVal(selector, val) {
+        var v = (val === null || val === undefined) ? "" : String(val);
         var $el = (window.jQuery ? window.jQuery(selector) : null);
         if ($el && $el.length) { $el.val(v); return; }
         var el = document.querySelector(selector);
@@ -612,93 +621,131 @@
             }
         });
 
-        // === Prefill tras retorno de DIAN (Session["acquirer"] => TempData => window.*) ===
+        // === Prefill tras retorno de DIAN (Session["acquirer"] => TempData/DOM => window.*) ===
         (function () {
-            // Siempre mostrar el editor del cliente al regresar de la acción,
-            // haya o no datos encontrados.
-            var regresoDIAN = !!window.AcquirerB64 || !!window.AcquirerMsg;
-            if (!regresoDIAN) return;
+            var modalClientesEl = byId("modalClientes");
+            if (!modalClientesEl) return;
 
-            // Asegura modal abierto
+            // ---------- helpers ----------
+            function q(sel) { return document.querySelector(sel); }
+            function setRaw(sel, val) {
+                var el = q(sel); if (!el) return;
+                el.value = (val === null || val === undefined) ? "" : String(val);
+            }
+            function b64ToJson(b64) {
+                if (!b64) return null;
+                try { return JSON.parse(atob(b64)); } catch (e) { return null; }
+            }
+            function strToObj(s) {
+                if (!s) return null;
+                try { return JSON.parse(s); } catch (e) { return null; }
+            }
+
+            // 1) Leer el adquirente de TODAS las fuentes disponibles
+            function readAcquirer() {
+                // a) del carrier en el DOM (lo que SIEMPRE envías en tu Index.cshtml)
+                var carrier = document.getElementById('acquirerData');
+                if (carrier) {
+                    var b64 = carrier.getAttribute('data-acquirer-json-b64') || "";
+                    var o = b64ToJson(b64);
+                    if (o) return o;
+                }
+                // b) de variables globales si las hubiera
+                if (typeof window.AcquirerB64 === 'string') {
+                    var o2 = b64ToJson(window.AcquirerB64);
+                    if (o2) return o2;
+                    var o3 = strToObj(window.AcquirerB64);
+                    if (o3) return o3;
+                }
+                if (typeof window.Acquirer === 'object' && window.Acquirer) return window.Acquirer;
+                if (typeof window.AcquirerJSON === 'string') {
+                    var o4 = strToObj(window.AcquirerJSON);
+                    if (o4) return o4;
+                }
+                return {};
+            }
+
+            // 2) Decidir si debemos abrir modal y prellenar
+            var acq = readAcquirer();
+            var msg = (typeof window.AcquirerMsg === 'string' && window.AcquirerMsg.trim())
+                ? window.AcquirerMsg.trim()
+                : String(acq.Message ?? acq.message ?? '').trim();
+
+            var debeAbrir = !!msg || Object.keys(acq).length > 0 || window.DebeMostrarModalClientes === true || window.DebeMostrarModalClientes === "true";
+            if (!debeAbrir) return;
+
+            // 3) Abrir modal y mostrar editor
             if (window.bootstrap && bootstrap.Modal) {
                 var inst = bootstrap.Modal.getInstance(modalClientesEl) || new bootstrap.Modal(modalClientesEl, { backdrop: 'static', keyboard: false });
                 inst.show();
             }
-            // Muestra el formulario (editor)
             $('#cli-editor').removeClass('d-none');
 
-            // Tomar NIT consultado del buscador DIAN (fallback)
+            // 4) Construir valores finales (NIT con ‘solo dígitos’ + resto tal cual)
+            var nitHidden = ($('#nit_dian_hidden').val() || '').replace(/\D/g, '');
             var nitQuery = ($('#cli-dian-nit').val() || '').replace(/\D/g, '');
+            var nitFromAcq = String(acq.Nit ?? acq.nit ?? '').replace(/\D/g, '');
+            var finalNit = nitFromAcq || nitHidden || nitQuery;
 
-            // Parsear objeto Session["acquirer"] si llegó
-            var acq = null;
-            if (window.AcquirerB64) {
-                try { acq = JSON.parse(atob(window.AcquirerB64)); } catch (e) { console.error('No se pudo procesar AcquirerB64:', e); }
+            var vals = {
+                nit: finalNit,
+                nombre: String(acq.Name ?? acq.name ?? ''),
+                comercial: String(acq.NombreComercial ?? acq.CommercialName ?? acq.tradeName ?? ''),
+                telefono: String(acq.Telefono ?? acq.Phone ?? acq.phone ?? ''),
+                direccion: String(acq.Direccion ?? acq.Address ?? acq.address ?? ''),
+                correo: String(acq.Email ?? acq.email ?? '')
+            };
+
+            // 5) Escribir SIEMPRE (incluye "", "0" y "-")
+            function applyValues() {
+                setRaw('#cli-nit', vals.nit);
+                setRaw('#cli-dian-nit', vals.nit);
+                setRaw('#cli-nombre', vals.nombre);
+                setRaw('#cli-comercial', vals.comercial);
+                setRaw('#cli-telefono', vals.telefono);
+                setRaw('#cli-direccion', vals.direccion);
+                setRaw('#cli-correo', vals.correo);
             }
 
-            // Normalizar campos desde acq (si existen)
-            var msg = acq ? ((acq.Message !== undefined) ? acq.Message : acq.message) : window.AcquirerMsg;
-            var nitFromAcq = acq ? (acq.Nit ?? acq.nit ?? "") : "";
-            nitFromAcq = nitFromAcq.toString().replace(/\D/g, '');
-            var finalNit = nitFromAcq || nitQuery; // <<--- SIEMPRE colocar NIT consultado si no vino en acq
-
-            var email = acq ? (acq.Email ?? acq.email ?? "") : "";
-            var name = acq ? (acq.Name ?? acq.name ?? "") : "";
-            var comercial = acq ? (acq.NombreComercial ?? acq.CommercialName ?? acq.commercialName ?? acq.tradeName ?? "") : "";
-            var telefono = acq ? (acq.Telefono ?? acq.Phone ?? acq.phone ?? "") : "";
-            var direccion = acq ? (acq.Direccion ?? acq.Address ?? acq.address ?? "") : "";
-
-            // Prellenar SIEMPRE el NIT con el finalNit (aunque no haya registro)
-            setIfVal('#cli-nit', finalNit);
-            // Reflejar también en el buscador DIAN
-            setIfVal('#cli-dian-nit', finalNit);
-
-            // Prellenar otros campos con lo que venga en Session["acquirer"] (si hay)
-            setIfVal('#cli-nombre', name);
-            setIfVal('#cli-correo', email);
-            setIfVal('#cli-comercial', comercial);
-            setIfVal('#cli-telefono', telefono);
-            setIfVal('#cli-direccion', direccion);
-
-            // Mostrar aviso en alert de la página (si existe)
-            if (window.AcquirerMsg) {
+            // Alerta embebida y/o SweetAlert
+            if (msg) {
                 var $al = $('#cli-dian-alert');
-                if ($al.length) {
-                    $al.removeClass('d-none alert-success').addClass('alert alert-warning').text(window.AcquirerMsg);
-                } else {
-                    console.warn('Aviso DIAN:', window.AcquirerMsg);
-                }
+                if ($al.length) $al.removeClass('d-none alert-success').addClass('alert alert-warning').text(msg);
             }
 
-            // ¿No encontrado?
-            var noEncontrado = (msg !== null && msg !== undefined && String(msg).trim() !== "");
-            if (noEncontrado) {
-                showSwal(
-                    'No se encontró registro en la DIAN',
-                    (finalNit ? ('para el NIT ' + finalNit + '. ') : '') + 'Puedes completar o ajustar los datos manualmente.',
-                    'warning'
-                ).then(function () {
-                    // Enfocar primer campo vacío para facilitar la captura
+            // Aplicar ahora, al terminar de abrir el modal, y tras cerrar el SweetAlert
+            applyValues();
+
+            $(modalClientesEl).off('shown.bs.modal.hvacq').on('shown.bs.modal.hvacq', function () {
+                applyValues();
+            });
+
+            if (msg && window.Swal && typeof Swal.fire === 'function') {
+                var texto = (vals.nit ? ('para el NIT ' + vals.nit + '. ') : '') + 'Se cargó la información disponible para que completes los datos.';
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'No se encontró registro en la DIAN',
+                    text: texto,
+                    confirmButtonText: 'Continuar',
+                    allowOutsideClick: false,
+                    allowEscapeKey: true
+                }).then(function () {
+                    applyValues();
+                    // Deja el foco en el primer campo vacío
                     var firstEmpty = ['#cli-nombre', '#cli-comercial', '#cli-telefono', '#cli-direccion', '#cli-correo']
-                        .map(function (sel) { return document.querySelector(sel); })
+                        .map(function (s) { return q(s); })
                         .find(function (el) { return el && (!el.value || String(el.value).trim() === ''); });
                     if (firstEmpty) try { firstEmpty.focus(); } catch { }
                 });
-            } else {
-                // Encontrado: también enfocar primer campo vacío si lo hay
-                setTimeout(function () {
-                    var firstEmpty = ['#cli-nombre', '#cli-comercial', '#cli-telefono', '#cli-direccion', '#cli-correo']
-                        .map(function (sel) { return document.querySelector(sel); })
-                        .find(function (el) { return el && (!el.value || String(el.value).trim() === ''); });
-                    if (firstEmpty) try { firstEmpty.focus(); } catch { }
-                }, 50);
             }
 
-            // Enfoca el formulario en cualquier caso
-            setTimeout(function () {
-                document.getElementById('cli-editor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }, 50);
+            // Debug por si algo falla
+            console.debug('[HV] acquirer (final):', acq);
+            console.debug('[HV] valores aplicados:', vals, 'mensaje:', msg);
         })();
+
+
+
     }
 
     // ===== INIT
