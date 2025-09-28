@@ -507,6 +507,48 @@
 </div>
 
 
+
+
+
+
+<form id="formAcquirer" class="d-none" data-acq-form>
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            <label class="form-label">NIT</label>
+            <input type="text" class="form-control" id="acqNit" data-acq-field="Nit">
+        </div>
+        <div class="col-12 col-md-6">
+            <label class="form-label">Nombre / Razón social</label>
+            <input type="text" class="form-control" id="acqName" data-acq-field="Name">
+        </div>
+        <div class="col-12 col-md-6">
+            <label class="form-label">Nombre comercial</label>
+            <input type="text" class="form-control" id="acqCommercial" data-acq-field="NombreComercial">
+        </div>
+        <div class="col-12 col-md-6">
+            <label class="form-label">Correo</label>
+            <input type="email" class="form-control" id="acqEmail" data-acq-field="Email">
+        </div>
+        <div class="col-12 col-md-6">
+            <label class="form-label">Teléfono</label>
+            <input type="text" class="form-control" id="acqPhone" data-acq-field="Telefono">
+        </div>
+        <div class="col-12">
+            <label class="form-label">Dirección</label>
+            <input type="text" class="form-control" id="acqAddress" data-acq-field="Direccion">
+        </div>
+    </div>
+</form>
+
+
+
+
+
+
+
+
+
+
 <script>
     window.ClientesBase64 = "@jsonClientesBase64";
     window.DebeMostrarModalClientes = @(debeMostrarModalClientes ? "true" : "false");
@@ -549,6 +591,20 @@
     }
     </script>
 }
+
+
+@using System.Text
+@{
+    var rawAcquirer = (string)(Session["acquirer"] ?? "{}");
+    var acquirerB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(rawAcquirer));
+}
+<!-- Portador de datos para el JS -->
+<div id="acquirerData"
+     data-acquirer-json-b64="@acquirerB64">
+</div>
+
+<!-- (Opcional) SweetAlert2 si no lo cargas en el _Layout -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
 

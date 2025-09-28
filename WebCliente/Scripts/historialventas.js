@@ -1,6 +1,6 @@
 ﻿/* ======================================
    HISTORIAL VENTAS – LÓGICA DE FRONTEND (sin render de filas)
-   v1.13.0
+   v1.14.0
    --------------------------------------
    - Tabla (#tablaHV) renderizada desde Razor/ASP (este JS no crea filas).
    - Funciones: selección de fila, export/print, rango fechas, resoluciones,
@@ -8,6 +8,9 @@
    - NIT DIAN: solo números.
    - Prefill desde DIAN vía TempData (AcquirerB64 / AcquirerMsg). 
      **El editor de cliente se muestra SIEMPRE tanto si hay datos como si no.**
+   - NUEVO: Prefill de NombreComercial, Telefono y Direccion desde AcquirerB64.
+           Si DIAN no devuelve registro, muestra SweetAlert2 (si existe)
+           y mantiene el editor visible y prellenado con lo que haya.
    ====================================== */
 (function () {
     "use strict";
@@ -19,6 +22,29 @@
     function parseDate(val) { var d = val ? new Date(val) : null; return isNaN(d) ? null : d; }
     function decodeBase64(b64) { try { return atob(b64 || ""); } catch { return "[]"; } }
     function decodeB64ToJson(b64) { try { if (!b64) return null; var txt = atob(b64); return JSON.parse(txt); } catch (e) { return null; } }
+    function setIfVal(selector, val) {
+        var v = (val === null || val === undefined) ? "" : String(val).trim();
+        if (!v) return;
+        var $el = (window.jQuery ? window.jQuery(selector) : null);
+        if ($el && $el.length) { $el.val(v); return; }
+        var el = document.querySelector(selector);
+        if (el) el.value = v;
+    }
+    function showSwal(title, text, icon) {
+        if (window.Swal && typeof window.Swal.fire === "function") {
+            return window.Swal.fire({
+                icon: icon || "info",
+                title: title || "Aviso",
+                text: text || "",
+                confirmButtonText: "Continuar",
+                allowOutsideClick: false,
+                allowEscapeKey: true
+            });
+        } else {
+            alert((title ? title + ": " : "") + (text || ""));
+            return Promise.resolve();
+        }
+    }
 
     // ===== Estado de la UI
     var selected = null; // { idVenta, total, fechaVenta, prefijo, numeroVenta, ... }
@@ -591,57 +617,89 @@
             // Siempre mostrar el editor del cliente al regresar de la acción,
             // haya o no datos encontrados.
             var regresoDIAN = !!window.AcquirerB64 || !!window.AcquirerMsg;
-            if (regresoDIAN) {
-                // Asegura modal abierto
-                if (window.bootstrap && bootstrap.Modal) {
-                    var inst = bootstrap.Modal.getInstance(modalClientesEl) || new bootstrap.Modal(modalClientesEl, { backdrop: 'static', keyboard: false });
-                    inst.show();
-                }
-                // Muestra el formulario (editor)
-                $('#cli-editor').removeClass('d-none');
+            if (!regresoDIAN) return;
 
-                // Si vino mensaje de NO ENCONTRADO, muéstralo (pero mantenemos el formulario visible)
-                if (window.AcquirerMsg) {
-                    var $al = $('#cli-dian-alert');
-                    if ($al.length) {
-                        $al.removeClass('d-none alert-success').addClass('alert alert-warning').text(window.AcquirerMsg);
-                    } else {
-                        // Fallback
-                        console.warn('Aviso DIAN:', window.AcquirerMsg);
-                    }
-                }
-
-                // Si vino objeto ENCONTRADO (Message == null), prellenar campos
-                if (window.AcquirerB64) {
-                    try {
-                        var acq = JSON.parse(atob(window.AcquirerB64)); // { Message, Email, Name, Nit } (PascalCase)
-                        var msg = (acq.Message !== undefined) ? acq.Message : acq.message;
-                        var email = (acq.Email !== undefined) ? acq.Email : acq.email;
-                        var name = (acq.Name !== undefined) ? acq.Name : acq.name;
-                        var nit = (acq.Nit !== undefined) ? acq.Nit : acq.nit;
-
-                        // Pasa a solo dígitos por coherencia
-                        nit = (nit || '').toString().replace(/\D/g, '');
-
-                        if (msg === null) { // encontrado
-                            $('#cli-nit').val(nit);
-                            $('#cli-nombre').val((name || '').toString().trim());
-                            $('#cli-correo').val((email || '').toString().trim());
-
-                            // Refleja el NIT también en el buscador DIAN
-                            $('#cli-dian-nit').val(nit);
-                        }
-                    } catch (e) {
-                        console.error('No se pudo procesar AcquirerB64:', e);
-                    }
-                }
-
-                // Enfoca el formulario
-                setTimeout(function () {
-                    document.getElementById('cli-editor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    $('#cli-nombre').trigger('focus');
-                }, 50);
+            // Asegura modal abierto
+            if (window.bootstrap && bootstrap.Modal) {
+                var inst = bootstrap.Modal.getInstance(modalClientesEl) || new bootstrap.Modal(modalClientesEl, { backdrop: 'static', keyboard: false });
+                inst.show();
             }
+            // Muestra el formulario (editor)
+            $('#cli-editor').removeClass('d-none');
+
+            // Si vino mensaje de NO ENCONTRADO, mostrarlo (además usaremos SweetAlert2 más abajo)
+            if (window.AcquirerMsg) {
+                var $al = $('#cli-dian-alert');
+                if ($al.length) {
+                    $al.removeClass('d-none alert-success').addClass('alert alert-warning').text(window.AcquirerMsg);
+                } else {
+                    console.warn('Aviso DIAN:', window.AcquirerMsg);
+                }
+            }
+
+            // Prefill desde objeto (tanto si hay encontrado como si no)
+            if (window.AcquirerB64) {
+                try {
+                    var acq = JSON.parse(atob(window.AcquirerB64)); // { Message, Email, Name, Nit, NombreComercial, Telefono, Direccion }
+                    // Normaliza llaves posibles
+                    var msg = (acq.Message !== undefined) ? acq.Message : acq.message;
+                    var email = acq.Email ?? acq.email ?? "";
+                    var name = acq.Name ?? acq.name ?? "";
+                    var nit = (acq.Nit ?? acq.nit ?? "").toString().replace(/\D/g, '');
+                    var comercial = acq.NombreComercial ?? acq.CommercialName ?? acq.commercialName ?? acq.tradeName ?? "";
+                    var telefono = acq.Telefono ?? acq.Phone ?? acq.phone ?? "";
+                    var direccion = acq.Direccion ?? acq.Address ?? acq.address ?? "";
+
+                    // Poner siempre lo que exista (no vacíos)
+                    setIfVal('#cli-nit', nit);
+                    setIfVal('#cli-nombre', name);
+                    setIfVal('#cli-correo', email);
+                    setIfVal('#cli-comercial', comercial);
+                    setIfVal('#cli-telefono', telefono);
+                    setIfVal('#cli-direccion', direccion);
+
+                    // Refleja el NIT también en el buscador DIAN
+                    setIfVal('#cli-dian-nit', nit);
+
+                    // Si NO encontrado (msg no vacío/definido distinto de null), mostrar SweetAlert
+                    var noEncontrado = (msg !== null && msg !== undefined && String(msg).trim() !== "");
+                    if (noEncontrado) {
+                        showSwal(
+                            'No se encontró registro en la DIAN',
+                            (nit ? ('para el NIT ' + nit + '. ') : '') + 'Puedes completar o ajustar los datos manualmente.',
+                            'warning'
+                        ).then(function () {
+                            // Enfocar primer campo vacío
+                            var firstEmpty = ['#cli-nit', '#cli-nombre', '#cli-comercial', '#cli-telefono', '#cli-direccion', '#cli-correo']
+                                .map(function (sel) { return document.querySelector(sel); })
+                                .find(function (el) { return el && (!el.value || String(el.value).trim() === ''); });
+                            if (firstEmpty) try { firstEmpty.focus(); } catch { }
+                        });
+                    } else {
+                        // Encontrado: enfocar primer campo vacío igualmente
+                        setTimeout(function () {
+                            var firstEmpty = ['#cli-nombre', '#cli-comercial', '#cli-telefono', '#cli-direccion', '#cli-correo']
+                                .map(function (sel) { return document.querySelector(sel); })
+                                .find(function (el) { return el && (!el.value || String(el.value).trim() === ''); });
+                            if (firstEmpty) try { firstEmpty.focus(); } catch { }
+                        }, 50);
+                    }
+                } catch (e) {
+                    console.error('No se pudo procesar AcquirerB64:', e);
+                }
+            } else if (window.AcquirerMsg) {
+                // No llegó objeto, pero sí mensaje: SweetAlert igualmente
+                showSwal(
+                    'No se encontró registro en la DIAN',
+                    'Puedes completar o ajustar los datos manualmente.',
+                    'warning'
+                );
+            }
+
+            // Enfoca el formulario en cualquier caso
+            setTimeout(function () {
+                document.getElementById('cli-editor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 50);
         })();
     }
 
