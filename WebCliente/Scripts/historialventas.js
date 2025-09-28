@@ -1,6 +1,6 @@
 ﻿/* ======================================
    HISTORIAL VENTAS – LÓGICA DE FRONTEND (sin render de filas)
-   v1.14.0
+   v1.14.1
    --------------------------------------
    - Tabla (#tablaHV) renderizada desde Razor/ASP (este JS no crea filas).
    - Funciones: selección de fila, export/print, rango fechas, resoluciones,
@@ -8,9 +8,9 @@
    - NIT DIAN: solo números.
    - Prefill desde DIAN vía TempData (AcquirerB64 / AcquirerMsg). 
      **El editor de cliente se muestra SIEMPRE tanto si hay datos como si no.**
-   - NUEVO: Prefill de NombreComercial, Telefono y Direccion desde AcquirerB64.
-           Si DIAN no devuelve registro, muestra SweetAlert2 (si existe)
-           y mantiene el editor visible y prellenado con lo que haya.
+   - Ajuste solicitado: si NO hay registro en DIAN, además de alertar,
+     el NIT consultado se coloca en #cli-nit y, si hay Session["acquirer"],
+     se prellenan también el resto de campos.
    ====================================== */
 (function () {
     "use strict";
@@ -627,7 +627,40 @@
             // Muestra el formulario (editor)
             $('#cli-editor').removeClass('d-none');
 
-            // Si vino mensaje de NO ENCONTRADO, mostrarlo (además usaremos SweetAlert2 más abajo)
+            // Tomar NIT consultado del buscador DIAN (fallback)
+            var nitQuery = ($('#cli-dian-nit').val() || '').replace(/\D/g, '');
+
+            // Parsear objeto Session["acquirer"] si llegó
+            var acq = null;
+            if (window.AcquirerB64) {
+                try { acq = JSON.parse(atob(window.AcquirerB64)); } catch (e) { console.error('No se pudo procesar AcquirerB64:', e); }
+            }
+
+            // Normalizar campos desde acq (si existen)
+            var msg = acq ? ((acq.Message !== undefined) ? acq.Message : acq.message) : window.AcquirerMsg;
+            var nitFromAcq = acq ? (acq.Nit ?? acq.nit ?? "") : "";
+            nitFromAcq = nitFromAcq.toString().replace(/\D/g, '');
+            var finalNit = nitFromAcq || nitQuery; // <<--- SIEMPRE colocar NIT consultado si no vino en acq
+
+            var email = acq ? (acq.Email ?? acq.email ?? "") : "";
+            var name = acq ? (acq.Name ?? acq.name ?? "") : "";
+            var comercial = acq ? (acq.NombreComercial ?? acq.CommercialName ?? acq.commercialName ?? acq.tradeName ?? "") : "";
+            var telefono = acq ? (acq.Telefono ?? acq.Phone ?? acq.phone ?? "") : "";
+            var direccion = acq ? (acq.Direccion ?? acq.Address ?? acq.address ?? "") : "";
+
+            // Prellenar SIEMPRE el NIT con el finalNit (aunque no haya registro)
+            setIfVal('#cli-nit', finalNit);
+            // Reflejar también en el buscador DIAN
+            setIfVal('#cli-dian-nit', finalNit);
+
+            // Prellenar otros campos con lo que venga en Session["acquirer"] (si hay)
+            setIfVal('#cli-nombre', name);
+            setIfVal('#cli-correo', email);
+            setIfVal('#cli-comercial', comercial);
+            setIfVal('#cli-telefono', telefono);
+            setIfVal('#cli-direccion', direccion);
+
+            // Mostrar aviso en alert de la página (si existe)
             if (window.AcquirerMsg) {
                 var $al = $('#cli-dian-alert');
                 if ($al.length) {
@@ -637,63 +670,28 @@
                 }
             }
 
-            // Prefill desde objeto (tanto si hay encontrado como si no)
-            if (window.AcquirerB64) {
-                try {
-                    var acq = JSON.parse(atob(window.AcquirerB64)); // { Message, Email, Name, Nit, NombreComercial, Telefono, Direccion }
-                    // Normaliza llaves posibles
-                    var msg = (acq.Message !== undefined) ? acq.Message : acq.message;
-                    var email = acq.Email ?? acq.email ?? "";
-                    var name = acq.Name ?? acq.name ?? "";
-                    var nit = (acq.Nit ?? acq.nit ?? "").toString().replace(/\D/g, '');
-                    var comercial = acq.NombreComercial ?? acq.CommercialName ?? acq.commercialName ?? acq.tradeName ?? "";
-                    var telefono = acq.Telefono ?? acq.Phone ?? acq.phone ?? "";
-                    var direccion = acq.Direccion ?? acq.Address ?? acq.address ?? "";
-
-                    // Poner siempre lo que exista (no vacíos)
-                    setIfVal('#cli-nit', nit);
-                    setIfVal('#cli-nombre', name);
-                    setIfVal('#cli-correo', email);
-                    setIfVal('#cli-comercial', comercial);
-                    setIfVal('#cli-telefono', telefono);
-                    setIfVal('#cli-direccion', direccion);
-
-                    // Refleja el NIT también en el buscador DIAN
-                    setIfVal('#cli-dian-nit', nit);
-
-                    // Si NO encontrado (msg no vacío/definido distinto de null), mostrar SweetAlert
-                    var noEncontrado = (msg !== null && msg !== undefined && String(msg).trim() !== "");
-                    if (noEncontrado) {
-                        showSwal(
-                            'No se encontró registro en la DIAN',
-                            (nit ? ('para el NIT ' + nit + '. ') : '') + 'Puedes completar o ajustar los datos manualmente.',
-                            'warning'
-                        ).then(function () {
-                            // Enfocar primer campo vacío
-                            var firstEmpty = ['#cli-nit', '#cli-nombre', '#cli-comercial', '#cli-telefono', '#cli-direccion', '#cli-correo']
-                                .map(function (sel) { return document.querySelector(sel); })
-                                .find(function (el) { return el && (!el.value || String(el.value).trim() === ''); });
-                            if (firstEmpty) try { firstEmpty.focus(); } catch { }
-                        });
-                    } else {
-                        // Encontrado: enfocar primer campo vacío igualmente
-                        setTimeout(function () {
-                            var firstEmpty = ['#cli-nombre', '#cli-comercial', '#cli-telefono', '#cli-direccion', '#cli-correo']
-                                .map(function (sel) { return document.querySelector(sel); })
-                                .find(function (el) { return el && (!el.value || String(el.value).trim() === ''); });
-                            if (firstEmpty) try { firstEmpty.focus(); } catch { }
-                        }, 50);
-                    }
-                } catch (e) {
-                    console.error('No se pudo procesar AcquirerB64:', e);
-                }
-            } else if (window.AcquirerMsg) {
-                // No llegó objeto, pero sí mensaje: SweetAlert igualmente
+            // ¿No encontrado?
+            var noEncontrado = (msg !== null && msg !== undefined && String(msg).trim() !== "");
+            if (noEncontrado) {
                 showSwal(
                     'No se encontró registro en la DIAN',
-                    'Puedes completar o ajustar los datos manualmente.',
+                    (finalNit ? ('para el NIT ' + finalNit + '. ') : '') + 'Puedes completar o ajustar los datos manualmente.',
                     'warning'
-                );
+                ).then(function () {
+                    // Enfocar primer campo vacío para facilitar la captura
+                    var firstEmpty = ['#cli-nombre', '#cli-comercial', '#cli-telefono', '#cli-direccion', '#cli-correo']
+                        .map(function (sel) { return document.querySelector(sel); })
+                        .find(function (el) { return el && (!el.value || String(el.value).trim() === ''); });
+                    if (firstEmpty) try { firstEmpty.focus(); } catch { }
+                });
+            } else {
+                // Encontrado: también enfocar primer campo vacío si lo hay
+                setTimeout(function () {
+                    var firstEmpty = ['#cli-nombre', '#cli-comercial', '#cli-telefono', '#cli-direccion', '#cli-correo']
+                        .map(function (sel) { return document.querySelector(sel); })
+                        .find(function (el) { return el && (!el.value || String(el.value).trim() === ''); });
+                    if (firstEmpty) try { firstEmpty.focus(); } catch { }
+                }, 50);
             }
 
             // Enfoca el formulario en cualquier caso

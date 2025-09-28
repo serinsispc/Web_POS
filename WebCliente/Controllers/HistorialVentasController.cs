@@ -222,7 +222,7 @@ namespace WebCliente.Controllers
                 acquirerDto.Email = "";
                 acquirerDto.Name = "";
                 acquirerDto.Nit = nit.ToString();
-                acquirerDto.NombreComercial = respuesta.Name;
+                acquirerDto.NombreComercial = "";
                 acquirerDto.Telefono = "0";
                 acquirerDto.Direccion = "-";
                 string acquirer = JsonConvert.SerializeObject(acquirerDto);
