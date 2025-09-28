@@ -281,3 +281,13 @@
 }
 
 
+
+
+/* Fila activa “pegada” */
+#tablaHV tbody tr.fila-activa:not(.child) > * {
+    --bs-table-bg: #e7f1ff; /* azul suave */
+    --bs-table-color: inherit;
+    box-shadow: inset 3px 0 0 #0d6efd; /* barrita azul a la izquierda */
+}
+
+

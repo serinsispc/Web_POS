@@ -22,7 +22,6 @@
         if ($tabla.length === 0) return;
 
         var dt = $tabla.DataTable({
-            // Layout con padding y separación entre "Mostrar" y "Buscar"
             dom:
                 "<'dt-top d-flex flex-wrap align-items-center gap-2 px-2' l f>" +
                 "t" +
@@ -44,11 +43,8 @@
             paging: true,
             pageLength: 25,
             lengthMenu: [10, 25, 50, 100],
-
-            // Orden por Fecha (col 1)
             order: [[1, 'desc']],
 
-            // Definición de columnas visibles (CUFE va oculta)
             columns: [
                 { className: 'all' },                   // 0 Número
                 { className: 'all' },                   // 1 Fecha
@@ -58,7 +54,7 @@
                 { className: '' },                      // 5 Estado
                 { className: '' },                      // 6 NIT
                 { className: '' },                      // 7 Cliente
-                { className: '' }                       // 8 CUFE (OCULTA)
+                { className: '' }                       // 8 CUFE (oculta)
             ],
 
             columnDefs: [
@@ -68,7 +64,6 @@
                 { responsivePriority: 7, targets: 5 }, // Estado
                 { responsivePriority: 8, targets: 6 }, // NIT
 
-                // Total: orden numérico correcto
                 {
                     targets: 3,
                     render: function (data, type) {
@@ -77,24 +72,18 @@
                     }
                 },
 
-                // CUFE: oculto pero disponible para lógica y sin búsqueda
-                { targets: 8, visible: false, searchable: false }
+                { targets: 8, visible: false, searchable: false } // CUFE
             ],
 
             language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json' },
             deferRender: true,
             stateSave: true,
 
-            // === Pintar fila completa SOLO por CUFE (col 8) ===
             createdRow: function (row, data) {
                 try {
-                    // data[8] existe aunque la columna esté oculta
                     var cufe = (data[8] || '').toString().trim().toUpperCase();
-
-                    // Tolerante a variantes ("ACEPTADA", "ACEPTADO", "Aceptada por DIAN"...)
                     var esAceptada = cufe.includes('ACEPT');
                     var esRechazada = cufe.includes('RECHAZ');
-
                     if (esRechazada) {
                         row.classList.add('fila-negativa');
                     } else if (esAceptada) {
@@ -106,7 +95,61 @@
             }
         });
 
-        // Tu selección de filas en historialventas.js sigue funcionando (delegada en <tbody>)
+        // === Selección persistente con autoscroll ===
+        var STORAGE_KEY = 'HV_idventa_seleccionada';
+
+        // Click para seleccionar y guardar
+        $('#tablaHV tbody').on('click', 'tr', function (e) {
+            if ($(e.target).closest('a,button,.btn,input,label,.dropdown-item').length) return;
+            var id = this.getAttribute('data-idventa');
+            if (!id) return;
+
+            $('#tablaHV tbody tr.fila-activa').removeClass('fila-activa');
+            this.classList.add('fila-activa');
+            sessionStorage.setItem(STORAGE_KEY, id);
+        });
+
+        function reselectStickyRow() {
+            var id = sessionStorage.getItem(STORAGE_KEY);
+            if (!id) return;
+
+            var targetIdx = null, targetNode = null;
+            dt.rows({ search: 'applied', page: 'all' }).every(function (rowIdx) {
+                var node = this.node();
+                if (node && node.getAttribute('data-idventa') === id) {
+                    targetIdx = rowIdx; targetNode = node;
+                    return false; // break
+                }
+            });
+            if (targetIdx == null) return;
+
+            var info = dt.page.info();
+            var pageLen = info.length;
+            var targetPage = Math.floor(targetIdx / pageLen);
+
+            function highlightAndScroll() {
+                $('#tablaHV tbody tr.fila-activa').removeClass('fila-activa');
+                if (targetNode && document.body.contains(targetNode)) {
+                    targetNode.classList.add('fila-activa');
+                    targetNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+
+            if (info.page !== targetPage) {
+                dt.page(targetPage).draw('page');
+                setTimeout(highlightAndScroll, 60);
+            } else {
+                highlightAndScroll();
+            }
+        }
+
+        dt.on('draw', reselectStickyRow);
+        dt.on('responsive-display', reselectStickyRow);
+        reselectStickyRow();
+
+        window.HV_GetIdVentaSeleccionada = function () {
+            return sessionStorage.getItem(STORAGE_KEY) || null;
+        };
     });
 
 })();
