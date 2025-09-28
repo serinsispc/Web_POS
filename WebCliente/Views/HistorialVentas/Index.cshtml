@@ -105,6 +105,13 @@
         <input type="hidden" name="nit" id="nit_dian_hidden" />
     }
 
+    @* formulario oculto para enviar factura DIAN *@
+    @using (Html.BeginForm("EnviarFacturaDIAN", "HistorialVentas", FormMethod.Post, new { id = "formEnviarDIAN", style = "display:none;" }))
+    {
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="idventa" id="inp-idventa-enviar" value="0" />
+    }
+
 
     <!-- FILTROS -->
     <div class="card card-filter shadow-sm mb-3">
@@ -190,7 +197,7 @@
         <div class="col-12 col-lg-9">
             <div class="card shadow-sm">
                 <div class="card-body p-0">
-                    <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                    <div class="table-responsive">
                         <table id="tablaHV" class="table table-sm table-hover table-hv align-middle mb-0">
                             <thead>
                                 <tr>
@@ -569,10 +576,6 @@
 
 <!-- Inicialización específica para #tablaHV -->
 <script src="~/Scripts/hv.datatables.js?v=1.0.0"></script>
-
-<!-- Tu JS existente -->
-<script src="~/Scripts/historialventas.js?v=1.9.0"></script>
-
 
 
 @if (TempData["AcquirerB64"] != null || TempData["AcquirerMsg"] != null)

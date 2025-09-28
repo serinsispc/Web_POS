@@ -20,13 +20,13 @@ namespace RunApi.Funciones
                 string json = JsonConvert.SerializeObject(objeto);
                 var api = new ClassAPI();
                 var url = $"GetDataFactura_JSON/ConsultarFactura_ID";
-                var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Get);
+                var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Post);
                 return JsonConvert.DeserializeObject<GetDataFactura_JSON>(resp);
             }
             catch (Exception ex)
             {
                 string msg = ex.Message;
-                return 0;
+                return new GetDataFactura_JSON();
             }
         }
     }

@@ -286,10 +286,18 @@ namespace RunApi.Funciones.DIAN_API
             /****************************************************************************/
             var url = $"/api/ubl2.1/invoice/";
             var json = JsonConvert.SerializeObject(facturaNacional);
-            var rspuestaAPI = await classAPI.HttpWebRequestPostAsync(json,url,HttpMethod.Post,true,token.Replace("\"", ""));
+            var rspuestaAPI = await classAPI.HttpWebRequestPostAsync(url,json,HttpMethod.Post,true,token.Replace("\"", ""));
 
-            FacturaElectronica_Respons facturaNacionalRespuesta = JsonConvert.DeserializeObject<FacturaElectronica_Respons>(json);
-            return "--";
+            FacturaElectronica_Respons facturaNacionalRespuesta = JsonConvert.DeserializeObject<FacturaElectronica_Respons>(rspuestaAPI);
+            //en esta parte preguntamos si es valido
+            if (facturaNacionalRespuesta != null)
+            {
+                if (facturaNacionalRespuesta.is_valid)
+                {
+
+                }
+            }
+            return JsonConvert.SerializeObject(facturaNacionalRespuesta);
         }
     }
 }

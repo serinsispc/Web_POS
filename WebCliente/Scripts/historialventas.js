@@ -246,7 +246,7 @@
         byId("actPosAElectronica")?.addEventListener("click", function () { if (!requireSel()) return; alert("POS a Electrónica (placeholder)"); });
         byId("actClonar")?.addEventListener("click", function () { if (!requireSel()) return; alert("Clonar (placeholder)"); });
         byId("actAumentarNumero")?.addEventListener("click", function () { if (!requireSel()) return; alert("Aumentar número (placeholder)"); });
-        byId("actEnviarDIAN")?.addEventListener("click", function () { if (!requireSel()) return; alert("Enviar DIAN (placeholder)"); });
+     
         byId("actDescargarFactura")?.addEventListener("click", function () { if (!requireSel()) return; alert("Descargar Factura (placeholder)"); });
 
         // **Resoluciones**
@@ -272,6 +272,29 @@
             inp.value = idv;
             form.submit();
         });
+
+
+        /* Enviar factura DIAN */
+        byId("actEnviarDIAN")?.addEventListener("click", function () {
+            if (!requireSel()) return;
+
+            var form = byId("formEnviarDIAN");
+            var inp = byId("inp-idventa-enviar");
+            if (!form || !inp) {
+                alert("No se encontró el formulario para enviar a la DIAN.");
+                return;
+            }
+
+            var idv = selected.idVenta || 0;
+            if (!idv || idv <= 0) {
+                alert("No se pudo determinar el id de la venta seleccionada.");
+                return;
+            }
+
+            inp.value = idv;
+            form.submit();
+        });
+
     }
 
     // ====== RESOLUCIONES (Modal)

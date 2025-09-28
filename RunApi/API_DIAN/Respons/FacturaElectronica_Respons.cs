@@ -10,7 +10,7 @@ namespace RunApi.API_DIAN.Respons
     {
         public string message { get; set; }
         public int type_environment_id { get; set; }
-        public bool? is_valid { get; set; }
+        public bool is_valid { get; set; }
         public object is_restored { get; set; }
         public object algorithm { get; set; }
         public string number { get; set; }

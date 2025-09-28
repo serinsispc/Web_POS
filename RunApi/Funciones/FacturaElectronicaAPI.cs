@@ -21,7 +21,7 @@ namespace RunApi.Funciones
                 string json=JsonConvert.SerializeObject(objeto);
                 var api = new ClassAPI();
                 var url = $"FacturaElectronica/ConsultarConsecutivo";
-                var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Get);
+                var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Post);
                 return JsonConvert.DeserializeObject<int>(resp);
             }
             catch(Exception ex)
