@@ -12,6 +12,9 @@ namespace RunApi.API_DIAN
         public string Email { get; set; } = "";
         public string Name { get; set; } = "";
         public string Nit { get; set; }           // lo agregamos para reenviar el NIT consultado
+        public string NombreComercial { get; set; }           // lo agregamos para reenviar el NIT consultado
+        public string Telefono { get; set; }           // lo agregamos para reenviar el NIT consultado
+        public string Direccion { get; set; }           // lo agregamos para reenviar el NIT consultado
     }
 
 }

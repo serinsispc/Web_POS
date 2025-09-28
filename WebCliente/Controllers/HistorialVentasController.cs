@@ -206,13 +206,28 @@ namespace WebCliente.Controllers
                 acquirerDto.Email = respuesta.Email;
                 acquirerDto.Name = respuesta.Name;
                 acquirerDto.Nit = nit.ToString();
+                acquirerDto.NombreComercial = respuesta.Name;
+                acquirerDto.Telefono = "0";
+                acquirerDto.Direccion = "-";
                 var b64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(acquirerDto)));
+                string acquirer = JsonConvert.SerializeObject(acquirerDto);
+                Session["acquirer"] = acquirer;
                 TempData["AcquirerB64"] = b64;
                 ViewBag.DebeMostrarModalClientes = true;
             }
             else
             {
-                TempData["AcquirerMsg"] = respuesta.Message;
+                AcquirerDto acquirerDto = new AcquirerDto();
+                acquirerDto.Message = respuesta.Message;
+                acquirerDto.Email = "";
+                acquirerDto.Name = "";
+                acquirerDto.Nit = nit.ToString();
+                acquirerDto.NombreComercial = respuesta.Name;
+                acquirerDto.Telefono = "0";
+                acquirerDto.Direccion = "-";
+                string acquirer = JsonConvert.SerializeObject(acquirerDto);
+                Session["acquirer"] = acquirer;
+                TempData["AcquirerMsg"] = $"No se encontro el NIT:{nit}";
                 ViewBag.DebeMostrarModalClientes = true;
             }
 

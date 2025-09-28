@@ -1,12 +1,13 @@
 ﻿/* ======================================
    HISTORIAL VENTAS – LÓGICA DE FRONTEND (sin render de filas)
-   v1.11.0
+   v1.13.0
    --------------------------------------
-   - La tabla (#tablaHV) viene renderizada desde Razor/ASP.
-   - Este JS NO crea filas ni columnas.
-   - Funciones activas: selección de fila, envío de formularios, rango de fechas,
-     exportar CSV desde DOM, impresión, modales de resoluciones y clientes
-     (buscar/editar/DIAN/seleccionar). NIT DIAN: solo números.
+   - Tabla (#tablaHV) renderizada desde Razor/ASP (este JS no crea filas).
+   - Funciones: selección de fila, export/print, rango fechas, resoluciones,
+     clientes (buscar/editar/DIAN/seleccionar).
+   - NIT DIAN: solo números.
+   - Prefill desde DIAN vía TempData (AcquirerB64 / AcquirerMsg). 
+     **El editor de cliente se muestra SIEMPRE tanto si hay datos como si no.**
    ====================================== */
 (function () {
     "use strict";
@@ -427,7 +428,8 @@
 
         pintarTablaClientes(clientes);
 
-        if (window.DebeMostrarModalClientes === true || window.DebeMostrarModalClientes === "true") {
+        // Abre el modal si así se indicó, o si hay respuesta de DIAN (encontrado/no encontrado)
+        if (window.DebeMostrarModalClientes === true || window.DebeMostrarModalClientes === "true" || window.AcquirerB64 || window.AcquirerMsg) {
             if (window.bootstrap && bootstrap.Modal) {
                 var modalCli = new bootstrap.Modal(modalClientesEl, { backdrop: "static", keyboard: false });
                 modalCli.show();
@@ -480,7 +482,6 @@
             $('#nit_dian_hidden').val(nit);
             $('#formBuscarNIT_DIAN').trigger('submit');
         });
-
 
         // === EDITAR (abre panel)
         $('#tablaClientes').on('click', '.cli-editar', function () {
@@ -584,6 +585,64 @@
                 form.submit();
             }
         });
+
+        // === Prefill tras retorno de DIAN (Session["acquirer"] => TempData => window.*) ===
+        (function () {
+            // Siempre mostrar el editor del cliente al regresar de la acción,
+            // haya o no datos encontrados.
+            var regresoDIAN = !!window.AcquirerB64 || !!window.AcquirerMsg;
+            if (regresoDIAN) {
+                // Asegura modal abierto
+                if (window.bootstrap && bootstrap.Modal) {
+                    var inst = bootstrap.Modal.getInstance(modalClientesEl) || new bootstrap.Modal(modalClientesEl, { backdrop: 'static', keyboard: false });
+                    inst.show();
+                }
+                // Muestra el formulario (editor)
+                $('#cli-editor').removeClass('d-none');
+
+                // Si vino mensaje de NO ENCONTRADO, muéstralo (pero mantenemos el formulario visible)
+                if (window.AcquirerMsg) {
+                    var $al = $('#cli-dian-alert');
+                    if ($al.length) {
+                        $al.removeClass('d-none alert-success').addClass('alert alert-warning').text(window.AcquirerMsg);
+                    } else {
+                        // Fallback
+                        console.warn('Aviso DIAN:', window.AcquirerMsg);
+                    }
+                }
+
+                // Si vino objeto ENCONTRADO (Message == null), prellenar campos
+                if (window.AcquirerB64) {
+                    try {
+                        var acq = JSON.parse(atob(window.AcquirerB64)); // { Message, Email, Name, Nit } (PascalCase)
+                        var msg = (acq.Message !== undefined) ? acq.Message : acq.message;
+                        var email = (acq.Email !== undefined) ? acq.Email : acq.email;
+                        var name = (acq.Name !== undefined) ? acq.Name : acq.name;
+                        var nit = (acq.Nit !== undefined) ? acq.Nit : acq.nit;
+
+                        // Pasa a solo dígitos por coherencia
+                        nit = (nit || '').toString().replace(/\D/g, '');
+
+                        if (msg === null) { // encontrado
+                            $('#cli-nit').val(nit);
+                            $('#cli-nombre').val((name || '').toString().trim());
+                            $('#cli-correo').val((email || '').toString().trim());
+
+                            // Refleja el NIT también en el buscador DIAN
+                            $('#cli-dian-nit').val(nit);
+                        }
+                    } catch (e) {
+                        console.error('No se pudo procesar AcquirerB64:', e);
+                    }
+                }
+
+                // Enfoca el formulario
+                setTimeout(function () {
+                    document.getElementById('cli-editor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    $('#cli-nombre').trigger('focus');
+                }, 50);
+            }
+        })();
     }
 
     // ===== INIT
