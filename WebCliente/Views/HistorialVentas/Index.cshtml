@@ -215,20 +215,20 @@
                                         var dataTotal = (lista.totalVenta ?? 0m).ToString(System.Globalization.CultureInfo.InvariantCulture); // valor crudo
                                         var dataFechaIso = lista.fechaVenta.HasValue ? lista.fechaVenta.Value.ToString("s") : ""; // ISO 8601 "yyyy-MM-ddTHH:mm:ss"
 
-                                                                <tr data-idventa="@dataIdVenta"
-                                                                    data-total="@dataTotal"
-                                                                    data-fecha="@dataFechaIso"
-                                                                    data-numero="@lista.numeroVenta">
-                                                                    <td data-col="numeroVenta">@lista.prefijo @lista.numeroVenta</td>
-                                                                    <td data-col="fechaVenta">@((lista.fechaVenta ?? DateTime.MinValue).ToString("yyyy-MM-dd HH:mm"))</td>
-                                                                    <td data-col="tipoFactura">@lista.tipoFactura</td>
-                                                                    <td class="text-end" data-col="total">@((lista.totalVenta ?? 0m).ToString("C0", esCO))</td>
-                                                                    <td data-col="formaDePago">@lista.formaDePago</td>
-                                                                    <td data-col="estadoVenta">@lista.estadoVenta</td>
-                                                                    <td data-col="nit">@lista.nit</td>
-                                                                    <td data-col="nombreCliente" title="@lista.nombreCliente">@lista.nombreCliente</td>
-                                                                    <td data-col="cufe">@cufeEstado</td>
-                                                                </tr>
+                                        <tr data-idventa="@dataIdVenta"
+                                            data-total="@dataTotal"
+                                            data-fecha="@dataFechaIso"
+                                            data-numero="@lista.numeroVenta">
+                                            <td data-col="numeroVenta">@lista.prefijo @lista.numeroVenta</td>
+                                            <td data-col="fechaVenta">@((lista.fechaVenta ?? DateTime.MinValue).ToString("yyyy-MM-dd HH:mm"))</td>
+                                            <td data-col="tipoFactura">@lista.tipoFactura</td>
+                                            <td class="text-end" data-col="total">@((lista.totalVenta ?? 0m).ToString("C0", esCO))</td>
+                                            <td data-col="formaDePago">@lista.formaDePago</td>
+                                            <td data-col="estadoVenta">@lista.estadoVenta</td>
+                                            <td data-col="nit">@lista.nit</td>
+                                            <td data-col="nombreCliente" title="@lista.nombreCliente">@lista.nombreCliente</td>
+                                            <td data-col="cufe">@cufeEstado</td>
+                                        </tr>
                                     }
                                 }
                             </tbody>
@@ -353,47 +353,142 @@
     </div>
 </div>
 
-<!-- ========= MODAL: LISTA DE CLIENTES ========= -->
-<div class="modal fade" id="modalClientes" tabindex="-1" aria-labelledby="modalClientesLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+<!-- Modal: Seleccionar cliente -->
+<div class="modal fade" id="modalClientes" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 id="modalClientesLabel" class="modal-title">Seleccionar cliente</h5>
+                <h5 class="modal-title">Seleccionar cliente</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
 
             <div class="modal-body">
-                <div class="row g-2 mb-3">
-                    <div class="col-md-4">
-                        <input id="cliFiltroTexto" class="form-control" placeholder="Buscar por NIT, nombre, comercio, teléfono o correo..." />
+                <!-- Barra de búsqueda (la que ya tienes) -->
+                <div class="row g-2 align-items-center mb-3">
+                    <div class="col-12 col-md">
+                        <input id="cli-buscar" class="form-control" type="search"
+                               placeholder="Buscar por NIT, nombre, comercio, teléfono o correo" />
                     </div>
-                    <div class="col-md-3">
-                        <button id="cliBtnLimpiar" class="btn btn-outline-secondary w-100" type="button">Limpiar</button>
+                    <div class="col-12 col-md-auto">
+                        <button id="cli-limpiar" type="button" class="btn btn-outline-secondary">Limpiar</button>
+                    </div>
+
+                    <!-- NUEVO: búsqueda por NIT + botón DIAN -->
+                    <div class="col-12 col-md-auto ms-auto">
+                        <div class="input-group">
+                            <input id="cli-dian-nit" 
+                                   class="form-control" 
+                                   type="text" 
+                                   inputmode="numeric"
+                                   pattern="[0-9]"
+                                   maxlength="15"
+                                   autocomplete="off"
+                                   placeholder="NIT..." />
+                            <button id="cli-dian-btn" type="button" class="btn btn-dian">
+                                @*<img src="~/Archivos/IMG/DIAN.png" alt="" width="18" height="18" class="me-2" />*@
+                                Consultar DIAN
+                            </button>
+                        </div>
                     </div>
                 </div>
 
+                <!-- Tabla de clientes -->
                 <div class="table-responsive">
-                    <table class="table table-sm table-hover align-middle" id="tablaClientes">
-                        <thead class="table-light">
+                    <table id="tablaClientes" class="table table-sm table-hover align-middle">
+                        <thead>
                             <tr>
                                 <th style="width: 140px;">NIT</th>
                                 <th>Nombre</th>
-                                <th>Nombre Comercial</th>
-                                <th style="width: 130px;">Teléfono</th>
-                                <th>Dirección</th>
-                                <th>Correo</th>
-                                <th style="width: 120px;" class="text-center">Acción</th>
+                                <th style="width: 160px;">Nombre Comercial</th>
+                                <th style="width: 120px;">Teléfono</th>
+                                <th style="width: 160px;">Dirección</th>
+                                <th style="width: 220px;">Correo</th>
+                                <th style="width: 160px;">Acción</th>
                             </tr>
                         </thead>
-                        <tbody><!-- se rellena por JS --></tbody>
+                        <tbody>
+                            @* Rellena dinámicamente en tu vista (ejemplo) *@
+                            @* Cada fila debe traer data-idcliente para poder editar *@
+                            @*
+                                @foreach (var c in Model.Clientes) {
+                                  <tr data-idcliente="@c.Id"
+                                      data-nit="@c.Nit"
+                                      data-nombre="@c.Nombre"
+                                      data-comercial="@c.NombreComercial"
+                                      data-telefono="@c.Telefono"
+                                      data-direccion="@c.Direccion"
+                                      data-correo="@c.Correo">
+                                    <td>@c.Nit</td>
+                                    <td>@c.Nombre</td>
+                                    <td>@c.NombreComercial</td>
+                                    <td>@c.Telefono</td>
+                                    <td>@c.Direccion</td>
+                                    <td>@c.Correo</td>
+                                    <td class="text-nowrap">
+                                      <button type="button" class="btn btn-primary btn-sm cli-seleccionar">
+                                        <i class="bi bi-check2-circle me-1"></i> Seleccionar
+                                      </button>
+                                      <button type="button" class="btn btn-warning btn-sm cli-editar">
+                                        <i class="bi bi-pencil-square me-1"></i> Editar
+                                      </button>
+                                    </td>
+                                  </tr>
+                                }
+                            *@
+                        </tbody>
                     </table>
                 </div>
 
-                @using (Html.BeginForm("SeleccionarCliente", "HistorialVentas", FormMethod.Post, new { id = "formSeleccionarCliente" }))
-                {
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="idCliente" id="idClienteSeleccionado" />
-                }
+                <!-- NUEVO: Panel de edición (colapsable) -->
+                <div id="cli-editor" class="card mt-3 d-none">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="m-0">Editar cliente</h6>
+                            <button type="button" id="cli-editor-cerrar" class="btn btn-sm btn-outline-secondary">
+                                Cerrar
+                            </button>
+                        </div>
+
+                        <form id="cli-form">
+                            <input type="hidden" id="cli-id" />
+                            <div class="row g-3">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label">NIT</label>
+                                    <input id="cli-nit" class="form-control" type="text" />
+                                </div>
+                                <div class="col-12 col-md-8">
+                                    <label class="form-label">Nombre</label>
+                                    <input id="cli-nombre" class="form-control" type="text" />
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">Nombre Comercial</label>
+                                    <input id="cli-comercial" class="form-control" type="text" />
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">Teléfono</label>
+                                    <input id="cli-telefono" class="form-control" type="text" />
+                                </div>
+                                <div class="col-12 col-md-8">
+                                    <label class="form-label">Dirección</label>
+                                    <input id="cli-direccion" class="form-control" type="text" />
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label">Correo</label>
+                                    <input id="cli-correo" class="form-control" type="email" />
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2 mt-3">
+                                <button type="button" id="cli-guardar" class="btn btn-success">
+                                    <i class="bi bi-save2 me-1"></i> Guardar
+                                </button>
+                                <button type="button" id="cli-guardar-y-seleccionar" class="btn btn-success">
+                                    <i class="bi bi-check2 me-1"></i> Guardar y seleccionar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
 
             <div class="modal-footer">
@@ -402,6 +497,7 @@
         </div>
     </div>
 </div>
+
 
 <script>
     window.ClientesBase64 = "@jsonClientesBase64";

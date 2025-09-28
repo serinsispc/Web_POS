@@ -140,6 +140,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Archivos\IMG\cajon.png" />
+    <Content Include="Archivos\IMG\DIAN.png" />
     <Content Include="Archivos\IMG\escaner.png" />
     <Content Include="Archivos\IMG\factura-simulada.png" />
     <Content Include="Archivos\IMG\impresora.png" />

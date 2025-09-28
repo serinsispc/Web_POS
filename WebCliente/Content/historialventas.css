@@ -291,3 +291,21 @@
 }
 
 
+
+
+/* Botón DIAN: colores alusivos */
+.btn-dian {
+    background-color: #004b9b;
+    color: #fff;
+    border-color: #003d80;
+}
+
+    .btn-dian:hover {
+        background-color: #003d80;
+        color: #fff;
+    }
+
+/* Estética del editor */
+#cli-editor .form-label {
+    font-weight: 600;
+}

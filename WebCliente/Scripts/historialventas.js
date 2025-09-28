@@ -1,12 +1,12 @@
-﻿//    archivo    historialventas.js
-/* ======================================
+﻿/* ======================================
    HISTORIAL VENTAS – LÓGICA DE FRONTEND (sin render de filas)
-   v1.9.0
+   v1.10.0
    --------------------------------------
    - La tabla (#tablaHV) viene renderizada desde Razor/ASP.
    - Este JS NO crea filas ni columnas.
-   - Funciones activas: selección de fila, envío de formularios, rango de fechas,
-     exportar CSV desde DOM, impresión, modales de resoluciones y clientes.
+   - Funciones activas: selección de fila (persistente en otro archivo), envío de
+     formularios, rango de fechas, exportar CSV desde DOM, impresión,
+     modales de resoluciones y clientes (buscar/editar/DIAN/seleccionar).
    ====================================== */
 (function () {
     "use strict";
@@ -24,9 +24,10 @@
         return yyyy + "-" + mm + "-" + dd + " " + hh + ":" + mi;
     }
     function decodeBase64(b64) { try { return atob(b64 || ""); } catch { return "[]"; } }
+    function decodeB64ToJson(b64) { try { if (!b64) return null; var txt = atob(b64); return JSON.parse(txt); } catch (e) { return null; } }
 
-    // ===== Estado de la UI (ya no hay 'data/filtered')
-    var selected = null; // { idVenta, total, fechaVenta, prefijo, numeroVenta, ... } (lo que se pueda leer del DOM)
+    // ===== Estado de la UI
+    var selected = null; // { idVenta, total, fechaVenta, prefijo, numeroVenta, ... }
 
     // ===== Selección y panel lateral
     function setEnabled(id, en) { var b = byId(id); if (b) b.disabled = !en; }
@@ -38,7 +39,6 @@
             "actExportar", "actResolucion", "actAumentarNumero", "actEnviarDIAN", "actDescargarFactura",
             "actEditarFecha"
         ].forEach(function (id) {
-            // Exportar/Imprimir pueden estar siempre activos si lo prefieres
             var allowAlways = (id === "actExportar" || id === "actImprimir");
             setEnabled(id, hasSel || allowAlways);
         });
@@ -54,20 +54,13 @@
     }
 
     function leerItemDesdeFila(tr) {
-        // Recomendado: imprimir estos data-attrs en Razor
-        // <tr data-idventa="@x.id" data-total="@x.total" data-fecha="@x.fechaVentaIso" data-prefijo="@x.prefijo" data-numero="@x.numeroVenta">
         var idv = Number(tr.getAttribute("data-idventa") || "0");
         var total = Number(tr.getAttribute("data-total") || "0");
         var fechaIso = tr.getAttribute("data-fecha") || "";
         var fecha = parseDate(fechaIso);
 
-        // Intento de respaldo (si no tienes data-attrs): lee celdas por orden.
-        // Ajusta índices a tu orden real si lo necesitas.
-        if (!idv) {
-            // Si hay un input oculto por fila con id, podrías leerlo aquí.
-        }
         if (!total) {
-            var totalCell = tr.querySelector('td[data-col="total"]') || tr.cells[4]; // 0:fecha,1:tipo,2:prefijo,3:num,4:total,...
+            var totalCell = tr.querySelector('td[data-col="total"]') || tr.cells[4];
             if (totalCell) {
                 var t = (totalCell.textContent || "").replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", ".");
                 total = Number(t) || 0;
@@ -80,17 +73,10 @@
             fecha = isNaN(guess) ? null : guess;
         }
 
-        // Prefijo y número (si los necesitas para mensajes)
         var pref = tr.getAttribute("data-prefijo") || (tr.querySelector('td[data-col="prefijo"]')?.textContent || "").trim();
         var num = tr.getAttribute("data-numero") || (tr.querySelector('td[data-col="numeroVenta"]')?.textContent || "").trim();
 
-        return {
-            idVenta: idv,
-            total: total,
-            fechaVenta: fecha,
-            prefijo: pref,
-            numeroVenta: num
-        };
+        return { idVenta: idv, total: total, fechaVenta: fecha, prefijo: pref, numeroVenta: num };
     }
 
     function clearRowSelection(tbody) {
@@ -106,8 +92,6 @@
         tbody.addEventListener("click", function (ev) {
             var tr = ev.target.closest("tr");
             if (!tr || !tbody.contains(tr)) return;
-
-            // Evita capturar clicks en filas de "detalles" si existieran
             if (tr.classList.contains("row-details")) return;
 
             selected = leerItemDesdeFila(tr);
@@ -125,11 +109,9 @@
         if (!table) { alert("No se encontró la tabla."); return; }
         var tbody = table.querySelector("tbody");
         var rows = tbody ? tbody.querySelectorAll("tr") : [];
-
         if (!rows || rows.length === 0) { alert("No hay datos para exportar."); return; }
 
         var sep = ";";
-        // Ajusta estos encabezados a las columnas que estás mostrando en Razor
         var headers = ["Fecha", "Tipo", "Prefijo", "Número", "Total", "Forma de Pago", "Estado", "NIT", "Cliente", "CUFE"];
         var out = [headers.join(sep)];
 
@@ -138,7 +120,6 @@
             var tds = tr.querySelectorAll("td");
             if (!tds || tds.length === 0) return;
 
-            // Mapea por índice o por data-col (recomendado tener data-col en cada <td>)
             function get(colName, fallbackIndex) {
                 var el = tr.querySelector('td[data-col="' + colName + '"]');
                 if (el) return (el.textContent || "").trim();
@@ -151,7 +132,7 @@
                 get("tipoFactura", 1),
                 get("prefijo", 2),
                 get("numeroVenta", 3),
-                (get("total", 4) || "").replace(/\./g, ","), // cambia separador decimal si quieres
+                (get("total", 4) || "").replace(/\./g, ","), // opcional
                 get("formaDePago", 5),
                 get("estadoVenta", 6),
                 get("nit", 7),
@@ -174,7 +155,7 @@
 
     function imprimir() { window.print(); }
 
-    // ===== Rango de Fechas (coherencia)
+    // ===== Rango de Fechas
     function wireDateRange() {
         var desde = byId('fFechaDesde');
         var hasta = byId('fFechaHasta');
@@ -201,11 +182,10 @@
         syncMinMax();
     }
 
-    // ===== Formularios / Acciones que van al servidor
+    // ===== Formularios / Acciones servidor
     function wireServerActions() {
         var formNumero = byId("formNumero");
 
-        // Submit al presionar Enter en número de factura
         byId("fNumeroFactura")?.addEventListener("keydown", function (e) {
             if (e.key === "Enter") {
                 if (formNumero) {
@@ -216,13 +196,11 @@
             }
         });
 
-        // Botones principales
         byId("btnExportar")?.addEventListener("click", exportCSV);
         byId("btnImprimir")?.addEventListener("click", imprimir);
         byId("actExportar")?.addEventListener("click", exportCSV);
         byId("actImprimir")?.addEventListener("click", imprimir);
 
-        // Placeholders simples (lado servidor pendiente)
         byId("actVerDetalle")?.addEventListener("click", function () {
             if (!requireSel()) return;
             alert("Ver detalle de " + (selected.prefijo ? (selected.prefijo + "-") : "") + (selected.numeroVenta ?? ""));
@@ -242,7 +220,7 @@
         byId("actEnviarDIAN")?.addEventListener("click", function () { if (!requireSel()) return; alert("Enviar DIAN (placeholder)"); });
         byId("actDescargarFactura")?.addEventListener("click", function () { if (!requireSel()) return; alert("Descargar Factura (placeholder)"); });
 
-        // **Resoluciones** -> POST a ListaResoluciones con idventa seleccionado
+        // **Resoluciones**
         byId("actResolucion")?.addEventListener("click", function () {
             if (!requireSel()) return;
             var form = byId("formResolucion");
@@ -254,7 +232,7 @@
             form.submit();
         });
 
-        // **Editar/Agregar Cliente** -> POST a BotonEditar_AgregarCliente con idventa
+        // **Editar/Agregar Cliente**
         byId("actEditarCliente")?.addEventListener("click", function () {
             if (!requireSel()) return;
             var form = byId("formListaClientes");
@@ -369,18 +347,16 @@
         });
     }
 
-    // ===== CLIENTES (Modal) =====
-    function decodeB64ToJson(b64) { try { if (!b64) return null; var txt = atob(b64); return JSON.parse(txt); } catch (e) { return null; } }
-
+    // ===== CLIENTES (Modal) – UNIFICADO =====
     function normalizarCliente(c) {
         return {
             id: c.id ?? c.idCliente ?? c.Id ?? 0,
-            identificationNumber: (c.identificationNumber ?? "").toString(),
-            nameCliente: (c.nameCliente ?? "").toString(),
-            tradeName: (c.tradeName ?? "").toString(),
-            phone: (c.phone ?? "").toString(),
-            adress: (c.adress ?? "").toString(),
-            email: (c.email ?? "").toString()
+            identificationNumber: (c.identificationNumber ?? c.Nit ?? "").toString(),
+            nameCliente: (c.nameCliente ?? c.Nombre ?? "").toString(),
+            tradeName: (c.tradeName ?? c.NombreComercial ?? "").toString(),
+            phone: (c.phone ?? c.Telefono ?? "").toString(),
+            adress: (c.adress ?? c.Direccion ?? "").toString(),
+            email: (c.email ?? c.Correo ?? "").toString()
         };
     }
 
@@ -388,6 +364,7 @@
         var tbody = document.querySelector("#tablaClientes tbody");
         if (!tbody) return;
         tbody.innerHTML = "";
+
         if (!Array.isArray(lista) || lista.length === 0) {
             var tr = document.createElement("tr");
             var td = document.createElement("td");
@@ -398,12 +375,23 @@
             tbody.appendChild(tr);
             return;
         }
+
         function safe(v) { v = (v ?? "").toString().trim(); return v === "" ? "-" : v; }
 
         var frag = document.createDocumentFragment();
         lista.forEach(function (raw) {
             var c = normalizarCliente(raw);
             var tr = document.createElement("tr");
+
+            // data-* para precargar editor
+            tr.setAttribute("data-idcliente", c.id);
+            tr.setAttribute("data-nit", c.identificationNumber);
+            tr.setAttribute("data-nombre", c.nameCliente);
+            tr.setAttribute("data-comercial", c.tradeName);
+            tr.setAttribute("data-telefono", c.phone);
+            tr.setAttribute("data-direccion", c.adress);
+            tr.setAttribute("data-correo", c.email);
+
             tr.innerHTML =
                 '<td>' + safe(c.identificationNumber) + '</td>' +
                 '<td>' + safe(c.nameCliente) + '</td>' +
@@ -411,10 +399,13 @@
                 '<td>' + safe(c.phone) + '</td>' +
                 '<td>' + safe(c.adress) + '</td>' +
                 '<td>' + safe(c.email) + '</td>' +
-                '<td class="text-center">' +
-                '<button type="button" class="btn btn-primary btn-sm btn-sel-cliente" data-id="' + c.id + '">' +
-                '<i class="bi bi-check2-circle me-1"></i>Seleccionar' +
-                '</button>' +
+                '<td class="text-nowrap">' +
+                '  <button type="button" class="btn btn-primary btn-sm btn-sel-cliente">' +
+                '    <i class="bi bi-check2-circle me-1"></i> Seleccionar' +
+                '  </button> ' +
+                '  <button type="button" class="btn btn-warning btn-sm cli-editar">' +
+                '    <i class="bi bi-pencil-square me-1"></i> Editar' +
+                '  </button>' +
                 '</td>';
             frag.appendChild(tr);
         });
@@ -438,12 +429,15 @@
         var modalClientesEl = byId("modalClientes");
         if (!modalClientesEl) return;
 
+        // La lista de clientes viene en base64 desde Razor (string JSON)
         var base64 = window.ClientesBase64 || "";
         var clientes = decodeB64ToJson(base64);
         if (!Array.isArray(clientes)) clientes = [];
 
+        // Pinta de entrada
         pintarTablaClientes(clientes);
 
+        // Mostrar modal al cargar si corresponde
         if (window.DebeMostrarModalClientes === true || window.DebeMostrarModalClientes === "true") {
             if (window.bootstrap && bootstrap.Modal) {
                 var modalCli = new bootstrap.Modal(modalClientesEl, { backdrop: "static", keyboard: false });
@@ -451,33 +445,148 @@
             }
         }
 
-        byId("cliFiltroTexto")?.addEventListener("input", function () {
+        // === BUSCAR (texto libre)
+        $('#cli-buscar').on('input', function () {
             var texto = this.value || "";
             var lista = filtrarClientes(clientes, texto);
             pintarTablaClientes(lista);
         });
-        byId("cliBtnLimpiar")?.addEventListener("click", function () {
-            var inp = byId("cliFiltroTexto");
-            if (inp) { inp.value = ""; }
-            pintarTablaClientes(clientes);
+        $('#cli-limpiar').on('click', function () {
+            $('#cli-buscar').val('').trigger('input');
         });
 
-        document.addEventListener("click", function (ev) {
-            var btn = ev.target.closest(".btn-sel-cliente");
-            if (!btn) return;
-            var idCli = btn.getAttribute("data-id");
-            if (!idCli) return;
+        // === CONSULTAR DIAN
+        $('#cli-dian-btn').on('click', function () {
+            var nit = ($('#cli-dian-nit').val() || '').trim();
+            if (!nit) { alert('Ingrese un NIT para consultar.'); return; }
+
+            var $btn = $(this);
+            $btn.prop('disabled', true).text('Consultando...');
+            $.getJSON('/Dian/ConsultarNit', { nit: nit })
+                .done(function (data) {
+                    if (data) {
+                        $('#cli-nit').val(data.nit || nit);
+                        $('#cli-nombre').val(data.razonSocial || '');
+                        $('#cli-comercial').val(data.nombreComercial || '');
+                        $('#cli-direccion').val(data.direccion || '');
+                        $('#cli-telefono').val(data.telefono || '');
+                        $('#cli-correo').val(data.correo || '');
+                        $('#cli-editor').removeClass('d-none');
+                        setTimeout(function () {
+                            document.getElementById('cli-editor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }, 50);
+                    }
+                })
+                .fail(function (xhr) {
+                    console.error(xhr.responseText || xhr.statusText);
+                    alert('No fue posible consultar la DIAN.');
+                })
+                .always(function () { $btn.prop('disabled', false).text('Consultar DIAN'); });
+        });
+
+        // === EDITAR (abre panel)
+        $('#tablaClientes').on('click', '.cli-editar', function () {
+            var $tr = $(this).closest('tr');
+            $('#cli-id').val($tr.data('idcliente') || '');
+            $('#cli-nit').val($tr.data('nit') || '');
+            $('#cli-nombre').val($tr.data('nombre') || '');
+            $('#cli-comercial').val($tr.data('comercial') || '');
+            $('#cli-telefono').val($tr.data('telefono') || '');
+            $('#cli-direccion').val($tr.data('direccion') || '');
+            $('#cli-correo').val($tr.data('correo') || '');
+
+            $('#cli-editor').removeClass('d-none');
+            setTimeout(function () {
+                document.getElementById('cli-editor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 50);
+        });
+
+        // Cerrar editor
+        $('#cli-editor-cerrar').on('click', function () {
+            $('#cli-editor').addClass('d-none');
+        });
+
+        // Helpers editor
+        function payloadCliente() {
+            return {
+                Id: $('#cli-id').val(),
+                Nit: $('#cli-nit').val().trim(),
+                Nombre: $('#cli-nombre').val().trim(),
+                NombreComercial: $('#cli-comercial').val().trim(),
+                Telefono: $('#cli-telefono').val().trim(),
+                Direccion: $('#cli-direccion').val().trim(),
+                Correo: $('#cli-correo').val().trim()
+            };
+        }
+
+        function actualizarFilaDesdePayload(p) {
+            var $tr = $('#tablaClientes tbody tr').filter(function () {
+                return String($(this).data('idcliente')) === String(p.Id);
+            }).first();
+
+            if ($tr.length) {
+                $tr.data('nit', p.Nit);
+                $tr.data('nombre', p.Nombre);
+                $tr.data('comercial', p.NombreComercial);
+                $tr.data('telefono', p.Telefono);
+                $tr.data('direccion', p.Direccion);
+                $tr.data('correo', p.Correo);
+
+                var tds = $tr.children('td');
+                $(tds[0]).text(p.Nit);
+                $(tds[1]).text(p.Nombre);
+                $(tds[2]).text(p.NombreComercial);
+                $(tds[3]).text(p.Telefono);
+                $(tds[4]).text(p.Direccion);
+                $(tds[5]).text(p.Correo);
+            }
+        }
+
+        function guardarClienteCore(opts) {
+            var p = payloadCliente();
+            if (!p.Id) { alert('Seleccione un cliente para editar.'); return; }
+
+            $.ajax({
+                url: '/Clientes/EditarClienteAjax', // <--- AJUSTA
+                type: 'POST',
+                data: JSON.stringify(p),
+                contentType: 'application/json; charset=utf-8'
+            })
+                .done(function () {
+                    actualizarFilaDesdePayload(p);
+                    if (opts && opts.seleccionar) {
+                        $('#tablaClientes tbody tr').filter(function () {
+                            return String($(this).data('idcliente')) === String(p.Id);
+                        }).find('.btn-sel-cliente').trigger('click');
+                    }
+                    $('#cli-editor').addClass('d-none');
+                })
+                .fail(function (xhr) {
+                    console.error(xhr.responseText || xhr.statusText);
+                    alert('No se pudo guardar el cliente.');
+                });
+        }
+
+        $('#cli-guardar').on('click', function () {
+            guardarClienteCore({ seleccionar: false });
+        });
+        $('#cli-guardar-y-seleccionar').on('click', function () {
+            guardarClienteCore({ seleccionar: true });
+        });
+
+        // === Seleccionar cliente (envía al servidor tu id)
+        $('#tablaClientes').on('click', '.btn-sel-cliente', function () {
+            var $tr = $(this).closest('tr');
+            var idCli = $tr.data('idcliente');
 
             var hid = byId("idClienteSeleccionado");
             var form = byId("formSeleccionarCliente");
             if (hid && form) {
                 hid.value = idCli;
-
                 if (window.bootstrap && bootstrap.Modal) {
                     var inst = bootstrap.Modal.getInstance(modalClientesEl) || new bootstrap.Modal(modalClientesEl);
                     inst.hide();
                 }
-
                 form.submit();
             }
         });
@@ -485,22 +594,18 @@
 
     // ===== INIT
     document.addEventListener("DOMContentLoaded", function () {
-        // 1) Selección de fila y panel
         wireRowSelection();
         updateSidePanel();
 
-        // 2) Rango de fechas + acciones que van al servidor
         wireDateRange();
         wireServerActions();
 
-        // 3) Resoluciones (si vienen en Session["V_Resoluciones"])
         abrirModalResolucionesSiHayDatos();
         wireSeleccionResolucion();
 
-        // 4) Modal de clientes (opcional)
+        // Modal de clientes (UNIFICADO)
         wireModalClientes();
 
-        // 5) Tooltips Bootstrap (si los estás usando en celdas)
         if (window.bootstrap && typeof bootstrap.Tooltip === "function") {
             var triggers = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             triggers.forEach(function (el) { new bootstrap.Tooltip(el); });
