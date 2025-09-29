@@ -3,6 +3,7 @@ using RunApi.API_DIAN;
 using RunApi.API_DIAN.Request;
 using RunApi.API_DIAN.Respons;
 using RunApi.ApiControlers;
+using RunApi.Models;
 using RunApi.Models.Cliente;
 using System;
 using System.Collections.Generic;
@@ -295,7 +296,44 @@ namespace RunApi.Funciones.DIAN_API
                 if (facturaNacionalRespuesta.is_valid==true && facturaNacionalRespuesta.uuid!=null)
                 {
                     //procedemos a guardar toda la respuesta en la table FacturaElectronicaJSON
+                    var objeto = new
+                    {
+                        nombreDB = ClassDBCliente.DBCliente,
+                        facturaElectronicaJSON = new
+                        {
+                            id = 0,
+                            idVenta = IdVenta_frm,
+                            facturaJSON = JsonConvert.SerializeObject(rspuestaAPI)
+                        }
+                    };
+                    string jsonFE = JsonConvert.SerializeObject(objeto);
+                    var respAPI =await FacturaElectronicaJSONAPI.InsertInto(jsonFE);
+                    if (respAPI != null && respAPI.estado==true) 
+                    {
 
+                        string numerofacturaINT = facturaNacionalRespuesta.number.ToString().Replace(venta.prefijo,"");
+                        //ahora agregamos los datos a la tabla FacturaElectronica
+                        var facturaelectronica = new FacturaElectronica { 
+                        id = 0,
+                        idVenta=IdVenta_frm,
+                        cufe=facturaNacionalRespuesta.uuid.ToString(),
+                        numeroFactura=facturaNacionalRespuesta.number,
+                        fechaEmision=facturaNacionalRespuesta.issue_date.ToString(),
+                        fecahVensimiento=facturaNacionalRespuesta.expedition_date.ToString(),
+                        dataQR=facturaNacionalRespuesta.qr_data.ToString(),
+                        imagenQR="--",
+                        resolucion_id=(int)venta.idResolucion,
+                        prefijo=venta.prefijo,
+                        numero_factura=Convert.ToInt32(numerofacturaINT)
+                        };
+                        var objeto2 = new {
+                            nombreDB = ClassDBCliente.DBCliente,
+                            funcion = 0,
+                            facturaElectronica = JsonConvert.SerializeObject(facturaelectronica)
+                        };
+                        var resp2 = await FacturaElectronicaAPI.CRUD(JsonConvert.SerializeObject(objeto2));
+                        string respuesta2=JsonConvert.SerializeObject(resp2);
+                    }
                 }
             }
             return JsonConvert.SerializeObject(facturaNacionalRespuesta);

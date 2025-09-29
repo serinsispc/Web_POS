@@ -30,5 +30,20 @@ namespace RunApi.Funciones
                 return 0;
             }
         }
+        public static async Task<RespuestaCRUD_api> CRUD(string json)
+        {
+            try
+            {
+                var api= new ClassAPI();
+                var url = $"FacturaElectronica/CRUD";
+                var resp=await api.HttpWebRequestPostAsync(url,json, HttpMethod.Post);
+                return JsonConvert.DeserializeObject<RespuestaCRUD_api>(resp);
+            }
+            catch(Exception ex)
+            {
+                string error = ex.Message;
+                return new RespuestaCRUD_api { estado=false, idAfectado=0, mensaje=error };
+            }
+        }
     }
 }
