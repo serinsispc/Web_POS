@@ -112,7 +112,13 @@
         <input type="hidden" name="idventa" id="inp-idventa-enviar" value="0" />
     }
 
-
+    @* >>> NUEVO: formulario oculto para SeleccionarCliente (POST real) *@
+    @using (Html.BeginForm("SeleccionarCliente", "HistorialVentas", FormMethod.Post, new { id = "formSeleccionarCliente", style = "display:none;" }))
+    {
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="idCliente" id="idClienteSeleccionado" value="0" />
+        <input type="hidden" name="idventa" id="inp-idventa-seleccion-cliente" value="0" />
+    }
     <!-- FILTROS -->
     <div class="card card-filter shadow-sm mb-3">
         <div class="card-body">

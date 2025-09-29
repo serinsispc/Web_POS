@@ -8,11 +8,11 @@ namespace RunApi.API_DIAN.Respons
 {
     public class FacturaElectronica_Respons
     {
-        public string message { get; set; }
-        public int type_environment_id { get; set; }
         public bool is_valid { get; set; }
         public object is_restored { get; set; }
         public object algorithm { get; set; }
+        public string message { get; set; }
+        public int type_environment_id { get; set; }
         public string number { get; set; }
         public object uuid { get; set; }
         public object issue_date { get; set; }
@@ -36,6 +36,24 @@ namespace RunApi.API_DIAN.Respons
         public object pdf_base64_bytes { get; set; }
         public object zip_base64_bytes { get; set; }
         public Payload payload { get; set; }
+    }
+
+    public class Payload
+    {
+        public int number { get; set; }
+        public int resolution_id { get; set; }
+        public string date { get; set; }
+        public string time { get; set; }
+        public string testSetID { get; set; }
+        public bool sync { get; set; }
+        public int type_document_id { get; set; }
+        public Customer customer { get; set; }
+        public AllowanceCharges allowance_charges { get; set; }
+        public LegalMonetaryTotals legal_monetary_totals { get; set; }
+        public List<PaymentForms> payment_forms { get; set; }
+        public object tax_totals { get; set; }
+        public Notes notes { get; set; }
+
     }
     public class Discrepancy_response
     {
@@ -61,6 +79,35 @@ namespace RunApi.API_DIAN.Respons
         public string tax_inclusive_amount { get; set; }
         public string payable_amount { get; set; }
     }
+    public class PaymentForms
+    {
+        public int payment_form_id { get; set; }
+        public int payment_method_id { get; set; }
+        public string payment_due_date { get; set; }
+        public int duration_measure { get; set; }
+    }
+    public class invoice_lines
+    {
+        public int unit_measure_id { get; set; }
+        public string invoiced_quantity { get; set; }
+        public string line_extension_amount { get; set; }
+        public List<AllowanceCharges> allowance_charges { get; set; }
+        public List<TaxTotal> tax_totals { get; set; }
+        public string description { get; set; }
+        public string code { get; set; }
+        public int type_item_identification_id { get; set; }
+        public string price_amount { get; set; }
+        public string base_quantity { get; set; }
+        public object reference_price_id { get; set; }
+        public object free_of_charge_indicator { get; set; }
+    }
+    public class AllowanceCharges
+    {
+        public bool charge_indicator { get; set; }
+        public string allowance_charge_reason { get; set; }
+        public string  amount { get; set; }
+        public string base_amount { get; set; }
+    }
     public class TaxTotal
     {
         public int tax_id { get; set; }
@@ -71,38 +118,8 @@ namespace RunApi.API_DIAN.Respons
         public object per_unit_amount { get; set; }
         public object base_unit_measure { get; set; }
     }
-    public class invoice_lines
+    public class Notes
     {
-        public int unit_measure_id { get; set; }
-        public string invoiced_quantity { get; set; }
-        public string line_extension_amount { get; set; }
-        public List<TaxTotal> tax_totals { get; set; }
-        public string description { get; set; }
-        public string code { get; set; }
-        public int type_item_identification_id { get; set; }
-        public string price_amount { get; set; }
-        public string base_quantity { get; set; }
-        public object reference_price_id { get; set; }
-        public object free_of_charge_indicator { get; set; }
-    }
-    public class Billing_reference
-    {
-        public string number { get; set; }
-        public string uuid { get; set; }
-        public string issue_date { get; set; }
-    }
-    public class Payload
-    {
-        public string testSetID { get; set; }
-        public int number { get; set; }
-        //public bool sync { get; set; }
-        public int type_document_id { get; set; }
-        public Customer customer { get; set; }
-        public LegalMonetaryTotals legal_monetary_totals { get; set; }
-        public Discrepancy_response discrepancy_response { get; set; }
-        public Billing_reference billing_reference { get; set; }
-        public object tax_totals { get; set; }
-        public string token { get; set; }
-
+        public string text { get; set; }
     }
 }
