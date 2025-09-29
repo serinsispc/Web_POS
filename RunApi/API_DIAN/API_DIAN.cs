@@ -292,8 +292,9 @@ namespace RunApi.Funciones.DIAN_API
             //en esta parte preguntamos si es valido
             if (facturaNacionalRespuesta != null)
             {
-                if (facturaNacionalRespuesta.is_valid)
+                if (facturaNacionalRespuesta.is_valid==true && facturaNacionalRespuesta.uuid!=null)
                 {
+                    //procedemos a guardar toda la respuesta en la table FacturaElectronicaJSON
 
                 }
             }
