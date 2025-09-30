@@ -48,7 +48,8 @@ namespace RunApi.Funciones
                 var api = new ClassAPI();
                 var url = $"TablaVenta/EditarConsecutivo";
                 var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Put);
-                return JsonConvert.DeserializeObject<bool>(resp);
+                var respapi = JsonConvert.DeserializeObject<RespuestaCRUD_api>(resp);
+                return respapi.estado;
             }
             catch (Exception ex)
             {

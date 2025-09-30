@@ -310,34 +310,41 @@ namespace RunApi.Funciones.DIAN_API
                     facturaelectronicaJSON.is_restored = (bool)facturaNacionalRespuesta.is_restored;
                 }
                 
-                facturaelectronicaJSON.algorithm = (string)facturaNacionalRespuesta.algorithm;
-                facturaelectronicaJSON.zip_key = (string)facturaNacionalRespuesta.zip_key;
-                facturaelectronicaJSON.status_code = facturaNacionalRespuesta.status_code;
-                facturaelectronicaJSON.status_description = facturaNacionalRespuesta.status_description;
-                facturaelectronicaJSON.status_message = facturaNacionalRespuesta.status_message;
-                facturaelectronicaJSON.mail_sending_message = (string)facturaNacionalRespuesta.mail_sending_message;
-                if (facturaNacionalRespuesta.errors_messages.Count > 0)
+                facturaelectronicaJSON.algorithm = (string)(facturaNacionalRespuesta.algorithm ?? "--");
+                facturaelectronicaJSON.zip_key = (string)(facturaNacionalRespuesta.zip_key ?? "--");
+                facturaelectronicaJSON.status_code = (facturaNacionalRespuesta.status_code ?? "--");
+                facturaelectronicaJSON.status_description = (facturaNacionalRespuesta.status_description ?? "--");
+                facturaelectronicaJSON.status_message = (facturaNacionalRespuesta.status_message ?? "--");
+                facturaelectronicaJSON.mail_sending_message = (string)(facturaNacionalRespuesta.mail_sending_message ?? "--");
+                if (facturaNacionalRespuesta.errors_messages != null)
                 {
-                    foreach(var listmsg in facturaNacionalRespuesta.errors_messages)
+                    if (facturaNacionalRespuesta.errors_messages.Count > 0)
                     {
-                        facturaelectronicaJSON.errors_messages = listmsg;
+                        foreach (var listmsg in facturaNacionalRespuesta.errors_messages)
+                        {
+                            facturaelectronicaJSON.errors_messages = $"{facturaelectronicaJSON.errors_messages};{listmsg}";
+                        }
+                    }
+                    else
+                    {
+                        facturaelectronicaJSON.errors_messages = "";
                     }
                 }
                 else
                 {
                     facturaelectronicaJSON.errors_messages = "";
                 }
-                facturaelectronicaJSON.xml_name = (string)facturaNacionalRespuesta.xml_name;
-                facturaelectronicaJSON.zip_name = (string)facturaNacionalRespuesta.zip_name;
-                facturaelectronicaJSON.signature = (string)facturaNacionalRespuesta.signature;
-                facturaelectronicaJSON.qr_code = (string)facturaNacionalRespuesta.qr_code;
-                facturaelectronicaJSON.qr_link = (string)facturaNacionalRespuesta.qr_link;
-                facturaelectronicaJSON.pdf_download_link = (string)facturaNacionalRespuesta.pdf_download_link;
-                facturaelectronicaJSON.xml_base64_bytes = (string)facturaNacionalRespuesta.xml_base64_bytes;
-                facturaelectronicaJSON.application_response_base64_bytes = (string)facturaNacionalRespuesta.application_response_base64_bytes;
-                facturaelectronicaJSON.attached_document_base64_bytes = (string)facturaNacionalRespuesta.attached_document_base64_bytes;
-                facturaelectronicaJSON.pdf_base64_bytes = (string)facturaNacionalRespuesta.pdf_base64_bytes;
-                facturaelectronicaJSON.zip_base64_bytes = (string)facturaNacionalRespuesta.zip_base64_bytes;
+                facturaelectronicaJSON.xml_name = (string)(facturaNacionalRespuesta.xml_name ?? "--");
+                facturaelectronicaJSON.zip_name = (string)(facturaNacionalRespuesta.zip_name ?? "--");
+                facturaelectronicaJSON.signature = (string)(facturaNacionalRespuesta.signature ?? "--");
+                facturaelectronicaJSON.qr_code = (string)(facturaNacionalRespuesta.qr_code ?? "--");
+                facturaelectronicaJSON.qr_link = (string)(facturaNacionalRespuesta.qr_link ?? "--");
+                facturaelectronicaJSON.pdf_download_link = (string)(facturaNacionalRespuesta.pdf_download_link ?? "--");
+                facturaelectronicaJSON.xml_base64_bytes = (string)(facturaNacionalRespuesta.xml_base64_bytes ?? "--");
+                facturaelectronicaJSON.application_response_base64_bytes = (string)(facturaNacionalRespuesta.application_response_base64_bytes ?? "--");
+                facturaelectronicaJSON.attached_document_base64_bytes = (string)(facturaNacionalRespuesta.attached_document_base64_bytes ?? "--");
+                facturaelectronicaJSON.pdf_base64_bytes = (string)(facturaNacionalRespuesta.pdf_base64_bytes ?? "--");
+                facturaelectronicaJSON.zip_base64_bytes = (string)(facturaNacionalRespuesta.zip_base64_bytes ?? "--");
                 facturaelectronicaJSON.type_environment_id = facturaNacionalRespuesta.type_environment_id;
 
                 InsertIntoRequest insertIntoRequest = new InsertIntoRequest();
@@ -346,6 +353,7 @@ namespace RunApi.Funciones.DIAN_API
 
                 var res2 =await FacturaElectronicaJSONAPI.InsertInto(JsonConvert.SerializeObject(insertIntoRequest));
 
+                string jsonxx = JsonConvert.SerializeObject(insertIntoRequest);
 
                 //en esta parte guardamos la FacturaElectronica
                 FacturaElectronica fe = new FacturaElectronica();
@@ -367,11 +375,11 @@ namespace RunApi.Funciones.DIAN_API
                     fe.id = 0;
                 }
                 fe.idVenta = (int)venta.id;
-                fe.cufe = (string)facturaNacionalRespuesta.uuid;
-                fe.numeroFactura = facturaNacionalRespuesta.number;
-                fe.fechaEmision = (string)facturaNacionalRespuesta.expedition_date;
-                fe.fecahVensimiento = (string)facturaNacionalRespuesta.expedition_date;
-                fe.dataQR = (string)facturaNacionalRespuesta.qr_data;
+                fe.cufe = (string)(facturaNacionalRespuesta.uuid ?? "--");
+                fe.numeroFactura = (facturaNacionalRespuesta.number ?? "--");
+                fe.fechaEmision = (string)(facturaNacionalRespuesta.expedition_date ?? "--");
+                fe.fecahVensimiento = (string)(facturaNacionalRespuesta.expedition_date ?? "--");
+                fe.dataQR = (string)(facturaNacionalRespuesta.qr_data ?? "--");
                 fe.imagenQR = "--";
                 fe.resolucion_id = (int)venta.idResolucion;
                 fe.prefijo = venta.prefijo;
