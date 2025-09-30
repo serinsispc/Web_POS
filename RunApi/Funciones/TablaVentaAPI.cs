@@ -33,5 +33,28 @@ namespace RunApi.Funciones
                 return false;
             }
         }
+
+        public static async Task<bool> EditarConsecutivo(int idventa, int consecutivo)
+        {
+            try
+            {
+                var objeto = new
+                {
+                    nombreDB = ClassDBCliente.DBCliente,
+                    consecutivo = consecutivo,
+                    idventa = idventa
+                };
+                string json = JsonConvert.SerializeObject(objeto);
+                var api = new ClassAPI();
+                var url = $"TablaVenta/EditarConsecutivo";
+                var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Put);
+                return JsonConvert.DeserializeObject<bool>(resp);
+            }
+            catch (Exception ex)
+            {
+                string msg = ex.Message;
+                return false;
+            }
+        }
     }
 }

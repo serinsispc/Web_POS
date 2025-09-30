@@ -296,6 +296,7 @@ namespace RunApi.Funciones.DIAN_API
             //en esta parte preguntamos si es valido
             if (facturaNacionalRespuesta != null)
             {
+                
                 FacturaElectronicaJSON facturaelectronicaJSON = new FacturaElectronicaJSON();
                 facturaelectronicaJSON.id = 0;
                 facturaelectronicaJSON.idventa = (int)venta.id;
@@ -346,45 +347,43 @@ namespace RunApi.Funciones.DIAN_API
                 var res2 =await FacturaElectronicaJSONAPI.InsertInto(JsonConvert.SerializeObject(insertIntoRequest));
 
 
-                if (facturaNacionalRespuesta.is_valid==true && facturaNacionalRespuesta.uuid!=null)
+                //en esta parte guardamos la FacturaElectronica
+                FacturaElectronica fe = new FacturaElectronica();
+                //primero consultamos el idventa en la factura
+                var objetofe = new
                 {
-                    //en esta parte guardamos la FacturaElectronica
-                    FacturaElectronica fe = new FacturaElectronica();
-                    //primero consultamos el idventa en la factura
-                    var objetofe = new { 
-                    nombreDB=ClassDBCliente.DBCliente,
-                    idventa=venta.id
-                    };
-                    fe =await FacturaElectronicaAPI.ConsultarIdVenta(JsonConvert.SerializeObject(objetofe));
-                    int funcionfe = 0;
-                    if (fe != null)
-                    {
-                        funcionfe = 1;
-                    }
-                    else
-                    {
-                        fe = new FacturaElectronica();
-                        fe.id = 0;
-                    }
-                    fe.idVenta = (int)venta.id;
-                    fe.cufe = (string)facturaNacionalRespuesta.uuid;
-                    fe.numeroFactura = facturaNacionalRespuesta.number;
-                    fe.fechaEmision=(string)facturaNacionalRespuesta.expedition_date;
-                    fe.fecahVensimiento = (string)facturaNacionalRespuesta.expedition_date;
-                    fe.dataQR= (string)facturaNacionalRespuesta.qr_data;
-                    fe.imagenQR = "--";
-                    fe.resolucion_id = (int)venta.idResolucion;
-                    fe.prefijo = venta.prefijo;
-                    fe.numeroFactura = facturaNacionalRespuesta.number.Replace(venta.prefijo,"");
-                    var facturaelectronicaenvio = new FacturaElectronicaEnvio();
-                    facturaelectronicaenvio.nombreDB = ClassDBCliente.DBCliente;
-                    facturaelectronicaenvio.facturaElectronica = fe;
-                    var respuestaCRUD_FacturaElectronica = await FacturaElectronicaAPI.CRUD(facturaelectronicaenvio);
-                    if (respuestaCRUD_FacturaElectronica.estado)
-                    {
-
-                    }
-
+                    nombreDB = ClassDBCliente.DBCliente,
+                    idventa = venta.id
+                };
+                fe = await FacturaElectronicaAPI.ConsultarIdVenta(JsonConvert.SerializeObject(objetofe));
+                int funcionfe = 0;
+                if (fe != null)
+                {
+                    funcionfe = 1;
+                }
+                else
+                {
+                    fe = new FacturaElectronica();
+                    fe.id = 0;
+                }
+                fe.idVenta = (int)venta.id;
+                fe.cufe = (string)facturaNacionalRespuesta.uuid;
+                fe.numeroFactura = facturaNacionalRespuesta.number;
+                fe.fechaEmision = (string)facturaNacionalRespuesta.expedition_date;
+                fe.fecahVensimiento = (string)facturaNacionalRespuesta.expedition_date;
+                fe.dataQR = (string)facturaNacionalRespuesta.qr_data;
+                fe.imagenQR = "--";
+                fe.resolucion_id = (int)venta.idResolucion;
+                fe.prefijo = venta.prefijo;
+                fe.numero_factura =Convert.ToInt32(facturaNacionalRespuesta.number.Replace(venta.prefijo, ""));
+                var facturaelectronicaenvio = new FacturaElectronicaEnvio();
+                facturaelectronicaenvio.nombreDB = ClassDBCliente.DBCliente;
+                facturaelectronicaenvio.facturaElectronica = fe;
+                var respuestaCRUD_FacturaElectronica = await FacturaElectronicaAPI.CRUD(facturaelectronicaenvio);
+                if (respuestaCRUD_FacturaElectronica.estado)
+                {
+                    
+                    var tv = await TablaVentaAPI.EditarConsecutivo((int)venta.id, fe.numero_factura);
                 }
             }
             return JsonConvert.SerializeObject(facturaNacionalRespuesta);
