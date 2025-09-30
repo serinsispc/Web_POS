@@ -223,18 +223,23 @@
                                 @{
                                     foreach (var lista in listaventas)
                                     {
-                                        // Estado CUFE según tipo de factura electrónica
-                                        var cufeEstado = "--";
-                                        if (lista.tipoFactura == "FACTURA ELECTRÓNICA DE VENTA")
-                                        {
-                                            if (lista.cufe == "--") { cufeEstado = "RECHAZADA"; }
-                                            else { cufeEstado = "ACEPTADA"; }
-                                        }
+                                        // Determinar estado y texto de CUFE
+                                        var esFacturaElectronica = (lista.tipoFactura ?? "").Trim().ToUpper() == "FACTURA ELECTRÓNICA DE VENTA";
+                                        var cufeTexto = (lista.cufe ?? "").Trim();
+                                        var hayCufe = !string.IsNullOrEmpty(cufeTexto) && cufeTexto != "--";
 
-                                        // Atributos data-* para el JS (selección de fila)
+                                        var estadoCufe = esFacturaElectronica
+                                            ? (hayCufe ? "ACEPTADA" : "RECHAZADA")
+                                            : "--";
+
+                                        var badgeClase = estadoCufe == "ACEPTADA" ? "bg-success"
+                                                        : estadoCufe == "RECHAZADA" ? "bg-danger"
+                                                        : "bg-secondary";
+
+                                        // Atributos data-* para lógica JS (selección)
                                         var dataIdVenta = lista.id;
-                                        var dataTotal = (lista.totalVenta ?? 0m).ToString(System.Globalization.CultureInfo.InvariantCulture); // valor crudo
-                                        var dataFechaIso = lista.fechaVenta.HasValue ? lista.fechaVenta.Value.ToString("s") : ""; // ISO 8601 "yyyy-MM-ddTHH:mm:ss"
+                                        var dataTotal = (lista.totalVenta ?? 0m).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                                        var dataFechaIso = lista.fechaVenta.HasValue ? lista.fechaVenta.Value.ToString("s") : "";
 
                                         <tr data-idventa="@dataIdVenta"
                                             data-total="@dataTotal"
@@ -248,11 +253,21 @@
                                             <td data-col="estadoVenta">@lista.estadoVenta</td>
                                             <td data-col="nit">@lista.nit</td>
                                             <td data-col="nombreCliente" title="@lista.nombreCliente">@lista.nombreCliente</td>
-                                            <td data-col="cufe">@cufeEstado</td>
+
+                                            <!-- CUFE visible: valor real + badge de estado -->
+                                            <td data-col="cufe">
+                                                <div class="text-break" style="word-break:break-all;">
+                                                    @(esFacturaElectronica ? (hayCufe ? cufeTexto : "--") : "--")
+                                                </div>
+                                                <div class="mt-1">
+                                                    <span class="badge @badgeClase">@estadoCufe</span>
+                                                </div>
+                                            </td>
                                         </tr>
                                     }
                                 }
                             </tbody>
+
                         </table>
                     </div>
                 </div>

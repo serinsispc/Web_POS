@@ -89,6 +89,7 @@
     <Compile Include="API_DIAN\Respons\ConsultarNIT_Respons.cs" />
     <Compile Include="API_DIAN\Respons\FacturaElectronica_Respons.cs" />
     <Compile Include="ClassAPI.cs" />
+    <Compile Include="Envio\FacturaElectronicaEnvio.cs" />
     <Compile Include="Envio\LoginEnviar.cs" />
     <Compile Include="Envio\UsuarioAdminEnvio.cs" />
     <Compile Include="API_DIAN\API_DIAN.cs" />

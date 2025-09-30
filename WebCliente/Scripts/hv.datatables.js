@@ -1,6 +1,6 @@
 ﻿// hv.datatables.js
 // DataTables para #tablaHV con columnas:
-// 0 Número | 1 Fecha | 2 Tipo | 3 Total | 4 Forma de Pago | 5 Estado | 6 NIT | 7 Cliente | 8 CUFE (OCULTA)
+// 0 Número | 1 Fecha | 2 Tipo | 3 Total | 4 Forma de Pago | 5 Estado | 6 NIT | 7 Cliente | 8 CUFE (VISIBLE)
 
 (function () {
     'use strict';
@@ -46,18 +46,22 @@
             order: [[1, 'desc']],
 
             columns: [
-                { className: 'all' },                   // 0 Número
-                { className: 'all' },                   // 1 Fecha
-                { className: '' },                      // 2 Tipo
-                { className: 'min-phone-l text-end' },  // 3 Total
-                { className: '' },                      // 4 Forma de Pago
-                { className: '' },                      // 5 Estado
-                { className: '' },                      // 6 NIT
-                { className: '' },                      // 7 Cliente
-                { className: '' }                       // 8 CUFE (oculta)
+                { className: 'all' },                     // 0 Número
+                { className: 'all' },                     // 1 Fecha
+                { className: '' },                        // 2 Tipo
+                { className: 'min-phone-l text-end' },    // 3 Total
+                { className: '' },                        // 4 Forma de Pago
+                { className: '' },                        // 5 Estado
+                { className: '' },                        // 6 NIT
+                { className: '' },                        // 7 Cliente
+                { className: 'all text-break' }           // 8 CUFE (VISIBLE)
             ],
 
             columnDefs: [
+                // Prioridades de respuesta: menor número = más importante
+                { responsivePriority: 1, targets: 0 }, // Número
+                { responsivePriority: 2, targets: 1 }, // Fecha
+                { responsivePriority: 3, targets: 8 }, // CUFE (que sea visible siempre)
                 { responsivePriority: 4, targets: 7 }, // Cliente
                 { responsivePriority: 5, targets: 2 }, // Tipo
                 { responsivePriority: 6, targets: 4 }, // Forma
@@ -72,7 +76,8 @@
                     }
                 },
 
-                { targets: 8, visible: false, searchable: false } // CUFE
+                // Aseguramos visibilidad y búsqueda de CUFE
+                { targets: 8, visible: true, searchable: true }
             ],
 
             language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json' },

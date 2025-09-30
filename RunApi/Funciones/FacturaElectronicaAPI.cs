@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using RunApi.Envio;
 using RunApi.Models;
 using RunApi.Models.Cliente;
 using System;
@@ -30,10 +31,11 @@ namespace RunApi.Funciones
                 return 0;
             }
         }
-        public static async Task<RespuestaCRUD_api> CRUD(string json)
+        public static async Task<RespuestaCRUD_api> CRUD(FacturaElectronicaEnvio envio)
         {
             try
             {
+                string json = JsonConvert.SerializeObject(envio);
                 var api= new ClassAPI();
                 var url = $"FacturaElectronica/CRUD";
                 var resp=await api.HttpWebRequestPostAsync(url,json, HttpMethod.Post);
@@ -43,6 +45,22 @@ namespace RunApi.Funciones
             {
                 string error = ex.Message;
                 return new RespuestaCRUD_api { estado=false, idAfectado=0, mensaje=error };
+            }
+        }
+        public static async Task<FacturaElectronica>ConsultarIdVenta(string json)
+        {
+            try
+            {
+               
+                var api=new ClassAPI();
+                var url = $"FacturaElectronica/ConsultarIdVenta";
+                var resp=await api.HttpWebRequestPostAsync(url,json,HttpMethod.Post);
+                return JsonConvert.DeserializeObject<FacturaElectronica>(resp);
+            }
+            catch(Exception ex)
+            {
+                string message = ex.Message;
+                return null;
             }
         }
     }

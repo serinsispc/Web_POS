@@ -247,7 +247,8 @@ namespace WebCliente.Controllers
                 //llamamos el endpint que se encarga de enviar la factura a la DIAN
                 var respuesta = await API_DIAN.FacturaElectronica(idventa);
             }
-
+            var respTabla = await V_TablaVentasControler.Filtrar(Session["db"].ToString(), model.Fecha1, model.Fecha2);
+            model.V_TablaVentas = respTabla;
             ModelView(model);
             return View("Index");
         }

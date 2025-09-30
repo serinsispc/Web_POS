@@ -3,6 +3,7 @@ using RunApi.API_DIAN;
 using RunApi.API_DIAN.Request;
 using RunApi.API_DIAN.Respons;
 using RunApi.ApiControlers;
+using RunApi.Envio;
 using RunApi.Models;
 using RunApi.Models.Cliente;
 using System;
@@ -62,6 +63,7 @@ namespace RunApi.Funciones.DIAN_API
 
 
             facturaNacional.number= numeroFacturaElectronica;
+         
             facturaNacional.resolution_id = Convert.ToInt32(venta.idResolucion);
             facturaNacional.type_document_id = 1;
             if ($"{venta.fechaVenta:yyyy-MM-dd}" == $"{DateTime.Today:yyy-MM-dd}")
@@ -88,8 +90,8 @@ namespace RunApi.Funciones.DIAN_API
             }
 
             /* Metodos de Pago */
-            facturaNacional.payment_forms = new List<PaymentForms>();
-            PaymentForms paymentForms = new PaymentForms();
+            facturaNacional.payment_forms = new List<RunApi.API_DIAN.Request.PaymentForms>();
+            RunApi.API_DIAN.Request.PaymentForms paymentForms = new RunApi.API_DIAN.Request.PaymentForms();
             paymentForms.payment_method_id = Convert.ToInt32(venta.idMedioDePago);
             if (venta.formaDePago == "Contado")
             {
@@ -296,50 +298,86 @@ namespace RunApi.Funciones.DIAN_API
             {
                 if (facturaNacionalRespuesta.is_valid==true && facturaNacionalRespuesta.uuid!=null)
                 {
-                    //procedemos a guardar toda la respuesta en la table FacturaElectronicaJSON
-                    var objeto = new FacturaElectronicaJSON
-                    {
-
+                    //en esta parte guardamos la FacturaElectronica
+                    FacturaElectronica fe = new FacturaElectronica();
+                    //primero consultamos el idventa en la factura
+                    var objetofe = new { 
+                    nombreDB=ClassDBCliente.DBCliente,
+                    idventa=venta.id
                     };
-                    string jsonFE = JsonConvert.SerializeObject(objeto);
-                    var respAPI =await FacturaElectronicaJSONAPI.InsertInto(jsonFE);
-                    if (respAPI != null && respAPI.estado==true) 
+                    fe =await FacturaElectronicaAPI.ConsultarIdVenta(JsonConvert.SerializeObject(objetofe));
+                    int funcionfe = 0;
+                    if (fe != null)
                     {
-
-                        string numerofacturaINT = facturaNacionalRespuesta.number.ToString().Replace(venta.prefijo,"");
-                        //ahora agregamos los datos a la tabla FacturaElectronica
-                        FacturaElectronicaJSON facturaelectronicaJSON = new FacturaElectronicaJSON();
-                        facturaelectronicaJSON.id = 0;
-                        facturaelectronicaJSON.idventa = (int)venta.id;
-                        facturaelectronicaJSON.is_valid = facturaNacionalRespuesta.is_valid;
-                        facturaelectronicaJSON.is_restored = (bool)facturaNacionalRespuesta.is_restored;
-                        facturaelectronicaJSON.algorithm = (string)facturaNacionalRespuesta.algorithm;
-                        facturaelectronicaJSON.zip_key = (string)facturaNacionalRespuesta.zip_key;
-                        facturaelectronicaJSON.status_code = facturaNacionalRespuesta.status_code;
-                        facturaelectronicaJSON.status_description = facturaNacionalRespuesta.status_description;
-                        facturaelectronicaJSON.status_message = facturaNacionalRespuesta.status_message;
-                        facturaelectronicaJSON.mail_sending_message = (string)facturaNacionalRespuesta.mail_sending_message;
-                        facturaelectronicaJSON.errors_messages = "";
-                        facturaelectronicaJSON.xml_name = (string)facturaNacionalRespuesta.xml_name;
-                        facturaelectronicaJSON.zip_name = (string)facturaNacionalRespuesta.zip_name;
-                        facturaelectronicaJSON.signature = (string)facturaNacionalRespuesta.signature;
-                        facturaelectronicaJSON.qr_code = (string)facturaNacionalRespuesta.qr_code;
-                        facturaelectronicaJSON.qr_link = (string)facturaNacionalRespuesta.qr_link;
-                        facturaelectronicaJSON.pdf_download_link = (string)facturaNacionalRespuesta.pdf_download_link;
-                        facturaelectronicaJSON.xml_base64_bytes = (string)facturaNacionalRespuesta.xml_base64_bytes;
-                        facturaelectronicaJSON.application_response_base64_bytes = (string)facturaNacionalRespuesta.application_response_base64_bytes;
-                        facturaelectronicaJSON.attached_document_base64_bytes = (string)facturaNacionalRespuesta.attached_document_base64_bytes;
-                        facturaelectronicaJSON.pdf_base64_bytes = (string)facturaNacionalRespuesta.pdf_base64_bytes;
-                        facturaelectronicaJSON.zip_base64_bytes = (string)facturaNacionalRespuesta.zip_base64_bytes;
-                        facturaelectronicaJSON.type_environment_id = facturaNacionalRespuesta.type_environment_id;
-
-                        InsertIntoRequest insertIntoRequest = new InsertIntoRequest();
-                        insertIntoRequest.nombreDB = ClassDBCliente.DBCliente;
-                        insertIntoRequest.FacturaElectronicaJSON = facturaelectronicaJSON;
-
-                        var resp2 = await FacturaElectronicaAPI.CRUD(JsonConvert.SerializeObject(insertIntoRequest));
-                        string respuesta2=JsonConvert.SerializeObject(resp2);
+                        funcionfe = 1;
                     }
+                    else
+                    {
+                        fe = new FacturaElectronica();
+                        fe.id = 0;
+                    }
+                    fe.idVenta = (int)venta.id;
+                    fe.cufe = (string)facturaNacionalRespuesta.uuid;
+                    fe.numeroFactura = facturaNacionalRespuesta.number;
+                    fe.fechaEmision=(string)facturaNacionalRespuesta.expedition_date;
+                    fe.fecahVensimiento = (string)facturaNacionalRespuesta.expedition_date;
+                    fe.dataQR= (string)facturaNacionalRespuesta.qr_data;
+                    fe.imagenQR = "--";
+                    fe.resolucion_id = (int)venta.idResolucion;
+                    fe.prefijo = venta.prefijo;
+                    fe.numeroFactura = facturaNacionalRespuesta.number.Replace(venta.prefijo,"");
+                    var facturaelectronicaenvio = new FacturaElectronicaEnvio();
+                    facturaelectronicaenvio.nombreDB = ClassDBCliente.DBCliente;
+                    facturaelectronicaenvio.facturaElectronica = fe;
+                    var respuestaCRUD_FacturaElectronica = await FacturaElectronicaAPI.CRUD(facturaelectronicaenvio);
+                    if (respuestaCRUD_FacturaElectronica.estado)
+                    {
+                        //procedemos a guardar toda la respuesta en la table FacturaElectronicaJSON
+                        var objeto = new FacturaElectronicaJSON
+                        {
+
+                        };
+                        string jsonFE = JsonConvert.SerializeObject(objeto);
+                        var respAPI = await FacturaElectronicaJSONAPI.InsertInto(jsonFE);
+                        if (respAPI != null && respAPI.estado == true)
+                        {
+
+                            string numerofacturaINT = facturaNacionalRespuesta.number.ToString().Replace(venta.prefijo, "");
+                            //ahora agregamos los datos a la tabla FacturaElectronica
+                            FacturaElectronicaJSON facturaelectronicaJSON = new FacturaElectronicaJSON();
+                            facturaelectronicaJSON.id = 0;
+                            facturaelectronicaJSON.idventa = (int)venta.id;
+                            facturaelectronicaJSON.is_valid = facturaNacionalRespuesta.is_valid;
+                            facturaelectronicaJSON.is_restored = (bool)facturaNacionalRespuesta.is_restored;
+                            facturaelectronicaJSON.algorithm = (string)facturaNacionalRespuesta.algorithm;
+                            facturaelectronicaJSON.zip_key = (string)facturaNacionalRespuesta.zip_key;
+                            facturaelectronicaJSON.status_code = facturaNacionalRespuesta.status_code;
+                            facturaelectronicaJSON.status_description = facturaNacionalRespuesta.status_description;
+                            facturaelectronicaJSON.status_message = facturaNacionalRespuesta.status_message;
+                            facturaelectronicaJSON.mail_sending_message = (string)facturaNacionalRespuesta.mail_sending_message;
+                            facturaelectronicaJSON.errors_messages = "";
+                            facturaelectronicaJSON.xml_name = (string)facturaNacionalRespuesta.xml_name;
+                            facturaelectronicaJSON.zip_name = (string)facturaNacionalRespuesta.zip_name;
+                            facturaelectronicaJSON.signature = (string)facturaNacionalRespuesta.signature;
+                            facturaelectronicaJSON.qr_code = (string)facturaNacionalRespuesta.qr_code;
+                            facturaelectronicaJSON.qr_link = (string)facturaNacionalRespuesta.qr_link;
+                            facturaelectronicaJSON.pdf_download_link = (string)facturaNacionalRespuesta.pdf_download_link;
+                            facturaelectronicaJSON.xml_base64_bytes = (string)facturaNacionalRespuesta.xml_base64_bytes;
+                            facturaelectronicaJSON.application_response_base64_bytes = (string)facturaNacionalRespuesta.application_response_base64_bytes;
+                            facturaelectronicaJSON.attached_document_base64_bytes = (string)facturaNacionalRespuesta.attached_document_base64_bytes;
+                            facturaelectronicaJSON.pdf_base64_bytes = (string)facturaNacionalRespuesta.pdf_base64_bytes;
+                            facturaelectronicaJSON.zip_base64_bytes = (string)facturaNacionalRespuesta.zip_base64_bytes;
+                            facturaelectronicaJSON.type_environment_id = facturaNacionalRespuesta.type_environment_id;
+
+                            InsertIntoRequest insertIntoRequest = new InsertIntoRequest();
+                            insertIntoRequest.nombreDB = ClassDBCliente.DBCliente;
+                            insertIntoRequest.FacturaElectronicaJSON = facturaelectronicaJSON;
+
+                            //var resp2 = await FacturaElectronicaAPI.CRUD(JsonConvert.SerializeObject(insertIntoRequest));
+                            //string respuesta2 = JsonConvert.SerializeObject(resp2);
+                        }
+                    }
+
                 }
             }
             return JsonConvert.SerializeObject(facturaNacionalRespuesta);

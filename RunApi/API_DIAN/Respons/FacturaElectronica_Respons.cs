@@ -52,7 +52,7 @@ namespace RunApi.API_DIAN.Respons
         public LegalMonetaryTotals legal_monetary_totals { get; set; }
         public List<PaymentForms> payment_forms { get; set; }
         public object tax_totals { get; set; }
-        public Notes notes { get; set; }
+        public List<Notes> notes { get; set; }
 
     }
     public class Discrepancy_response
