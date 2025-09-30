@@ -215,8 +215,7 @@
                                     <th data-col="estadoVenta">Estado</th>
                                     <th data-col="nit">NIT</th>
                                     <th data-col="nombreCliente">Cliente</th>
-                                    <th data-col="cufe" class="all" data-priority="3">CUFE</th>
-
+                                    <th data-col="estadoFE" class="all" data-priority="4">Estado FE</th>
 
                                     @* la col "Más" ya no se agrega por JS (no hay overflow-mode) *@
                                 </tr>
@@ -230,34 +229,27 @@
                                         var cufeTexto = (lista.cufe ?? "").Trim();
                                         var hayCufe = !string.IsNullOrEmpty(cufeTexto) && cufeTexto != "--";
 
-                                        var estadoCufe = esFacturaElectronica
-                                            ? (hayCufe ? "ACEPTADA" : "RECHAZADA")
-                                            : "--";
-
-                                        var badgeClase = estadoCufe == "ACEPTADA" ? "bg-success"
-                                                        : estadoCufe == "RECHAZADA" ? "bg-danger"
-                                                        : "bg-secondary";
-
                                         // Atributos data-* para lógica JS (selección)
                                         var dataIdVenta = lista.id;
                                         var dataTotal = (lista.totalVenta ?? 0m).ToString(System.Globalization.CultureInfo.InvariantCulture);
                                         var dataFechaIso = lista.fechaVenta.HasValue ? lista.fechaVenta.Value.ToString("s") : "";
 
-                                        <tr data-idventa="@dataIdVenta"
-                                            data-total="@dataTotal"
-                                            data-fecha="@dataFechaIso"
-                                            data-numero="@lista.numeroVenta">
-                                            <td data-col="numeroVenta">@lista.prefijo @lista.numeroVenta</td>
-                                            <td data-col="fechaVenta">@((lista.fechaVenta ?? DateTime.MinValue).ToString("yyyy-MM-dd HH:mm"))</td>
-                                            <td data-col="tipoFactura">@lista.tipoFactura</td>
-                                            <td class="text-end" data-col="total">@((lista.totalVenta ?? 0m).ToString("C0", esCO))</td>
-                                            <td data-col="formaDePago">@lista.formaDePago</td>
-                                            <td data-col="estadoVenta">@lista.estadoVenta</td>
-                                            <td data-col="nit">@lista.nit</td>
-                                            <td data-col="nombreCliente" title="@lista.nombreCliente">@lista.nombreCliente</td>
-                                            <td data-col="cufe">@lista.cufe</td>
+                                                                <tr data-idventa="@dataIdVenta"
+                                                                    data-total="@dataTotal"
+                                                                    data-fecha="@dataFechaIso"
+                                                                    data-numero="@lista.numeroVenta">
+                                                                    <td data-col="numeroVenta">@lista.prefijo @lista.numeroVenta</td>
+                                                                    <td data-col="fechaVenta">@((lista.fechaVenta ?? DateTime.MinValue).ToString("yyyy-MM-dd HH:mm"))</td>
+                                                                    <td data-col="tipoFactura">@lista.tipoFactura</td>
+                                                                    <td class="text-end" data-col="total">@((lista.totalVenta ?? 0m).ToString("C0", esCO))</td>
+                                                                    <td data-col="formaDePago">@lista.formaDePago</td>
+                                                                    <td data-col="estadoVenta">@lista.estadoVenta</td>
+                                                                    <td data-col="nit">@lista.nit</td>
+                                                                    <td data-col="nombreCliente" title="@lista.nombreCliente">@lista.nombreCliente</td>
+                                                                    <td data-col="estadoFE">@lista.estadoFE</td>
 
-                                        </tr>
+
+                                                                </tr>
                                     }
                                 }
                             </tbody>

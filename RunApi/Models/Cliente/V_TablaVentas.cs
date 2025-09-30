@@ -52,6 +52,7 @@ namespace RunApi.Models.Cliente
         public string nombreCliente { get; set; }
         public decimal? propina { get; set; }
         public string cufe { get; set; }
+        public string estadoFE { get; set; }
         public string imagenQR { get; set; }
         public int? idBaseCaja { get; set; }
         public string razonDescuento { get; set; }
