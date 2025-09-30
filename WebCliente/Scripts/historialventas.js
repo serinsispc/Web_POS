@@ -1,10 +1,10 @@
 ﻿/* ======================================
    HISTORIAL VENTAS – LÓGICA DE FRONTEND (sin render de filas)
-   v1.14.3
+   v1.14.4
    --------------------------------------
-   - Ajuste: export CSV usa "Estado FE" (no CUFE) según orden real del DOM.
-   - Coloreado de filas ya se hace en hv.datatables.js (Estado FE).
-   - Mantiene toda la lógica existente (fechas, resoluciones, clientes, DIAN...).
+   - FIX global: decodificación Base64 → UTF-8 segura (tildes/ñ correctas).
+   - Export CSV usa "Estado FE" (no CUFE) según orden real del DOM.
+   - Coloreado de filas se hace en hv.datatables.js (Estado FE).
    ====================================== */
 (function () {
     "use strict";
@@ -14,8 +14,30 @@
     function byId(id) { return document.getElementById(id); }
     function ymd(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0'); }
     function parseDate(val) { var d = val ? new Date(val) : null; return isNaN(d) ? null : d; }
-    function decodeBase64(b64) { try { return atob(b64 || ""); } catch { return "[]"; } }
-    function decodeB64ToJson(b64) { try { if (!b64) return null; var txt = atob(b64); return JSON.parse(txt); } catch (e) { return null; } }
+
+    // ---------- NUEVO: helpers Base64 → UTF-8 seguros ----------
+    function b64ToUtf8(b64) {
+        try {
+            if (!b64) return "";
+            var bin = atob(b64);
+            if (window.TextDecoder) {
+                var bytes = new Uint8Array(bin.length);
+                for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                return new TextDecoder('utf-8').decode(bytes);
+            } else {
+                // Fallback legacy
+                return decodeURIComponent(escape(bin));
+            }
+        } catch (e) { return ""; }
+    }
+    function decodeBase64(b64) { return b64ToUtf8(b64); }
+    function decodeB64ToJson(b64) {
+        try {
+            var txt = b64ToUtf8(b64);
+            return txt ? JSON.parse(txt) : null;
+        } catch (e) { return null; }
+    }
+    // -----------------------------------------------------------
 
     // Setea valor SOLO si es no vacío (para casos normales)
     function setIfVal(selector, val) {
@@ -290,7 +312,7 @@
 
     }
 
-    // ====== RESOLUCIONES (Modal) – (sin cambios de lógica) =====
+    // ====== RESOLUCIONES (Modal) – (sin cambios de lógica, tildes OK por decode UTF-8) =====
     function normalizarResolucion(r) {
         return {
             id: r.id ?? null,
@@ -392,7 +414,7 @@
         });
     }
 
-    // ===== CLIENTES (Modal) – (sin cambios, salvo comentarios) =====
+    // ===== CLIENTES (Modal) – (sin cambios, tildes OK por decode UTF-8) =====
     function normalizarCliente(c) {
         return {
             id: c.id ?? c.idCliente ?? c.Id ?? 0,
@@ -647,9 +669,8 @@
                 var el = q(sel); if (!el) return;
                 el.value = (val === null || val === undefined) ? "" : String(val);
             }
-            function b64ToJson(b64) {
-                if (!b64) return null;
-                try { return JSON.parse(atob(b64)); } catch (e) { return null; }
+            function b64ToJsonSafe(b64) {
+                try { var txt = b64ToUtf8(b64); return txt ? JSON.parse(txt) : null; } catch (e) { return null; }
             }
             function strToObj(s) {
                 if (!s) return null;
@@ -660,11 +681,11 @@
                 var carrier = document.getElementById('acquirerData');
                 if (carrier) {
                     var b64 = carrier.getAttribute('data-acquirer-json-b64') || "";
-                    var o = b64ToJson(b64);
+                    var o = b64ToJsonSafe(b64);
                     if (o) return o;
                 }
                 if (typeof window.AcquirerB64 === 'string') {
-                    var o2 = b64ToJson(window.AcquirerB64);
+                    var o2 = b64ToJsonSafe(window.AcquirerB64);
                     if (o2) return o2;
                     var o3 = strToObj(window.AcquirerB64);
                     if (o3) return o3;

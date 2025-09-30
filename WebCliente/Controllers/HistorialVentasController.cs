@@ -25,44 +25,43 @@ namespace WebCliente.Controllers
         // GET: HistorialVentas
         public async Task<ActionResult> Index()
         {
-            //en esta parte enviamos el model en la session HistorialVentasJson
             var model = new HistorialVentasViewModels();
-            model.Fecha1=DateTime.Now;
-            model.Fecha2=DateTime.Now;
-            model.V_TablaVentas =await V_TablaVentasControler.Filtrar(Session["db"].ToString(),DateTime.Now, DateTime.Now);
+            model.Fecha1 = DateTime.Now;
+            model.Fecha2 = DateTime.Now;
+            model.V_TablaVentas = await V_TablaVentasControler.Filtrar(Session["db"].ToString(), DateTime.Now, DateTime.Now);
             ModelView(model);
             return View();
-        
         }
-        /// <summary>
-        /// función que se encarga de transformar el model y cargarlo a la session
-        /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
+
         public void ModelView(HistorialVentasViewModels model)
         {
             string json = JsonConvert.SerializeObject(model);
             Session["HistorialVentasJson"] = json;
         }
-        public async Task<ActionResult> Filtar(DateTime fecha1, DateTime fecha2,[Optional] string nombreCliente)
-        {
-            if (fecha1 == null) fecha1 = DateTime.Today;
-            if (fecha2 == null) fecha2 = DateTime.Today;
-            if (nombreCliente == null) nombreCliente = "";
 
-            // Normaliza rango (incluye todo el día de fecha2 si lo necesitas)
-            var desde = fecha1.Date;
-            var hasta = fecha2.Date.AddDays(1).AddTicks(-1);
+        [HttpGet]
+        [ActionName("Filtrar")]
+        public ActionResult Filtrar_Alias_Get()
+        {
+            return RedirectToAction("Index");
+        }
+
+        // 🔹 Tolerante a nulls
+        public async Task<ActionResult> Filtar(DateTime? fecha1 = null, DateTime? fecha2 = null, string nombreCliente = null)
+        {
+            var f1 = fecha1 ?? DateTime.Today;
+            var f2 = fecha2 ?? DateTime.Today;
 
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
-            model.Fecha1 = fecha1;
-            model.Fecha2 = fecha2;
-       
-            var respTabla= await V_TablaVentasControler.Filtrar(Session["db"].ToString(), fecha1, fecha2);
-            if (nombreCliente != null)
+            model.Fecha1 = f1;
+            model.Fecha2 = f2;
+
+            var respTabla = await V_TablaVentasControler.Filtrar(Session["db"].ToString(), f1, f2);
+
+            if (!string.IsNullOrWhiteSpace(nombreCliente))
             {
                 model.NombreCliente = nombreCliente;
-                model.V_TablaVentas = respTabla.Where(x=>x.nombreCliente.Contains(nombreCliente)).ToList();
+                model.V_TablaVentas = respTabla.Where(x => x.nombreCliente.Contains(nombreCliente)).ToList();
             }
             else
             {
@@ -72,13 +71,13 @@ namespace WebCliente.Controllers
             ModelView(model);
             return View("Index");
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> FiltarNumeroFactura(int? numerofactura)
+        public async Task<ActionResult> FiltarNumeroFactura(int? numerofactura = null)
         {
             if (!numerofactura.HasValue)
             {
-                // si llega vacío, puedes redirigir o recargar la vista con un mensaje
                 TempData["Msg"] = "Ingrese un número de factura válido.";
                 return RedirectToAction("Index");
             }
@@ -95,27 +94,31 @@ namespace WebCliente.Controllers
             ModelView(model);
             return View("Index");
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> FiltarNombreCliente(string nombreCliente)
+        public async Task<ActionResult> FiltarNombreCliente(string nombreCliente = null)
         {
-            var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
+            var criterio = (nombreCliente ?? "").Trim();
 
-            var respTabla = await V_TablaVentasControler.FiltrarNombreCliente(Session["db"].ToString(), nombreCliente);
+            var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
+            var respTabla = await V_TablaVentasControler.FiltrarNombreCliente(Session["db"].ToString(), criterio);
+
             model.V_TablaVentas = respTabla;
             model.NumeroFactura = null;
-            model.NombreCliente = $"{nombreCliente}";
+            model.NombreCliente = criterio;
 
             ModelView(model);
             return View("Index");
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> ListaResoluciones(int idventa)
         {
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
 
-            var listaresoluciones =await V_ResolucionesControler.Lista();
+            var listaresoluciones = await V_ResolucionesControler.Lista();
 
             Session["idventa"] = idventa;
             Session["V_Resoluciones"] = JsonConvert.SerializeObject(listaresoluciones);
@@ -123,27 +126,27 @@ namespace WebCliente.Controllers
             ModelView(model);
             return View("Index");
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> SeleccionarResoluciones(int idResolucion)
         {
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
 
-            //en esta parte modificamos el id de la resolución de la table ventas
             int idventa = Convert.ToInt32(Session["idventa"]);
-            var respuesta = await HistorialVentasAPI.EditarIdResolucion(idventa,idResolucion);
+            var respuesta = await HistorialVentasAPI.EditarIdResolucion(idventa, idResolucion);
 
             if (respuesta.estado)
             {
                 string db = Session["db"].ToString();
-                model.V_TablaVentas =await V_TablaVentasControler.Filtrar(db,model.Fecha1,model.Fecha2);
+                model.V_TablaVentas = await V_TablaVentasControler.Filtrar(db, model.Fecha1, model.Fecha2);
             }
 
             Session["V_Resoluciones"] = "[]";
-            
             ModelView(model);
             return View("Index");
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> BotonEditar_AgregarCliente(int idventa)
@@ -163,27 +166,21 @@ namespace WebCliente.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> SeleccionarCliente(int idCliente)
         {
-            // Restaura el modelo de sesión y vuelve al Index
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
 
-            // Recupera el idventa por si necesitas asociar el cliente a la venta
             var idventa = 0;
             if (Session["idventa"] != null)
                 int.TryParse(Session["idventa"].ToString(), out idventa);
 
-            // TODO: tu lógica para asociar el cliente seleccionado a la venta / modelo
-            // Por ejemplo:
-            var respuesta= await HistorialVentasAPI.AsociarClienteAVenta(idventa, idCliente);
+            var respuesta = await HistorialVentasAPI.AsociarClienteAVenta(idventa, idCliente);
             if (respuesta.estado)
             {
-                model.V_TablaVentas =await V_TablaVentasControler.Filtrar(Session["db"].ToString(),model.Fecha1,model.Fecha2);
+                model.V_TablaVentas = await V_TablaVentasControler.Filtrar(Session["db"].ToString(), model.Fecha1, model.Fecha2);
             }
-            // Limpia la lista para que el modal no reaparezca al recargar
+
             Session.Remove("V_Clientes");
 
-
             ModelView(model);
-            // Puedes mostrar un toast/alert de éxito en la vista si ya lo manejas
             return View("Index");
         }
 
@@ -191,19 +188,14 @@ namespace WebCliente.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> BuscarNIT_DIAN(int nit)
         {
-            // Restaura el modelo de sesión y vuelve al Index
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
 
-            //declaramos la variable del token
-            string token= string.Empty;
-            //consultamos el token
-            token =await HistorialVentasAPI.ConsultarToken();
-            //en esta parte hacemos la consulta a la DIAN
+            string token = await HistorialVentasAPI.ConsultarToken();
             var reques = new ConsultarNIT_Request();
             reques.Environment.TypeEnvironmentId = 1;
             reques.TypeDocumentIdentificationId = 6;
             reques.IdentificationNumber = nit;
-            var respuesta = await API_DIAN.ConsultarNIT(reques,token);
+            var respuesta = await API_DIAN.ConsultarNIT(reques, token);
 
             if (respuesta.Message == null)
             {
@@ -247,10 +239,8 @@ namespace WebCliente.Controllers
         {
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
 
-            //codificamos toda la lógica
             if (idventa > 0)
             {
-                //llamamos el endpint que se encarga de enviar la factura a la DIAN
                 var respuesta = await API_DIAN.FacturaElectronica(idventa);
             }
             var respTabla = await V_TablaVentasControler.Filtrar(Session["db"].ToString(), model.Fecha1, model.Fecha2);
@@ -263,28 +253,21 @@ namespace WebCliente.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> ExportarExcelFiltro()
         {
-            // 1) Recuperar el modelo desde sesión
             var jsonSession = Session["HistorialVentasJson"] as string;
             if (string.IsNullOrWhiteSpace(jsonSession))
-                return RedirectToAction("Index"); // o un BadRequest/Json con mensaje
+                return RedirectToAction("Index");
 
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(jsonSession);
             if (model == null)
                 return RedirectToAction("Index");
 
-            // 2) Traer las ventas (si tu método ya retorna JSON string no serialices otra vez)
-            var ventas =await ExportarExcelAPI.ExportarExcels(model.Fecha1, model.Fecha2);
+            var ventas = await ExportarExcelAPI.ExportarExcels(model.Fecha1, model.Fecha2);
+            string ventasJson = JsonConvert.SerializeObject(ventas);
 
-            // 3) Usa el JSON tal cual si ya viene como string
-            string ventasJson =  JsonConvert.SerializeObject(ventas);
-
-
-            // 4) Llamar a tu API que genera el Excel
             var result = await ExportarExcelAPI.VentasExcel(ventasJson);
             if (result == null || result.Bytes == null || result.Bytes.Length == 0)
                 return new HttpStatusCodeResult(500, "No fue posible generar el Excel.");
 
-            // 5) Descargar
             var contentType = string.IsNullOrWhiteSpace(result.ContentType)
                 ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 : result.ContentType;
