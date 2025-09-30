@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Ajax.Utilities;
+using Newtonsoft.Json;
 using RunApi.API_DIAN;
 using RunApi.ApiControlers;
 using RunApi.Funciones;
@@ -252,5 +253,43 @@ namespace WebCliente.Controllers
             ModelView(model);
             return View("Index");
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> ExportarExcelFiltro()
+        {
+            // 1) Recuperar el modelo desde sesión
+            var jsonSession = Session["HistorialVentasJson"] as string;
+            if (string.IsNullOrWhiteSpace(jsonSession))
+                return RedirectToAction("Index"); // o un BadRequest/Json con mensaje
+
+            var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(jsonSession);
+            if (model == null)
+                return RedirectToAction("Index");
+
+            // 2) Traer las ventas (si tu método ya retorna JSON string no serialices otra vez)
+            var ventas =await ExportarExcelAPI.ExportarExcels(model.Fecha1, model.Fecha2);
+
+            // 3) Usa el JSON tal cual si ya viene como string
+            string ventasJson =  JsonConvert.SerializeObject(ventas);
+
+
+            // 4) Llamar a tu API que genera el Excel
+            var result = await ExportarExcelAPI.VentasExcel(ventasJson);
+            if (result == null || result.Bytes == null || result.Bytes.Length == 0)
+                return new HttpStatusCodeResult(500, "No fue posible generar el Excel.");
+
+            // 5) Descargar
+            var contentType = string.IsNullOrWhiteSpace(result.ContentType)
+                ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                : result.ContentType;
+
+            var fileName = string.IsNullOrWhiteSpace(result.FileName)
+                ? $"ventas_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+                : result.FileName;
+
+            return File(result.Bytes, contentType, fileName);
+        }
+
     }
 }

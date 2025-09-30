@@ -93,6 +93,7 @@
     <Compile Include="Envio\LoginEnviar.cs" />
     <Compile Include="Envio\UsuarioAdminEnvio.cs" />
     <Compile Include="API_DIAN\API_DIAN.cs" />
+    <Compile Include="Funciones\ExportarExcelAPI.cs" />
     <Compile Include="Funciones\FacturaElectronicaAPI.cs" />
     <Compile Include="Funciones\FacturaElectronicaJSONAPI.cs" />
     <Compile Include="Funciones\GetDataFactura_JSON_API.cs" />
@@ -103,6 +104,7 @@
     <Compile Include="Models\Admin\V_UsuarioDB.cs" />
     <Compile Include="Models\ClassDBCliente.cs" />
     <Compile Include="Models\Cliente\ConfiguracionDian.cs" />
+    <Compile Include="Models\Cliente\ExportarExcel.cs" />
     <Compile Include="Models\Cliente\FacturaElectronica.cs" />
     <Compile Include="Models\Cliente\FacturaElectronicaJSON.cs" />
     <Compile Include="Models\Cliente\GetDataFactura_JSON.cs" />
