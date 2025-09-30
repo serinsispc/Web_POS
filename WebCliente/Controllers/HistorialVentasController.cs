@@ -118,6 +118,9 @@ namespace WebCliente.Controllers
         {
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
 
+            // 🔑 Evita que el modal de Clientes se auto-abra en este request
+            Session.Remove("V_Clientes");
+
             var listaresoluciones = await V_ResolucionesControler.Lista();
 
             Session["idventa"] = idventa;
@@ -149,9 +152,22 @@ namespace WebCliente.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public ActionResult CancelarResoluciones()
+        {
+            // 🔧 apaga el trigger si el usuario cierra el modal sin elegir
+            Session.Remove("V_Resoluciones");
+            return new HttpStatusCodeResult(204);
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<ActionResult> BotonEditar_AgregarCliente(int idventa)
         {
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
+
+            // 🔧 evita que Resoluciones se auto-abra después
+            Session.Remove("V_Resoluciones");
 
             var listaClientes = await HistorialVentasAPI.ListaClientes();
 

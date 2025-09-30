@@ -1,13 +1,17 @@
 ﻿/* ======================================
    HISTORIAL VENTAS – LÓGICA DE FRONTEND (sin render de filas)
-   v1.14.4
+   v1.14.7
    --------------------------------------
-   - FIX global: decodificación Base64 → UTF-8 segura (tildes/ñ correctas).
-   - Export CSV usa "Estado FE" (no CUFE) según orden real del DOM.
-   - Coloreado de filas se hace en hv.datatables.js (Estado FE).
+   - FIX UTF-8: decodificación Base64 → UTF-8 (tildes/ñ OK).
+   - FIX modales: evita backdrops huérfanos y pantalla “congelada”.
+   - NUEVO: bandera global para impedir doble auto-apertura de modales
+            en el mismo render (Clientes vs Resoluciones).
    ====================================== */
 (function () {
     "use strict";
+
+    // ===== Bandera global: impide auto-abrir más de 1 modal por render =====
+    window.__HV_MODAL_AUTOOPENED__ = false;
 
     // ===== Utils
     var fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -15,7 +19,7 @@
     function ymd(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0'); }
     function parseDate(val) { var d = val ? new Date(val) : null; return isNaN(d) ? null : d; }
 
-    // ---------- NUEVO: helpers Base64 → UTF-8 seguros ----------
+    // ---------- Helpers Base64 → UTF-8 seguros ----------
     function b64ToUtf8(b64) {
         try {
             if (!b64) return "";
@@ -37,7 +41,14 @@
             return txt ? JSON.parse(txt) : null;
         } catch (e) { return null; }
     }
-    // -----------------------------------------------------------
+
+    // ---------- Helper seguro para abrir modales (una sola instancia) ----------
+    function showModal(el, opts) {
+        if (!el || !window.bootstrap || !bootstrap.Modal) return null;
+        var inst = bootstrap.Modal.getOrCreateInstance(el, opts || {});
+        inst.show();
+        return inst;
+    }
 
     // Setea valor SOLO si es no vacío (para casos normales)
     function setIfVal(selector, val) {
@@ -47,7 +58,7 @@
         var el = document.querySelector(selector);
         if (el && v) el.value = v;
     }
-    // Setea valor SIEMPRE (incluso vacío, "0" o "-") – para reflejar exactamente lo que llegue del acquirer
+    // Setea valor SIEMPRE (refleja exactamente lo que llegue del acquirer)
     function setVal(selector, val) {
         var v = (val === null || val === undefined) ? "" : String(val);
         var $el = (window.jQuery ? window.jQuery(selector) : null);
@@ -312,7 +323,7 @@
 
     }
 
-    // ====== RESOLUCIONES (Modal) – (sin cambios de lógica, tildes OK por decode UTF-8) =====
+    // ====== RESOLUCIONES (Modal) =====
     function normalizarResolucion(r) {
         return {
             id: r.id ?? null,
@@ -385,9 +396,9 @@
         llenarTablaResoluciones(lista);
         if (Array.isArray(lista) && lista.length > 0) {
             var modalEl = byId("modalResoluciones");
-            if (modalEl && window.bootstrap && bootstrap.Modal) {
-                var modal = new bootstrap.Modal(modalEl, { backdrop: "static" });
-                modal.show();
+            if (modalEl && !window.__HV_MODAL_AUTOOPENED__) {
+                showModal(modalEl, { backdrop: "static" });
+                window.__HV_MODAL_AUTOOPENED__ = true; // <- evita que se autoabra otro modal
             }
         }
     }
@@ -399,13 +410,13 @@
 
             var inp = byId("inp-idResolucion");
             var form = byId("formSelResol");
+            var modalEl = byId("modalResoluciones");
 
             if (inp && form) {
                 inp.value = id;
 
-                var modalEl = byId("modalResoluciones");
                 if (modalEl && window.bootstrap && bootstrap.Modal) {
-                    var instance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                    var instance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
                     instance.hide();
                 }
 
@@ -414,7 +425,7 @@
         });
     }
 
-    // ===== CLIENTES (Modal) – (sin cambios, tildes OK por decode UTF-8) =====
+    // ===== CLIENTES (Modal) =====
     function normalizarCliente(c) {
         return {
             id: c.id ?? c.idCliente ?? c.Id ?? 0,
@@ -502,11 +513,10 @@
         pintarTablaClientes(clientes);
 
         // Abre el modal si así se indicó, o si hay respuesta de DIAN (encontrado/no encontrado)
-        if (window.DebeMostrarModalClientes === true || window.DebeMostrarModalClientes === "true" || window.AcquirerB64 || window.AcquirerMsg) {
-            if (window.bootstrap && bootstrap.Modal) {
-                var modalCli = new bootstrap.Modal(modalClientesEl, { backdrop: "static", keyboard: false });
-                modalCli.show();
-            }
+        if ((window.DebeMostrarModalClientes === true || window.DebeMostrarModalClientes === "true" || window.AcquirerB64 || window.AcquirerMsg) &&
+            !window.__HV_MODAL_AUTOOPENED__) {
+            showModal(modalClientesEl, { backdrop: "static", keyboard: false });
+            window.__HV_MODAL_AUTOOPENED__ = true; // <- evita abrir otro modal automáticamente
         }
 
         // === BUSCAR general por texto
@@ -551,7 +561,6 @@
             var nit = ($('#cli-dian-nit').val() || '').replace(/\D/g, '').trim();
             if (!nit) { alert('Ingrese un NIT para consultar.'); return; }
 
-            // Envía el NIT al form oculto que postea a BuscarNIT_DIAN
             $('#nit_dian_hidden').val(nit);
             $('#formBuscarNIT_DIAN').trigger('submit');
         });
@@ -649,17 +658,19 @@
 
             var hid = byId("idClienteSeleccionado");
             var form = byId("formSeleccionarCliente");
+            var modalClientesEl = byId("modalClientes");
+
             if (hid && form) {
                 hid.value = idCli;
-                if (window.bootstrap && bootstrap.Modal) {
-                    var inst = bootstrap.Modal.getInstance(modalClientesEl) || new bootstrap.Modal(modalClientesEl);
+                if (modalClientesEl && window.bootstrap && bootstrap.Modal) {
+                    var inst = bootstrap.Modal.getInstance(modalClientesEl) || bootstrap.Modal.getOrCreateInstance(modalClientesEl);
                     inst.hide();
                 }
                 form.submit();
             }
         });
 
-        // === Prefill tras retorno de DIAN (Session["acquirer"] => TempData/DOM => window.*) ===
+        // === Prefill tras retorno de DIAN ===
         (function () {
             var modalClientesEl = byId("modalClientes");
             if (!modalClientesEl) return;
@@ -706,9 +717,9 @@
             var debeAbrir = !!msg || Object.keys(acq).length > 0 || window.DebeMostrarModalClientes === true || window.DebeMostrarModalClientes === "true";
             if (!debeAbrir) return;
 
-            if (window.bootstrap && bootstrap.Modal) {
-                var inst = new bootstrap.Modal(modalClientesEl, { backdrop: 'static', keyboard: false });
-                inst.show();
+            if (!window.__HV_MODAL_AUTOOPENED__) {
+                showModal(modalClientesEl, { backdrop: 'static', keyboard: false });
+                window.__HV_MODAL_AUTOOPENED__ = true;
             }
             $('#cli-editor').removeClass('d-none');
 
@@ -761,7 +772,7 @@
         })();
     }
 
-    // ===== INIT
+    // ===== INIT + Limpieza anti-backdrop =====
     document.addEventListener("DOMContentLoaded", function () {
         wireRowSelection();
         updateSidePanel();
@@ -778,5 +789,60 @@
             var triggers = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             triggers.forEach(function (el) { new bootstrap.Tooltip(el); });
         }
+
+        // ---------- Limpieza forzada de modales/backdrop ----------
+        function forceModalCleanup() {
+            try {
+                document.querySelectorAll('.modal-backdrop').forEach(function (bd) {
+                    bd.parentNode && bd.parentNode.removeChild(bd);
+                });
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('padding-right');
+                document.body.style.removeProperty('overflow');
+            } catch (e) { /* no-op */ }
+        }
+
+        ['modalClientes', 'modalResoluciones'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('hidden.bs.modal', function () {
+                var inst = (window.bootstrap && bootstrap.Modal) ? bootstrap.Modal.getInstance(el) : null;
+                if (inst && inst.dispose) inst.dispose();
+
+                // 🔧 si es el modal de resoluciones, avisa al servidor para apagar el trigger
+                if (el.id === 'modalResoluciones') {
+                    try {
+                        // reutiliza cualquier AntiForgeryToken existente en la página
+                        var token =
+                            document.querySelector('#formSelResol input[name="__RequestVerificationToken"]')?.value ||
+                            document.querySelector('#formResolucion input[name="__RequestVerificationToken"]')?.value;
+                        if (token) {
+                            fetch('/HistorialVentas/CancelarResoluciones', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                                body: '__RequestVerificationToken=' + encodeURIComponent(token)
+                            });
+                        }
+                    } catch (e) { /* no-op */ }
+                }
+
+                // limpieza visual anti-backdrop (ya la tienes, la dejo aquí por claridad)
+                try {
+                    document.querySelectorAll('.modal-backdrop').forEach(function (bd) {
+                        bd.parentNode && bd.parentNode.removeChild(bd);
+                    });
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('padding-right');
+                    document.body.style.removeProperty('overflow');
+                } catch (e) { /* no-op */ }
+            });
+        });
+
+
+        // Si se cierra con botones data-bs-dismiss="modal" o X
+        document.addEventListener('click', function (e) {
+            var btnClose = e.target.closest('[data-bs-dismiss="modal"], .btn-close');
+            if (btnClose) setTimeout(forceModalCleanup, 100);
+        });
     });
 })();
