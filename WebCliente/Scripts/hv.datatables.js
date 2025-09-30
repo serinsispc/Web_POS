@@ -1,6 +1,6 @@
 ﻿// hv.datatables.js
 // DataTables para #tablaHV con columnas (ORDEN REAL DEL DOM):
-// 0 Número | 1 Fecha | 2 Tipo | 3 Total | 4 Forma de Pago | 5 Estado | 6 NIT | 7 Cliente | 8 CUFE (VISIBLE)
+// 0 Número | 1 Fecha | 2 Tipo | 3 Total | 4 Forma de Pago | 5 Estado | 6 NIT | 7 Cliente | 8 Estado FE (VISIBLE)
 
 (function () {
     'use strict';
@@ -56,7 +56,7 @@
                 { className: '' },                         // 5 Estado
                 { className: '' },                         // 6 NIT
                 { className: '' },                         // 7 Cliente
-                { className: 'all' }                       // 8 CUFE (SIEMPRE visible)
+                { className: 'all' }                       // 8 Estado FE (SIEMPRE visible)
             ],
 
             columnDefs: [
@@ -64,7 +64,7 @@
                 { responsivePriority: 1, targets: 0 }, // Número
                 { responsivePriority: 2, targets: 1 }, // Fecha
                 { responsivePriority: 3, targets: 3 }, // Total
-                { responsivePriority: 4, targets: 8 }, // CUFE (además marcado como 'all')
+                { responsivePriority: 4, targets: 8 }, // Estado FE (además marcado como 'all')
                 { responsivePriority: 5, targets: 7 }, // Cliente
                 { responsivePriority: 6, targets: 4 }, // Forma de Pago
                 { responsivePriority: 7, targets: 5 }, // Estado
@@ -90,9 +90,9 @@
                     }
                 },
 
-                // Forzar visibilidad y búsqueda de CUFE + wrap para no desbordar
+                // Forzar visibilidad/búsqueda de ESTADO FE + wrap para no desbordar
                 {
-                    targets: 8,             // CUFE
+                    targets: 8,             // Estado FE
                     visible: true,
                     searchable: true,
                     createdCell: function (td) {
@@ -108,17 +108,17 @@
 
             createdRow: function (row, data) {
                 try {
-                    // data[8] = CUFE (según orden real)
-                    var cufe = (data[8] || '').toString().trim().toUpperCase();
-                    var esAceptada = cufe.includes('ACEPT');
-                    var esRechazada = cufe.includes('RECHAZ');
-                    if (esRechazada) {
+                    // data[8] = Estado FE (según orden real)
+                    var estadoFE = (data[8] || '').toString().trim().toUpperCase();
+                    var esAceptada = estadoFE.includes('ACEPT');      // ACEPTADA
+                    var esDenegada = estadoFE.includes('DENEG') || estadoFE.includes('RECHAZ'); // DENEGADA / RECHAZADA
+                    if (esDenegada) {
                         row.classList.add('fila-negativa');
                     } else if (esAceptada) {
                         row.classList.add('fila-positiva');
                     }
                 } catch (e) {
-                    console.error('createdRow (CUFE) error:', e);
+                    console.error('createdRow (Estado FE) error:', e);
                 }
             }
         });

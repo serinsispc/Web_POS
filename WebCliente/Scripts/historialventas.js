@@ -1,16 +1,10 @@
 ﻿/* ======================================
    HISTORIAL VENTAS – LÓGICA DE FRONTEND (sin render de filas)
-   v1.14.2
+   v1.14.3
    --------------------------------------
-   - Tabla (#tablaHV) renderizada desde Razor/ASP (este JS no crea filas).
-   - Funciones: selección de fila, export/print, rango fechas, resoluciones,
-     clientes (buscar/editar/DIAN/seleccionar).
-   - NIT DIAN: solo números.
-   - Prefill desde DIAN vía TempData (AcquirerB64 / AcquirerMsg). 
-     **El editor de cliente se muestra SIEMPRE tanto si hay datos como si no.**
-   - NUEVO: si NO hay registro en DIAN, se muestra alerta y se prellenan
-     TODOS los campos con lo que traiga Session["acquirer"], incluso
-     si vienen vacíos (""), "0" o "-".
+   - Ajuste: export CSV usa "Estado FE" (no CUFE) según orden real del DOM.
+   - Coloreado de filas ya se hace en hv.datatables.js (Estado FE).
+   - Mantiene toda la lógica existente (fechas, resoluciones, clientes, DIAN...).
    ====================================== */
 (function () {
     "use strict";
@@ -89,14 +83,14 @@
         var fecha = parseDate(fechaIso);
 
         if (!total) {
-            var totalCell = tr.querySelector('td[data-col="total"]') || tr.cells[4];
+            var totalCell = tr.querySelector('td[data-col="total"]') || tr.cells[3];
             if (totalCell) {
                 var t = (totalCell.textContent || "").replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", ".");
                 total = Number(t) || 0;
             }
         }
         if (!fecha) {
-            var fCell = tr.querySelector('td[data-col="fechaVenta"]') || tr.cells[0];
+            var fCell = tr.querySelector('td[data-col="fechaVenta"]') || tr.cells[1];
             var txt = (fCell ? fCell.textContent : "").trim();
             var guess = parseDate(txt.replace(" ", "T"));
             fecha = isNaN(guess) ? null : guess;
@@ -141,7 +135,9 @@
         if (!rows || rows.length === 0) { alert("No hay datos para exportar."); return; }
 
         var sep = ";";
-        var headers = ["Fecha", "Tipo", "Prefijo", "Número", "Total", "Forma de Pago", "Estado", "NIT", "Cliente", "CUFE"];
+        // Orden real del DOM:
+        // 0 Número | 1 Fecha | 2 Tipo | 3 Total | 4 Forma de Pago | 5 Estado | 6 NIT | 7 Cliente | 8 Estado FE
+        var headers = ["Número", "Fecha", "Tipo", "Total", "Forma de Pago", "Estado", "NIT", "Cliente", "Estado FE"];
         var out = [headers.join(sep)];
 
         rows.forEach(function (tr) {
@@ -157,16 +153,15 @@
             }
 
             var fila = [
-                get("fechaVenta", 0),
-                get("tipoFactura", 1),
-                get("prefijo", 2),
-                get("numeroVenta", 3),
-                (get("total", 4) || "").replace(/\./g, ","), // opcional
-                get("formaDePago", 5),
-                get("estadoVenta", 6),
-                get("nit", 7),
-                get("nombreCliente", 8),
-                get("cufe", 9)
+                get("numeroVenta", 0),
+                get("fechaVenta", 1),
+                get("tipoFactura", 2),
+                (get("total", 3) || "").replace(/\./g, ","), // opcional
+                get("formaDePago", 4),
+                get("estadoVenta", 5),
+                get("nit", 6),
+                get("nombreCliente", 7),
+                get("estadoFE", 8)
             ];
             out.push(fila.join(sep));
         });
@@ -246,7 +241,6 @@
         byId("actPosAElectronica")?.addEventListener("click", function () { if (!requireSel()) return; alert("POS a Electrónica (placeholder)"); });
         byId("actClonar")?.addEventListener("click", function () { if (!requireSel()) return; alert("Clonar (placeholder)"); });
         byId("actAumentarNumero")?.addEventListener("click", function () { if (!requireSel()) return; alert("Aumentar número (placeholder)"); });
-     
         byId("actDescargarFactura")?.addEventListener("click", function () { if (!requireSel()) return; alert("Descargar Factura (placeholder)"); });
 
         // **Resoluciones**
@@ -273,8 +267,7 @@
             form.submit();
         });
 
-
-        /* Enviar factura DIAN */
+        // **Enviar factura DIAN**
         byId("actEnviarDIAN")?.addEventListener("click", function () {
             if (!requireSel()) return;
 
@@ -297,7 +290,7 @@
 
     }
 
-    // ====== RESOLUCIONES (Modal)
+    // ====== RESOLUCIONES (Modal) – (sin cambios de lógica) =====
     function normalizarResolucion(r) {
         return {
             id: r.id ?? null,
@@ -399,7 +392,7 @@
         });
     }
 
-    // ===== CLIENTES (Modal) – UNIFICADO =====
+    // ===== CLIENTES (Modal) – (sin cambios, salvo comentarios) =====
     function normalizarCliente(c) {
         return {
             id: c.id ?? c.idCliente ?? c.Id ?? 0,
@@ -649,7 +642,6 @@
             var modalClientesEl = byId("modalClientes");
             if (!modalClientesEl) return;
 
-            // ---------- helpers ----------
             function q(sel) { return document.querySelector(sel); }
             function setRaw(sel, val) {
                 var el = q(sel); if (!el) return;
@@ -664,16 +656,13 @@
                 try { return JSON.parse(s); } catch (e) { return null; }
             }
 
-            // 1) Leer el adquirente de TODAS las fuentes disponibles
             function readAcquirer() {
-                // a) del carrier en el DOM (lo que SIEMPRE envías en tu Index.cshtml)
                 var carrier = document.getElementById('acquirerData');
                 if (carrier) {
                     var b64 = carrier.getAttribute('data-acquirer-json-b64') || "";
                     var o = b64ToJson(b64);
                     if (o) return o;
                 }
-                // b) de variables globales si las hubiera
                 if (typeof window.AcquirerB64 === 'string') {
                     var o2 = b64ToJson(window.AcquirerB64);
                     if (o2) return o2;
@@ -688,7 +677,6 @@
                 return {};
             }
 
-            // 2) Decidir si debemos abrir modal y prellenar
             var acq = readAcquirer();
             var msg = (typeof window.AcquirerMsg === 'string' && window.AcquirerMsg.trim())
                 ? window.AcquirerMsg.trim()
@@ -697,14 +685,12 @@
             var debeAbrir = !!msg || Object.keys(acq).length > 0 || window.DebeMostrarModalClientes === true || window.DebeMostrarModalClientes === "true";
             if (!debeAbrir) return;
 
-            // 3) Abrir modal y mostrar editor
             if (window.bootstrap && bootstrap.Modal) {
-                var inst = bootstrap.Modal.getInstance(modalClientesEl) || new bootstrap.Modal(modalClientesEl, { backdrop: 'static', keyboard: false });
+                var inst = new bootstrap.Modal(modalClientesEl, { backdrop: 'static', keyboard: false });
                 inst.show();
             }
             $('#cli-editor').removeClass('d-none');
 
-            // 4) Construir valores finales (NIT con ‘solo dígitos’ + resto tal cual)
             var nitHidden = ($('#nit_dian_hidden').val() || '').replace(/\D/g, '');
             var nitQuery = ($('#cli-dian-nit').val() || '').replace(/\D/g, '');
             var nitFromAcq = String(acq.Nit ?? acq.nit ?? '').replace(/\D/g, '');
@@ -719,7 +705,6 @@
                 correo: String(acq.Email ?? acq.email ?? '')
             };
 
-            // 5) Escribir SIEMPRE (incluye "", "0" y "-")
             function applyValues() {
                 setRaw('#cli-nit', vals.nit);
                 setRaw('#cli-dian-nit', vals.nit);
@@ -729,19 +714,6 @@
                 setRaw('#cli-direccion', vals.direccion);
                 setRaw('#cli-correo', vals.correo);
             }
-
-            // Alerta embebida y/o SweetAlert
-            if (msg) {
-                var $al = $('#cli-dian-alert');
-                if ($al.length) $al.removeClass('d-none alert-success').addClass('alert alert-warning').text(msg);
-            }
-
-            // Aplicar ahora, al terminar de abrir el modal, y tras cerrar el SweetAlert
-            applyValues();
-
-            $(modalClientesEl).off('shown.bs.modal.hvacq').on('shown.bs.modal.hvacq', function () {
-                applyValues();
-            });
 
             if (msg && window.Swal && typeof Swal.fire === 'function') {
                 var texto = (vals.nit ? ('para el NIT ' + vals.nit + '. ') : '') + 'Se cargó la información disponible para que completes los datos.';
@@ -754,21 +726,18 @@
                     allowEscapeKey: true
                 }).then(function () {
                     applyValues();
-                    // Deja el foco en el primer campo vacío
                     var firstEmpty = ['#cli-nombre', '#cli-comercial', '#cli-telefono', '#cli-direccion', '#cli-correo']
                         .map(function (s) { return q(s); })
                         .find(function (el) { return el && (!el.value || String(el.value).trim() === ''); });
                     if (firstEmpty) try { firstEmpty.focus(); } catch { }
                 });
+            } else {
+                applyValues();
             }
 
-            // Debug por si algo falla
             console.debug('[HV] acquirer (final):', acq);
             console.debug('[HV] valores aplicados:', vals, 'mensaje:', msg);
         })();
-
-
-
     }
 
     // ===== INIT

@@ -8,6 +8,7 @@ using RunApi.Models.Cliente;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -43,8 +44,12 @@ namespace WebCliente.Controllers
             string json = JsonConvert.SerializeObject(model);
             Session["HistorialVentasJson"] = json;
         }
-        public async Task<ActionResult> Filtar(DateTime fecha1, DateTime fecha2,string nombreCliente)
+        public async Task<ActionResult> Filtar(DateTime fecha1, DateTime fecha2,[Optional] string nombreCliente)
         {
+            if (fecha1 == null) fecha1 = DateTime.Today;
+            if (fecha2 == null) fecha2 = DateTime.Today;
+            if (nombreCliente == null) nombreCliente = "";
+
             // Normaliza rango (incluye todo el día de fecha2 si lo necesitas)
             var desde = fecha1.Date;
             var hasta = fecha2.Date.AddDays(1).AddTicks(-1);
