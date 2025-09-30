@@ -28,6 +28,13 @@
     table-layout: auto;
 }
 
+/* Content/historialventas.css */
+.table-hv td[data-col="cufe"],
+.table-hv th[data-col="cufe"] {
+    word-break: break-all;
+}
+
+
 /* DataTables (Bootstrap) puede generar un leve overflow por márgenes negativos.
    Lo anulamos en pantallas chicas para que no “se salga” del card. */
 @media (max-width: 576px) {

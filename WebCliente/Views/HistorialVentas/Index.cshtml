@@ -215,7 +215,9 @@
                                     <th data-col="estadoVenta">Estado</th>
                                     <th data-col="nit">NIT</th>
                                     <th data-col="nombreCliente">Cliente</th>
-                                    <th data-col="cufe">CUFE</th>
+                                    <th data-col="cufe" class="all" data-priority="3">CUFE</th>
+
+
                                     @* la col "Más" ya no se agrega por JS (no hay overflow-mode) *@
                                 </tr>
                             </thead>
@@ -253,16 +255,8 @@
                                             <td data-col="estadoVenta">@lista.estadoVenta</td>
                                             <td data-col="nit">@lista.nit</td>
                                             <td data-col="nombreCliente" title="@lista.nombreCliente">@lista.nombreCliente</td>
+                                            <td data-col="cufe">@lista.cufe</td>
 
-                                            <!-- CUFE visible: valor real + badge de estado -->
-                                            <td data-col="cufe">
-                                                <div class="text-break" style="word-break:break-all;">
-                                                    @(esFacturaElectronica ? (hayCufe ? cufeTexto : "--") : "--")
-                                                </div>
-                                                <div class="mt-1">
-                                                    <span class="badge @badgeClase">@estadoCufe</span>
-                                                </div>
-                                            </td>
                                         </tr>
                                     }
                                 }
@@ -596,7 +590,7 @@
 <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
 
 <!-- Inicialización específica para #tablaHV -->
-<script src="~/Scripts/hv.datatables.js?v=1.0.0"></script>
+<script src="~/Scripts/hv.datatables.js?v=1.0.8"></script>
 
 
 @if (TempData["AcquirerB64"] != null || TempData["AcquirerMsg"] != null)

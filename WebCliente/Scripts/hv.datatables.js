@@ -27,6 +27,7 @@
                 "t" +
                 "<'dt-bottom d-flex flex-wrap justify-content-between align-items-center gap-2 px-2' i p>",
 
+            // Importante: responsive para que detalle muestre columnas ocultas
             responsive: {
                 details: { type: 'inline', target: 'tr' },
                 breakpoints: [
@@ -45,28 +46,29 @@
             lengthMenu: [10, 25, 50, 100],
             order: [[1, 'desc']],
 
+            // Coincidir 1:1 con los <th> del DOM
             columns: [
-                { className: 'all' },                     // 0 Número
-                { className: 'all' },                     // 1 Fecha
-                { className: '' },                        // 2 Tipo
-                { className: 'min-phone-l text-end' },    // 3 Total
-                { className: '' },                        // 4 Forma de Pago
-                { className: '' },                        // 5 Estado
-                { className: '' },                        // 6 NIT
-                { className: '' },                        // 7 Cliente
-                { className: 'all text-break' }           // 8 CUFE (VISIBLE)
+                { className: 'all' },                   // 0 Número
+                { className: 'all' },                   // 1 Fecha
+                { className: '' },                      // 2 Tipo
+                { className: 'min-phone-l text-end' },  // 3 Total
+                { className: '' },                      // 4 Forma de Pago
+                { className: '' },                      // 5 Estado
+                { className: '' },                      // 6 NIT
+                { className: '' },                      // 7 Cliente
+                { className: 'all text-break' }         // 8 CUFE VISIBLE SIEMPRE
             ],
 
             columnDefs: [
-                // Prioridades de respuesta: menor número = más importante
+                // Prioridades: menor número = más importante
                 { responsivePriority: 1, targets: 0 }, // Número
                 { responsivePriority: 2, targets: 1 }, // Fecha
-                { responsivePriority: 3, targets: 8 }, // CUFE (que sea visible siempre)
+                { responsivePriority: 3, targets: 6 }, // CUFE (fijar alto)
                 { responsivePriority: 4, targets: 7 }, // Cliente
                 { responsivePriority: 5, targets: 2 }, // Tipo
                 { responsivePriority: 6, targets: 4 }, // Forma
                 { responsivePriority: 7, targets: 5 }, // Estado
-                { responsivePriority: 8, targets: 6 }, // NIT
+                { responsivePriority: 8, targets: 8 }, // NIT
 
                 {
                     targets: 3,
@@ -76,8 +78,17 @@
                     }
                 },
 
-                // Aseguramos visibilidad y búsqueda de CUFE
-                { targets: 8, visible: true, searchable: true }
+                // Forzar visibilidad y búsqueda de CUFE
+                {
+                    targets: 8,
+                    visible: true,          // mostrar CUFE
+                    searchable: true,       // permitir búsqueda por CUFE
+                    createdCell: function (td) {
+                        td.classList.add('text-break');
+                        td.style.wordBreak = 'break-all';
+                    }
+                }
+
             ],
 
             language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json' },
@@ -86,6 +97,7 @@
 
             createdRow: function (row, data) {
                 try {
+                    // data[8] = CUFE (tu render del servidor)
                     var cufe = (data[8] || '').toString().trim().toUpperCase();
                     var esAceptada = cufe.includes('ACEPT');
                     var esRechazada = cufe.includes('RECHAZ');
@@ -103,7 +115,6 @@
         // === Selección persistente con autoscroll ===
         var STORAGE_KEY = 'HV_idventa_seleccionada';
 
-        // Click para seleccionar y guardar
         $('#tablaHV tbody').on('click', 'tr', function (e) {
             if ($(e.target).closest('a,button,.btn,input,label,.dropdown-item').length) return;
             var id = this.getAttribute('data-idventa');
@@ -123,7 +134,7 @@
                 var node = this.node();
                 if (node && node.getAttribute('data-idventa') === id) {
                     targetIdx = rowIdx; targetNode = node;
-                    return false; // break
+                    return false;
                 }
             });
             if (targetIdx == null) return;
