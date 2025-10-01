@@ -310,3 +310,16 @@
 #cli-editor .form-label {
     font-weight: 600;
 }
+
+
+
+#formAnular {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+    #formAnular .action-btn {
+        width: 100%;
+    }

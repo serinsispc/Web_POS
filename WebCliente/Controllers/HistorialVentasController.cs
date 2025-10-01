@@ -1,6 +1,7 @@
 ﻿using Microsoft.Ajax.Utilities;
 using Newtonsoft.Json;
 using RunApi.API_DIAN;
+using RunApi.API_DIAN.Respons;
 using RunApi.ApiControlers;
 using RunApi.Funciones;
 using RunApi.Funciones.DIAN_API;
@@ -8,6 +9,7 @@ using RunApi.Models.Cliente;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -258,6 +260,28 @@ namespace WebCliente.Controllers
             if (idventa > 0)
             {
                 var respuesta = await API_DIAN.FacturaElectronica(idventa);
+                var resp_proceso = JsonConvert.DeserializeObject<FacturaElectronica_Respons>(respuesta);
+                var erroresLimpios =
+                  (resp_proceso?.errors_messages ?? Enumerable.Empty<string>())
+                  .Where(s => !string.IsNullOrWhiteSpace(s))
+                  .Select(s => s.Trim())
+                  .Distinct(StringComparer.OrdinalIgnoreCase)
+                  .ToList();
+
+                string mensajeError = erroresLimpios.Count == 0
+                    ? "Se produjo un error no especificado."
+                    : "Se encontraron los siguientes errores:" + Environment.NewLine +
+                      "• " + string.Join(Environment.NewLine + "• ", erroresLimpios);
+                if (resp_proceso.is_valid)
+                {
+                    model.AlertModerno = AlertModerno.CargarAlert(true, resp_proceso.status_message, mensajeError,"success");
+                }
+                else
+                {
+
+
+                    model.AlertModerno = AlertModerno.CargarAlert(true, resp_proceso.status_message, mensajeError, "error");
+                }
             }
             var respTabla = await V_TablaVentasControler.Filtrar(Session["db"].ToString(), model.Fecha1, model.Fecha2);
             model.V_TablaVentas = respTabla;
@@ -295,5 +319,13 @@ namespace WebCliente.Controllers
             return File(result.Bytes, contentType, fileName);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult>Anularfactura(int idventa)
+        {
+            var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
+            ModelView(model);
+            return View("Index");
+        }
     }
 }

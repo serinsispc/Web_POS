@@ -82,6 +82,13 @@
         }
     }
 
+    function getAntiForgeryToken() {
+        // Toma el primer __RequestVerificationToken que exista en la página
+        var el = document.querySelector('input[name="__RequestVerificationToken"]');
+        return el ? el.value : "";
+    }
+
+
     // ===== Estado de la UI
     var selected = null; // { idVenta, total, fechaVenta, prefijo, numeroVenta, ... }
 
@@ -264,10 +271,61 @@
         });
         byId("actAnular")?.addEventListener("click", function () {
             if (!requireSel()) return;
-            if (confirm("¿Anular la venta " + (selected.prefijo ? (selected.prefijo + "-") : "") + (selected.numeroVenta ?? "") + "?")) {
-                console.log("TODO: llamar endpoint de anulación");
+
+            var idv = selected.idVenta || 0;
+            var etiqueta = (selected.prefijo ? (selected.prefijo + "-") : "") + (selected.numeroVenta ?? "");
+
+            var confirmar = function () {
+                var token = getAntiForgeryToken();
+                if (!token) {
+                    // Si no hay token, el servidor con [ValidateAntiForgeryToken] rechazará el POST
+                    if (window.Swal) Swal.fire({ icon: 'error', title: 'Token inválido', text: 'No se encontró el AntiForgeryToken en la página.' });
+                    else alert('No se encontró el AntiForgeryToken en la página.');
+                    return;
+                }
+
+                var btn = byId("actAnular");
+                if (btn) btn.disabled = true;
+
+                var body = new URLSearchParams();
+                body.append('__RequestVerificationToken', token);
+                body.append('idventa', String(idv));
+
+                fetch('/HistorialVentas/Anularfactura', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                    body: body
+                })
+                    .then(function (r) { return r.text(); })
+                    .then(function (html) {
+                        // Tu acción devuelve View("Index"): reemplazamos el HTML completo
+                        document.open(); document.write(html); document.close();
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        if (window.Swal) Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo anular la venta.' });
+                        else alert('No se pudo anular la venta.');
+                    })
+                    .finally(function () {
+                        if (btn) btn.disabled = false;
+                    });
+            };
+
+            if (window.Swal && typeof Swal.fire === 'function') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Confirmar anulación',
+                    text: '¿Anular la venta ' + etiqueta + '?',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, anular',
+                    cancelButtonText: 'Cancelar'
+                }).then(function (res) { if (res.isConfirmed) confirmar(); });
+            } else {
+                if (confirm('¿Anular la venta ' + etiqueta + '?')) confirmar();
             }
         });
+
+
         byId("actCrearFE")?.addEventListener("click", function () { if (!requireSel()) return; alert("Crear Factura Electrónica (placeholder)"); });
         byId("actEnviarCorreo")?.addEventListener("click", function () { if (!requireSel()) return; alert("Enviar por correo (placeholder)"); });
         byId("actDevolucion")?.addEventListener("click", function () { if (!requireSel()) return; alert("Devolución (placeholder)"); });

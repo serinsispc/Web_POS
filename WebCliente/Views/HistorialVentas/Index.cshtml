@@ -176,7 +176,20 @@
                         </div>
                     }
                 </div>
+
+
             </div>
+
+            @using (Html.BeginForm("ExportarExcelFiltro", "HistorialVentas", FormMethod.Post, new { id = "formExportarServidor" }))
+            {
+                @Html.AntiForgeryToken()
+                <button type="submit"
+                        id="btnExportarServidor"
+                        class="btn btn-outline-primary mt-3"
+                        onclick="event.stopPropagation();">
+                    <i class="bi bi-filetype-csv"></i> Exportar (servidor)
+                </button>
+            }
 
         </div>
     </div>
@@ -254,9 +267,19 @@
                     <div class="hv-section">
                         <div class="section-title">Acciones</div>
                         <div class="d-grid gap-2">
+                            <button id="actDescargarFactura" class="action-btn btn-light"><i class="bi bi-download"></i> Descargar Factura</button>
                             <button id="actImprimir" class="action-btn btn-light"><i class="bi bi-printer"></i> Imprimir</button>
                             <button id="actVerDetalle" class="action-btn btn-light"><i class="bi bi-eye"></i> Ver Detalle</button>
-                            <button id="actAnular" class="action-btn btn-light action-danger"><i class="bi bi-slash-circle"></i> Anular</button>
+                            @using (Html.BeginForm("Anularfactura", "HistorialVentas", FormMethod.Post, new { id = "formAnular", @class = "d-inline" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="idventa" id="idventa_anular" value="" />
+
+                                <button type="button" id="actAnular" class="action-btn btn-light action-danger">
+                                    <i class="bi bi-slash-circle"></i> Anular
+                                </button>
+                            }
+
                             <button id="actClonar" class="action-btn btn-light"><i class="bi bi-files"></i> Clonar Factura</button>
                         </div>
                     </div>
@@ -264,10 +287,10 @@
                     <div class="hv-section mt-3">
                         <div class="section-title">Factura Electrónica</div>
                         <div class="d-grid gap-2">
-                            <button id="actCrearFE" class="action-btn btn-light"><i class="bi bi-file-earmark-plus"></i> Crear Factura Electrónica</button>
+
                             <button id="actEnviarDIAN" class="action-btn btn-light"><i class="bi bi-send"></i> Enviar Factura DIAN</button>
                             <button id="actEnviarCorreo" class="action-btn btn-light"><i class="bi bi-envelope"></i> Enviar Factura Correo</button>
-                            <button id="actPosAElectronica" class="action-btn btn-light"><i class="bi bi-arrow-left-right"></i> POS a ELECTRÓNICA</button>
+
                         </div>
                     </div>
 
@@ -302,19 +325,6 @@
                             <button id="actDevolucion" class="action-btn btn-light"><i class="bi bi-arrow-counterclockwise"></i> Devolución</button>
                             <button id="actResolucion" class="action-btn btn-light"><i class="bi bi-gear"></i> Resolución</button>
                             <button id="actAumentarNumero" class="action-btn btn-light"><i class="bi bi-plus-square"></i> Aumentar Número</button>
-                            <button id="actDescargarFactura" class="action-btn btn-light"><i class="bi bi-download"></i> Descargar Factura</button>
-                            @using (Html.BeginForm("ExportarExcelFiltro", "HistorialVentas", FormMethod.Post, new { id = "formExportarServidor" }))
-                            {
-                                @Html.AntiForgeryToken()
-                                <button type="submit"
-                                        id="btnExportarServidor"
-                                        class="btn btn-outline-primary"
-                                        onclick="event.stopPropagation();">
-                                    <i class="bi bi-filetype-csv"></i> Exportar (servidor)
-                                </button>
-                            }
-
-
                         </div>
                     </div>
                 </div>
@@ -595,6 +605,55 @@
     }
     </script>
 }
+
+@using System.Web
+@{
+    // Obtiene y deserializa el modelo desde la sesión (con defensas)
+    var sessionString = Session["HistorialVentasJson"] as string ?? "{}";
+    var viewmodels = Newtonsoft.Json.JsonConvert
+        .DeserializeObject<WebCliente.ViewModels.HistorialVentasViewModels>(sessionString)
+        ?? new WebCliente.ViewModels.HistorialVentasViewModels();
+
+    var alertModerno = viewmodels.AlertModerno ?? new WebCliente.ViewModels.AlertModerno();
+}
+
+@if (alertModerno.mostrar)
+{
+    // Normaliza el icono a los valores de SweetAlert2
+    var icono = (alertModerno.tipoAlert ?? "").Trim().ToLowerInvariant();
+    switch (icono)
+    {
+        case "success":
+        case "exito":
+        case "ok":
+            icono = "success"; break;
+        case "error":
+        case "danger":
+        case "fail":
+            icono = "error"; break;
+        case "warning":
+        case "warn":
+        case "alerta":
+            icono = "warning"; break;
+        default:
+            icono = "info"; break;
+    }
+
+    // Escapa seguro para JavaScript (incluye comillas)
+    var tituloJs = HttpUtility.JavaScriptStringEncode(alertModerno.titulo ?? "", true);
+    var mensajeJs = HttpUtility.JavaScriptStringEncode(alertModerno.mensaje ?? "", true);
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            Swal.fire({
+                icon: '@icono',
+                title: @Html.Raw(tituloJs),
+                text:  @Html.Raw(mensajeJs),
+                confirmButtonText: 'Aceptar'
+            });
+        });
+    </script>
+}
+
 
 
 @using System.Text

@@ -32,7 +32,7 @@ namespace RunApi.ApiControlers
                 string result = await aPI.HttpWebRequestPostAsync("HistorialVentas/FiltroDias", json_, HttpMethod.Post);
                 // s = el texto que pegaste (comillas, \r\n, etc.)
                 string rawArray = JsonConvert.DeserializeObject<string>(result); // 1) des-escapa la cadena → queda "[{...}, {...}]"
-                var ventas = JsonConvert.DeserializeObject<List<V_TablaVentas>>(rawArray); // 2) parsea el array
+                var ventas = JsonConvert.DeserializeObject<List<V_TablaVentas>>(rawArray).Where(X=>X.numeroVenta>0).ToList(); // 2) parsea el array
                 return ventas;
             }
             catch (Exception ex)
@@ -104,5 +104,6 @@ namespace RunApi.ApiControlers
                 return null;
             }
         }
+      
     }
 }
