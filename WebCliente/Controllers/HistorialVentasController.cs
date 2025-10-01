@@ -324,6 +324,7 @@ namespace WebCliente.Controllers
         public async Task<ActionResult>Anularfactura(int idventa)
         {
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
+
             ModelView(model);
             return View("Index");
         }

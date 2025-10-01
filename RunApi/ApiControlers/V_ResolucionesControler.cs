@@ -28,5 +28,21 @@ namespace RunApi.ApiControlers
                 return new List<V_Resoluciones>();
             }
         }
+        public static async Task<V_Resoluciones> ConsultarIdResolucion(int idresolucion)
+        {
+            try
+            {
+                var aPI = new ClassAPI();
+                var json = new { nombreDB = ClassDBCliente.DBCliente, idResolucion=idresolucion };
+                string json_ = JsonConvert.SerializeObject(json);
+                string result = await aPI.HttpWebRequestPostAsync("HistorialVentas/ListaResoluciones", json_, HttpMethod.Post);
+                return JsonConvert.DeserializeObject<V_Resoluciones>(result);
+            }
+            catch (Exception ex)
+            {
+                string msg = ex.Message;
+                return new V_Resoluciones();
+            }
+        }
     }
 }

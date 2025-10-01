@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using RunApi.API_DIAN;
+using RunApi.API_DIAN.Objetos;
 using RunApi.API_DIAN.Request;
 using RunApi.API_DIAN.Respons;
 using RunApi.ApiControlers;
@@ -396,5 +397,40 @@ namespace RunApi.Funciones.DIAN_API
             }
             return JsonConvert.SerializeObject(facturaNacionalRespuesta);
         }
+        public static async Task<Respuesta_ApiDIAN> NotaCreditoElectronica (int IdVenta)
+        {
+            try
+            {
+                //traemos toda la información relacionada con la factura
+                GetDataFactura_JSON getDataFactura_JSON = new GetDataFactura_JSON();
+                getDataFactura_JSON = await GetDataFactura_JSON_API.DataFactura(IdVenta);
+                if (getDataFactura_JSON == null)
+                {
+                    return new Respuesta_ApiDIAN { data = null, estado = false, mensaje = $"no se encontro la factura." };
+                }
+                //cargamos el objeto ventas
+                var venta = getDataFactura_JSON.V_TablaVentas;
+                //llamamos al objeto que carga toda la data que se requiere para la nota crédito
+                var notacredito = new NotaCreditoRequest();
+
+                notacredito.sync = true;
+
+                notacredito.discrepancy_response = new NotaCreditoRequest.DiscrepancyResponse();
+                notacredito.discrepancy_response.correction_concept_id = 2;
+
+                //consultamos la resolución
+                var resolucion=V_ResolucionesControler.
+
+
+                //ahora llamamos la class api
+                var api =new ClassAPI();
+                return new Respuesta_ApiDIAN();
+            }
+            catch(Exception ex)
+            {
+                string msg = ex.Message;
+                return new Respuesta_ApiDIAN { data = null, estado = false, mensaje=$"ocurrió el siguiente error en el proceso del envió de la nota crédito: {msg}" };
+            }
+        } 
     }
 }
