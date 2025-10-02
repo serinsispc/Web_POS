@@ -1,17 +1,19 @@
 ﻿/* ======================================
    HISTORIAL VENTAS – LÓGICA DE FRONTEND (sin render de filas)
-   v1.14.7
+   v1.14.8
    --------------------------------------
    - FIX UTF-8: decodificación Base64 → UTF-8 (tildes/ñ OK).
    - FIX modales: evita backdrops huérfanos y pantalla “congelada”.
    - NUEVO: bandera global para impedir doble auto-apertura de modales
             en el mismo render (Clientes vs Resoluciones).
+   - FIX Anular: envío por form + anti-doble submit + limpieza de URL
    ====================================== */
 (function () {
     "use strict";
 
-    // ===== Bandera global: impide auto-abrir más de 1 modal por render =====
-    window.__HV_MODAL_AUTOOPENED__ = false;
+    // ===== Banderas globales =====
+    window.__HV_MODAL_AUTOOPENED__ = false;       // evita auto-abrir 2 modales en un render
+    window.__HV_ANULAR_BUSY__ = false;            // evita doble submit de Anular
 
     // ===== Utils
     var fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -42,7 +44,7 @@
         } catch (e) { return null; }
     }
 
-    // ---------- Helper seguro para abrir modales (una sola instancia) ----------
+    // ---------- Helper seguro para abrir modales ----------
     function showModal(el, opts) {
         if (!el || !window.bootstrap || !bootstrap.Modal) return null;
         var inst = bootstrap.Modal.getOrCreateInstance(el, opts || {});
@@ -50,7 +52,7 @@
         return inst;
     }
 
-    // Setea valor SOLO si es no vacío (para casos normales)
+    // Setea valor SOLO si es no vacío
     function setIfVal(selector, val) {
         var v = (val === null || val === undefined) ? "" : String(val).trim();
         var $el = (window.jQuery ? window.jQuery(selector) : null);
@@ -58,7 +60,7 @@
         var el = document.querySelector(selector);
         if (el && v) el.value = v;
     }
-    // Setea valor SIEMPRE (refleja exactamente lo que llegue del acquirer)
+    // Setea valor SIEMPRE
     function setVal(selector, val) {
         var v = (val === null || val === undefined) ? "" : String(val);
         var $el = (window.jQuery ? window.jQuery(selector) : null);
@@ -66,6 +68,7 @@
         var el = document.querySelector(selector);
         if (el) el.value = v;
     }
+
     function showSwal(title, text, icon) {
         if (window.Swal && typeof window.Swal.fire === "function") {
             return window.Swal.fire({
@@ -83,11 +86,9 @@
     }
 
     function getAntiForgeryToken() {
-        // Toma el primer __RequestVerificationToken que exista en la página
         var el = document.querySelector('input[name="__RequestVerificationToken"]');
         return el ? el.value : "";
     }
-
 
     // ===== Estado de la UI
     var selected = null; // { idVenta, total, fechaVenta, prefijo, numeroVenta, ... }
@@ -175,8 +176,6 @@
         if (!rows || rows.length === 0) { alert("No hay datos para exportar."); return; }
 
         var sep = ";";
-        // Orden real del DOM:
-        // 0 Número | 1 Fecha | 2 Tipo | 3 Total | 4 Forma de Pago | 5 Estado | 6 NIT | 7 Cliente | 8 Estado FE
         var headers = ["Número", "Fecha", "Tipo", "Total", "Forma de Pago", "Estado", "NIT", "Cliente", "Estado FE"];
         var out = [headers.join(sep)];
 
@@ -269,47 +268,36 @@
             if (!requireSel()) return;
             alert("Ver detalle de " + (selected.prefijo ? (selected.prefijo + "-") : "") + (selected.numeroVenta ?? ""));
         });
+
+        // ====== ANULAR FACTURA (form POST + anti-doble submit) ======
         byId("actAnular")?.addEventListener("click", function () {
             if (!requireSel()) return;
+            if (window.__HV_ANULAR_BUSY__) return; // evita dobles
 
             var idv = selected.idVenta || 0;
             var etiqueta = (selected.prefijo ? (selected.prefijo + "-") : "") + (selected.numeroVenta ?? "");
+            var btn = byId("actAnular");
+            var form = byId("formAnular");
+            var hid = byId("idventa_anular");
 
-            var confirmar = function () {
-                var token = getAntiForgeryToken();
-                if (!token) {
-                    // Si no hay token, el servidor con [ValidateAntiForgeryToken] rechazará el POST
-                    if (window.Swal) Swal.fire({ icon: 'error', title: 'Token inválido', text: 'No se encontró el AntiForgeryToken en la página.' });
-                    else alert('No se encontró el AntiForgeryToken en la página.');
-                    return;
-                }
+            function confirmar() {
+                if (!form || !hid) { alert("No se encontró el formulario de anulación."); return; }
 
-                var btn = byId("actAnular");
+                window.__HV_ANULAR_BUSY__ = true;
                 if (btn) btn.disabled = true;
 
-                var body = new URLSearchParams();
-                body.append('__RequestVerificationToken', token);
-                body.append('idventa', String(idv));
+                // Setear id y enviar el formulario (lleva AntiForgeryToken)
+                hid.value = String(idv);
 
-                fetch('/HistorialVentas/Anularfactura', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-                    body: body
-                })
-                    .then(function (r) { return r.text(); })
-                    .then(function (html) {
-                        // Tu acción devuelve View("Index"): reemplazamos el HTML completo
-                        document.open(); document.write(html); document.close();
-                    })
-                    .catch(function (err) {
-                        console.error(err);
-                        if (window.Swal) Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo anular la venta.' });
-                        else alert('No se pudo anular la venta.');
-                    })
-                    .finally(function () {
-                        if (btn) btn.disabled = false;
-                    });
-            };
+                if (typeof form.requestSubmit === "function") form.requestSubmit();
+                else form.submit();
+
+                // Fallback por si algo evita la navegación (máx 8s)
+                setTimeout(function () {
+                    window.__HV_ANULAR_BUSY__ = false;
+                    if (btn) btn.disabled = false;
+                }, 8000);
+            }
 
             if (window.Swal && typeof Swal.fire === 'function') {
                 Swal.fire({
@@ -324,7 +312,6 @@
                 if (confirm('¿Anular la venta ' + etiqueta + '?')) confirmar();
             }
         });
-
 
         byId("actCrearFE")?.addEventListener("click", function () { if (!requireSel()) return; alert("Crear Factura Electrónica (placeholder)"); });
         byId("actEnviarCorreo")?.addEventListener("click", function () { if (!requireSel()) return; alert("Enviar por correo (placeholder)"); });
@@ -570,14 +557,12 @@
 
         pintarTablaClientes(clientes);
 
-        // Abre el modal si así se indicó, o si hay respuesta de DIAN (encontrado/no encontrado)
         if ((window.DebeMostrarModalClientes === true || window.DebeMostrarModalClientes === "true" || window.AcquirerB64 || window.AcquirerMsg) &&
             !window.__HV_MODAL_AUTOOPENED__) {
             showModal(modalClientesEl, { backdrop: "static", keyboard: false });
-            window.__HV_MODAL_AUTOOPENED__ = true; // <- evita abrir otro modal automáticamente
+            window.__HV_MODAL_AUTOOPENED__ = true;
         }
 
-        // === BUSCAR general por texto
         $('#cli-buscar').on('input', function () {
             var texto = this.value || "";
             var lista = filtrarClientes(clientes, texto);
@@ -587,7 +572,6 @@
             $('#cli-buscar').val('').trigger('input');
         });
 
-        // === NIT DIAN: SOLO NÚMEROS (input, keydown, paste)
         (function () {
             var $nit = $('#cli-dian-nit');
 
@@ -614,7 +598,6 @@
             });
         })();
 
-        // === CONSULTAR DIAN (POST con AntiForgery, sin AJAX) ===
         $('#cli-dian-btn').on('click', function () {
             var nit = ($('#cli-dian-nit').val() || '').replace(/\D/g, '').trim();
             if (!nit) { alert('Ingrese un NIT para consultar.'); return; }
@@ -623,7 +606,6 @@
             $('#formBuscarNIT_DIAN').trigger('submit');
         });
 
-        // === EDITAR (abre panel)
         $('#tablaClientes').on('click', '.cli-editar', function () {
             var $tr = $(this).closest('tr');
             $('#cli-id').val($tr.data('idcliente') || '');
@@ -640,12 +622,10 @@
             }, 50);
         });
 
-        // Cerrar editor
         $('#cli-editor-cerrar').on('click', function () {
             $('#cli-editor').addClass('d-none');
         });
 
-        // Helpers editor
         function payloadCliente() {
             return {
                 Id: $('#cli-id').val(),
@@ -686,7 +666,7 @@
             if (!p.Id) { alert('Seleccione un cliente para editar.'); return; }
 
             $.ajax({
-                url: '/Clientes/EditarClienteAjax', // <-- AJUSTA
+                url: '/Clientes/EditarClienteAjax', // <-- AJUSTA si aplica
                 type: 'POST',
                 data: JSON.stringify(p),
                 contentType: 'application/json; charset=utf-8'
@@ -709,7 +689,6 @@
         $('#cli-guardar').on('click', function () { guardarClienteCore({ seleccionar: false }); });
         $('#cli-guardar-y-seleccionar').on('click', function () { guardarClienteCore({ seleccionar: true }); });
 
-        // === Seleccionar cliente (envía al servidor tu id)
         $('#tablaClientes').on('click', '.btn-sel-cliente', function () {
             var $tr = $(this).closest('tr');
             var idCli = $tr.data('idcliente');
@@ -728,7 +707,6 @@
             }
         });
 
-        // === Prefill tras retorno de DIAN ===
         (function () {
             var modalClientesEl = byId("modalClientes");
             if (!modalClientesEl) return;
@@ -867,10 +845,8 @@
                 var inst = (window.bootstrap && bootstrap.Modal) ? bootstrap.Modal.getInstance(el) : null;
                 if (inst && inst.dispose) inst.dispose();
 
-                // 🔧 si es el modal de resoluciones, avisa al servidor para apagar el trigger
                 if (el.id === 'modalResoluciones') {
                     try {
-                        // reutiliza cualquier AntiForgeryToken existente en la página
                         var token =
                             document.querySelector('#formSelResol input[name="__RequestVerificationToken"]')?.value ||
                             document.querySelector('#formResolucion input[name="__RequestVerificationToken"]')?.value;
@@ -884,7 +860,6 @@
                     } catch (e) { /* no-op */ }
                 }
 
-                // limpieza visual anti-backdrop (ya la tienes, la dejo aquí por claridad)
                 try {
                     document.querySelectorAll('.modal-backdrop').forEach(function (bd) {
                         bd.parentNode && bd.parentNode.removeChild(bd);
@@ -896,11 +871,28 @@
             });
         });
 
-
         // Si se cierra con botones data-bs-dismiss="modal" o X
         document.addEventListener('click', function (e) {
             var btnClose = e.target.closest('[data-bs-dismiss="modal"], .btn-close');
             if (btnClose) setTimeout(forceModalCleanup, 100);
         });
+
+        // ===== Refuerzo anti-doble submit del form de Anular (una sola vez por carga)
+        var formAnular = document.getElementById("formAnular");
+        if (formAnular) {
+            formAnular.addEventListener("submit", function () {
+                window.__HV_ANULAR_BUSY__ = true;
+                var btn = document.getElementById("actAnular");
+                if (btn) btn.disabled = true;
+            }, { once: true });
+        }
+
+        // ===== Si estamos en /Anularfactura tras el POST (View directo), limpia la URL
+        try {
+            var p = location.pathname.toLowerCase();
+            if (p.indexOf('/historialventas/anularfactura') >= 0) {
+                history.replaceState(null, '', '/HistorialVentas/Index');
+            }
+        } catch (e) { /* no-op */ }
     });
 })();

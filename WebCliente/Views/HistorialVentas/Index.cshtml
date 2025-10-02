@@ -59,7 +59,6 @@
     foreach (var v in listaventas)
     {
         totSubtotal += (decimal)(v.subtotalVenta ?? 0m);
-        // Si tu objeto usa totalImpuestos / IVA / INC, ajusta aquí:
         var imp = (decimal)(v.IVA ?? 0m) + (decimal)(v.INC ?? 0m) + (decimal)(v.INCBolsas ?? 0m) + (decimal)(v.ivaVenta ?? 0m);
         totImpuestos += imp;
         totGeneral += (decimal)(v.totalVenta ?? 0m);
@@ -91,7 +90,7 @@
         <input type="hidden" name="idResolucion" id="inp-idResolucion" value="0" />
     }
 
-    <!-- === FORM oculto para abrir lista de clientes (rellena Session["V_Clientes"]) === -->
+    <!-- === FORM oculto para abrir lista de clientes === -->
     @using (Html.BeginForm("BotonEditar_AgregarCliente", "HistorialVentas", FormMethod.Post, new { id = "formListaClientes", style = "display:none;" }))
     {
         @Html.AntiForgeryToken()
@@ -112,7 +111,7 @@
         <input type="hidden" name="idventa" id="inp-idventa-enviar" value="0" />
     }
 
-    @* >>> NUEVO: formulario oculto para SeleccionarCliente (POST real) *@
+    @* formulario oculto para SeleccionarCliente (POST real) *@
     @using (Html.BeginForm("SeleccionarCliente", "HistorialVentas", FormMethod.Post, new { id = "formSeleccionarCliente", style = "display:none;" }))
     {
         @Html.AntiForgeryToken()
@@ -176,8 +175,6 @@
                         </div>
                     }
                 </div>
-
-
             </div>
 
             @using (Html.BeginForm("ExportarExcelFiltro", "HistorialVentas", FormMethod.Post, new { id = "formExportarServidor" }))
@@ -190,7 +187,6 @@
                     <i class="bi bi-filetype-csv"></i> Exportar (servidor)
                 </button>
             }
-
         </div>
     </div>
 
@@ -212,20 +208,16 @@
                                     <th data-col="nit">NIT</th>
                                     <th data-col="nombreCliente">Cliente</th>
                                     <th data-col="estadoFE" class="all" data-priority="4">Estado FE</th>
-
-                                    @* la col "Más" ya no se agrega por JS (no hay overflow-mode) *@
                                 </tr>
                             </thead>
                             <tbody>
                                 @{
                                     foreach (var lista in listaventas)
                                     {
-                                        // Determinar estado y texto de CUFE
                                         var esFacturaElectronica = (lista.tipoFactura ?? "").Trim().ToUpper() == "FACTURA ELECTRÓNICA DE VENTA";
                                         var cufeTexto = (lista.cufe ?? "").Trim();
                                         var hayCufe = !string.IsNullOrEmpty(cufeTexto) && cufeTexto != "--";
 
-                                        // Atributos data-* para lógica JS (selección)
                                         var dataIdVenta = lista.id;
                                         var dataTotal = (lista.totalVenta ?? 0m).ToString(System.Globalization.CultureInfo.InvariantCulture);
                                         var dataFechaIso = lista.fechaVenta.HasValue ? lista.fechaVenta.Value.ToString("s") : "";
@@ -243,13 +235,10 @@
                                             <td data-col="nit">@lista.nit</td>
                                             <td data-col="nombreCliente" title="@lista.nombreCliente">@lista.nombreCliente</td>
                                             <td data-col="estadoFE">@lista.estadoFE</td>
-
-
                                         </tr>
                                     }
                                 }
                             </tbody>
-
                         </table>
                     </div>
                 </div>
@@ -267,37 +256,35 @@
                     <div class="hv-section">
                         <div class="section-title">Acciones</div>
                         <div class="d-grid gap-2">
-                            <button id="actDescargarFactura" class="action-btn btn-light"><i class="bi bi-download"></i> Descargar Factura</button>
-                            <button id="actImprimir" class="action-btn btn-light"><i class="bi bi-printer"></i> Imprimir</button>
-                            <button id="actVerDetalle" class="action-btn btn-light"><i class="bi bi-eye"></i> Ver Detalle</button>
+                            <button type="button" id="actDescargarFactura" class="action-btn btn-light"><i class="bi bi-download"></i> Descargar Factura</button>
+                            <button type="button" id="actImprimir" class="action-btn btn-light"><i class="bi bi-printer"></i> Imprimir</button>
+                            <button type="button" id="actVerDetalle" class="action-btn btn-light"><i class="bi bi-eye"></i> Ver Detalle</button>
+
                             @using (Html.BeginForm("Anularfactura", "HistorialVentas", FormMethod.Post, new { id = "formAnular", @class = "d-inline" }))
                             {
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="idventa" id="idventa_anular" value="" />
-
                                 <button type="button" id="actAnular" class="action-btn btn-light action-danger">
                                     <i class="bi bi-slash-circle"></i> Anular
                                 </button>
                             }
 
-                            <button id="actClonar" class="action-btn btn-light"><i class="bi bi-files"></i> Clonar Factura</button>
+                            <button type="button" id="actClonar" class="action-btn btn-light"><i class="bi bi-files"></i> Clonar Factura</button>
                         </div>
                     </div>
 
                     <div class="hv-section mt-3">
                         <div class="section-title">Factura Electrónica</div>
                         <div class="d-grid gap-2">
-
-                            <button id="actEnviarDIAN" class="action-btn btn-light"><i class="bi bi-send"></i> Enviar Factura DIAN</button>
-                            <button id="actEnviarCorreo" class="action-btn btn-light"><i class="bi bi-envelope"></i> Enviar Factura Correo</button>
-
+                            <button type="button" id="actEnviarDIAN" class="action-btn btn-light"><i class="bi bi-send"></i> Enviar Factura DIAN</button>
+                            <button type="button" id="actEnviarCorreo" class="action-btn btn-light"><i class="bi bi-envelope"></i> Enviar Factura Correo</button>
                         </div>
                     </div>
 
                     <div class="hv-section mt-3">
                         <div class="section-title">Cliente & Totales</div>
                         <div class="d-grid gap-2">
-                            <button id="actEditarCliente" class="action-btn btn-light"><i class="bi bi-person"></i> Editar o Agregar Cliente</button>
+                            <button type="button" id="actEditarCliente" class="action-btn btn-light"><i class="bi bi-person"></i> Editar o Agregar Cliente</button>
                             <div class="card hv-total">
                                 <div class="card-body py-2 px-3 d-flex justify-content-between align-items-center">
                                     <div class="small text-muted">Total</div>
@@ -313,7 +300,7 @@
                             <div class="card-body py-2 px-3">
                                 <div class="input-group input-group-sm">
                                     <input type="date" id="fFechaFacturacion" class="form-control">
-                                    <button id="actEditarFecha" class="btn btn-outline-secondary">Editar</button>
+                                    <button type="button" id="actEditarFecha" class="btn btn-outline-secondary">Editar</button>
                                 </div>
                             </div>
                         </div>
@@ -322,9 +309,9 @@
                     <div class="hv-section mt-3">
                         <div class="section-title">Otras</div>
                         <div class="d-grid gap-2">
-                            <button id="actDevolucion" class="action-btn btn-light"><i class="bi bi-arrow-counterclockwise"></i> Devolución</button>
-                            <button id="actResolucion" class="action-btn btn-light"><i class="bi bi-gear"></i> Resolución</button>
-                            <button id="actAumentarNumero" class="action-btn btn-light"><i class="bi bi-plus-square"></i> Aumentar Número</button>
+                            <button type="button" id="actDevolucion" class="action-btn btn-light"><i class="bi bi-arrow-counterclockwise"></i> Devolución</button>
+                            <button type="button" id="actResolucion" class="action-btn btn-light"><i class="bi bi-gear"></i> Resolución</button>
+                            <button type="button" id="actAumentarNumero" class="action-btn btn-light"><i class="bi bi-plus-square"></i> Aumentar Número</button>
                         </div>
                     </div>
                 </div>
@@ -340,12 +327,10 @@
                 <h5 class="modal-title" id="modalResolucionesLabel">Resoluciones disponibles</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-
             <div class="modal-body">
                 <div class="mb-2 small text-muted">
                     Selecciona la resolución para la venta actual.
                 </div>
-
                 <div class="table-responsive">
                     <table class="table table-sm table-hover align-middle" id="tabla-resoluciones">
                         <thead class="table-light">
@@ -366,12 +351,10 @@
                         <tbody><!-- filas por JS --></tbody>
                     </table>
                 </div>
-
                 <div class="alert alert-warning d-none" id="alerta-sin-resoluciones">
                     No hay resoluciones para mostrar.
                 </div>
             </div>
-
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
@@ -387,9 +370,8 @@
                 <h5 class="modal-title">Seleccionar cliente</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-
             <div class="modal-body">
-                <!-- Barra de búsqueda (la que ya tienes) -->
+                <!-- Barra de búsqueda -->
                 <div class="row g-2 align-items-center mb-3">
                     <div class="col-12 col-md">
                         <input id="cli-buscar" class="form-control" type="search"
@@ -399,7 +381,7 @@
                         <button id="cli-limpiar" type="button" class="btn btn-outline-secondary">Limpiar</button>
                     </div>
 
-                    <!-- NUEVO: búsqueda por NIT + botón DIAN -->
+                    <!-- Búsqueda por NIT + DIAN -->
                     <div class="col-12 col-md-auto ms-auto">
                         <div class="input-group">
                             <input id="cli-dian-nit"
@@ -411,7 +393,6 @@
                                    autocomplete="off"
                                    placeholder="NIT..." />
                             <button id="cli-dian-btn" type="button" class="btn btn-dian">
-                                @*<img src="~/Archivos/IMG/DIAN.png" alt="" width="18" height="18" class="me-2" />*@
                                 Consultar DIAN
                             </button>
                         </div>
@@ -432,47 +413,16 @@
                                 <th style="width: 160px;">Acción</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @* Rellena dinámicamente en tu vista (ejemplo) *@
-                            @* Cada fila debe traer data-idcliente para poder editar *@
-                            @*
-                                @foreach (var c in Model.Clientes) {
-                                  <tr data-idcliente="@c.Id"
-                                      data-nit="@c.Nit"
-                                      data-nombre="@c.Nombre"
-                                      data-comercial="@c.NombreComercial"
-                                      data-telefono="@c.Telefono"
-                                      data-direccion="@c.Direccion"
-                                      data-correo="@c.Correo">
-                                    <td>@c.Nit</td>
-                                    <td>@c.Nombre</td>
-                                    <td>@c.NombreComercial</td>
-                                    <td>@c.Telefono</td>
-                                    <td>@c.Direccion</td>
-                                    <td>@c.Correo</td>
-                                    <td class="text-nowrap">
-                                      <button type="button" class="btn btn-primary btn-sm cli-seleccionar">
-                                        <i class="bi bi-check2-circle me-1"></i> Seleccionar
-                                      </button>
-                                      <button type="button" class="btn btn-warning btn-sm cli-editar">
-                                        <i class="bi bi-pencil-square me-1"></i> Editar
-                                      </button>
-                                    </td>
-                                  </tr>
-                                }
-                            *@
-                        </tbody>
+                        <tbody></tbody>
                     </table>
                 </div>
 
-                <!-- NUEVO: Panel de edición (colapsable) -->
+                <!-- Panel de edición -->
                 <div id="cli-editor" class="card mt-3 d-none">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <h6 class="m-0">Editar cliente</h6>
-                            <button type="button" id="cli-editor-cerrar" class="btn btn-sm btn-outline-secondary">
-                                Cerrar
-                            </button>
+                            <button type="button" id="cli-editor-cerrar" class="btn btn-sm btn-outline-secondary">Cerrar</button>
                         </div>
 
                         <form id="cli-form">
@@ -524,11 +474,6 @@
     </div>
 </div>
 
-
-
-
-
-
 <form id="formAcquirer" class="d-none" data-acq-form>
     <div class="row g-3">
         <div class="col-12 col-md-6">
@@ -558,23 +503,12 @@
     </div>
 </form>
 
-
-
-
-
-
-
-
-
-
 <script>
     window.ClientesBase64 = "@jsonClientesBase64";
     window.DebeMostrarModalClientes = @(debeMostrarModalClientes ? "true" : "false");
 </script>
 
-
-
-<!-- jQuery (requerido por DataTables) -->
+<!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 
 <!-- DataTables + Bootstrap 5 + Responsive -->
@@ -588,27 +522,25 @@
 <!-- Inicialización específica para #tablaHV -->
 <script src="~/Scripts/hv.datatables.js?v=1.0.8"></script>
 
-
 @if (TempData["AcquirerB64"] != null || TempData["AcquirerMsg"] != null)
 {
     <script>
-    window.DebeMostrarModalClientes = true;
-    @* objeto base64 cuando encontró *@
-    @if (TempData["AcquirerB64"] != null)
-    {
-      <text>window.AcquirerB64 = '@TempData["AcquirerB64"]';</text>
-    }
-    @* mensaje de no-encontrado *@
-    @if (TempData["AcquirerMsg"] != null)
-    {
-      <text>window.AcquirerMsg = '@(TempData["AcquirerMsg"]?.ToString()?.Replace("'", "\\'"))';</text>
-    }
+        window.DebeMostrarModalClientes = true;
+        @* objeto base64 cuando encontró *@
+        @if (TempData["AcquirerB64"] != null)
+        {
+          <text>window.AcquirerB64 = '@TempData["AcquirerB64"]';</text>
+        }
+        @* mensaje de no-encontrado *@
+        @if (TempData["AcquirerMsg"] != null)
+        {
+          <text>window.AcquirerMsg = '@(TempData["AcquirerMsg"]?.ToString()?.Replace("'", "\\'"))';</text>
+        }
     </script>
 }
 
 @using System.Web
 @{
-    // Obtiene y deserializa el modelo desde la sesión (con defensas)
     var sessionString = Session["HistorialVentasJson"] as string ?? "{}";
     var viewmodels = Newtonsoft.Json.JsonConvert
         .DeserializeObject<WebCliente.ViewModels.HistorialVentasViewModels>(sessionString)
@@ -619,7 +551,6 @@
 
 @if (alertModerno.mostrar)
 {
-    // Normaliza el icono a los valores de SweetAlert2
     var icono = (alertModerno.tipoAlert ?? "").Trim().ToLowerInvariant();
     switch (icono)
     {
@@ -639,7 +570,6 @@
             icono = "info"; break;
     }
 
-    // Escapa seguro para JavaScript (incluye comillas)
     var tituloJs = HttpUtility.JavaScriptStringEncode(alertModerno.titulo ?? "", true);
     var mensajeJs = HttpUtility.JavaScriptStringEncode(alertModerno.mensaje ?? "", true);
     <script>
@@ -652,9 +582,11 @@
             });
         });
     </script>
+    alertModerno = new WebCliente.ViewModels.AlertModerno();
+    viewmodels.AlertModerno = new WebCliente.ViewModels.AlertModerno();
+    Session["HistorialVentasJson"] = Newtonsoft.Json.JsonConvert.SerializeObject(viewmodels);
+
 }
-
-
 
 @using System.Text
 @{
@@ -662,13 +594,20 @@
     var acquirerB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(rawAcquirer));
 }
 <!-- Portador de datos para el JS -->
-<div id="acquirerData"
-     data-acquirer-json-b64="@acquirerB64">
-</div>
+<div id="acquirerData" data-acquirer-json-b64="@acquirerB64"></div>
 
-<!-- (Opcional) SweetAlert2 si no lo cargas en el _Layout -->
+<!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+<!-- Tu JS corregido (bust cache con v=1.14.8) -->
+<script src="~/Scripts/historialventas.js?v=1.14.9"></script>
 
-
-<script src="~/Scripts/historialventas.js?v=1.14.6"></script>
+<!-- Limpieza de URL si vienes de POST /Anularfactura -->
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var p = location.pathname.toLowerCase();
+  if (p.indexOf('/historialventas/anularfactura') >= 0) {
+    history.replaceState(null, '', '@Url.Action("Index", "HistorialVentas")');
+  }
+});
+</script>
