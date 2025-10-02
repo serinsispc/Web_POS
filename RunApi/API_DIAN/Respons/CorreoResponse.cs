@@ -8,6 +8,7 @@ namespace RunApi.API_DIAN.Respons
 {
     public class CorreoResponse
     {
+        public string message { get; set; }
         public bool? is_valid { get; set; }
         public List<To> to { get; set; }
         public List<Cc> cc { get; set; }

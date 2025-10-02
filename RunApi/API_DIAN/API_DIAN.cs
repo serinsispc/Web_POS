@@ -427,14 +427,19 @@ namespace RunApi.Funciones.DIAN_API
                 {
                     return new Respuesta_ApiDIAN { data = null, estado = false, mensaje = $"no se encontró el IdResolucion ({venta.idResolucion})." };
                 }
+                notacredito.resolution = new Resolution_NC();
                 notacredito.resolution.prefix = $"{resolucion.prefijo}";
                 notacredito.resolution.from = Convert.ToInt32(resolucion.desde);
                 notacredito.resolution.to = Convert.ToInt32(resolucion.hasta);
 
                 var facturaElectronica=new FacturaElectronica();
-                var objeto = new { nombreDB=ClassDBCliente.DBCliente, idventa=venta.id };
+                var objeto = new { nombreDB=ClassDBCliente.DBCliente, cufe=venta.cufe };
                 string jsonFE = JsonConvert.SerializeObject(objeto);
-                facturaElectronica =await FacturaElectronicaAPI.ConsultarIdVenta(jsonFE);
+                facturaElectronica =await FacturaElectronicaAPI.ConsultarCufe(jsonFE);
+                if(facturaElectronica==null || facturaElectronica.cufe == null)
+                {
+                    return new Respuesta_ApiDIAN { data = null, estado = false, mensaje = $"no se encontró la información del cufe ({venta.cufe})" };
+                }
 
                 notacredito.billing_reference = new NotaCreditoRequest.BillingReference();
                 notacredito.billing_reference.number = facturaElectronica.numeroFactura;
@@ -609,10 +614,11 @@ namespace RunApi.Funciones.DIAN_API
                     correoRequest.bcc = new List<RunApi.API_DIAN.Request.Bcc>();
                     RunApi.API_DIAN.Request.Bcc bccCorreo = new RunApi.API_DIAN.Request.Bcc();
                     bccCorreo.email = "facturacion@serinsispc.com";
+
                     correoRequest.bcc.Add(bccCorreo);
 
-                    var respCorreo =await FacturaMail(correoRequest,token, (string)notaCreditoResponse.uuid);
-                    if(respCorreo != null)
+                    var respCorreo =await FacturaMail(correoRequest,token.Replace("\"", ""), (string)notaCreditoResponse.uuid);
+                    if(respCorreo != null || (bool)respCorreo.is_valid==true)
                     {
                         if (!(bool)respCorreo.is_valid)
                         {

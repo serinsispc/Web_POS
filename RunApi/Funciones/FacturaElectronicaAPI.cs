@@ -47,17 +47,33 @@ namespace RunApi.Funciones
                 return new RespuestaCRUD_api { estado=false, idAfectado=0, mensaje=error };
             }
         }
-        public static async Task<FacturaElectronica>ConsultarIdVenta(string json)
+        public static async Task<FacturaElectronica>ConsultarCufe(string json)
         {
             try
             {
                
                 var api=new ClassAPI();
-                var url = $"FacturaElectronica/ConsultarIdVenta";
+                var url = $"FacturaElectronica/ConsultarCufe";
                 var resp=await api.HttpWebRequestPostAsync(url,json,HttpMethod.Post);
                 return JsonConvert.DeserializeObject<FacturaElectronica>(resp);
             }
             catch(Exception ex)
+            {
+                string message = ex.Message;
+                return null;
+            }
+        }
+        public static async Task<FacturaElectronica> ConsultarIdVenta(string json)
+        {
+            try
+            {
+
+                var api = new ClassAPI();
+                var url = $"FacturaElectronica/ConsultarIdVenta";
+                var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Post);
+                return JsonConvert.DeserializeObject<FacturaElectronica>(resp);
+            }
+            catch (Exception ex)
             {
                 string message = ex.Message;
                 return null;

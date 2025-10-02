@@ -18,7 +18,7 @@ namespace RunApi.Funciones
             {
                 string json=JsonConvert.SerializeObject(request);
                 var api = new ClassAPI();
-                var url = $"/NotasCredito/CRUD";
+                var url = $"NotasCredito/CRUD";
                 var resp=await api.HttpWebRequestPostAsync(url, json,HttpMethod.Post);
                 return JsonConvert.DeserializeObject<RespuestaCRUD_api>(resp);
             }
