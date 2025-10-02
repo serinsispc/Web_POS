@@ -325,13 +325,26 @@ namespace WebCliente.Controllers
         {
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
             var respuestaAPI = await API_DIAN.NotaCreditoElectronica(idventa);
-            if(respuestaAPI.estado)
+
+            if (respuestaAPI.estado)
             {
                 var respuestaNotaCredito=JsonConvert.DeserializeObject<NotaCreditoResponse>(respuestaAPI.data);
+                var erroresLimpios =
+                (respuestaNotaCredito?.errors_messages ?? Enumerable.Empty<string>())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => s.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+                string mensajeError = erroresLimpios.Count == 0
+                    ? "Se produjo un error no especificado."
+                    : "Se encontraron los siguientes errores:" + Environment.NewLine +
+                      "• " + string.Join(Environment.NewLine + "• ", erroresLimpios);
+                model.AlertModerno = AlertModerno.CargarAlert(true, respuestaNotaCredito.status_message, mensajeError, "success");
             }
             else
             {
-
+                model.AlertModerno = AlertModerno.CargarAlert(true, "Error", respuestaAPI.mensaje, "error");
             }
             ModelView(model);
             return View("Index");

@@ -585,9 +585,10 @@ namespace RunApi.Funciones.DIAN_API
                     objNotaCredito.imagenQR =GeneralQR.GenerarQrBase64((string)notaCreditoResponse.qr_data);
                     var crudRequest=new CRUD_NotaCreditoRequest { funcion=0, nombreDB=ClassDBCliente.DBCliente, NotasCredito=objNotaCredito};
                     var respCRUD = await NotaCreditoAPI.CRUD(crudRequest);
+                    string errorCRUDNotaCredito=string.Empty;
                     if (!respCRUD.estado)
                     {
-
+                        errorCRUDNotaCredito = $"La nota crédito no fue guardada en la base de datos.";
                     }
 
                     //como la nota crédito fue aprobada por la DIAN entonces enviamos la nota crédito al correo del cliente
