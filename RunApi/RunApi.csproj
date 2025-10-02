@@ -37,12 +37,18 @@
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="QRCoder, Version=1.6.0.0, Culture=neutral, PublicKeyToken=c4ed5b9ae8358a28, processorArchitecture=MSIL">
+      <HintPath>..\packages\QRCoder.1.6.0\lib\net40\QRCoder.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
     </Reference>
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Pipelines, Version=9.0.0.5, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.IO.Pipelines.9.0.5\lib\net462\System.IO.Pipelines.dll</HintPath>
     </Reference>
@@ -74,6 +80,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ApiControlers\ConfiguracionDianControler.cs" />
@@ -81,26 +88,31 @@
     <Compile Include="ApiControlers\ResolucionControler.cs" />
     <Compile Include="ApiControlers\SedeControler.cs" />
     <Compile Include="ApiControlers\TablaMesesControler.cs" />
+    <Compile Include="ApiControlers\V_CorreosClienteControler.cs" />
     <Compile Include="ApiControlers\V_ResolucionesControler.cs" />
     <Compile Include="ApiControlers\V_TablaVentasControler.cs" />
     <Compile Include="API_DIAN\Objetos\AcquirerDto.cs" />
     <Compile Include="API_DIAN\Objetos\Respuesta_ApiDIAN.cs" />
     <Compile Include="API_DIAN\Request\ConsultarNIT_Request.cs" />
+    <Compile Include="API_DIAN\Request\CorreoRequest.cs" />
     <Compile Include="API_DIAN\Request\FacturaElectronica_Request.cs" />
     <Compile Include="API_DIAN\Request\NotaCreditoRequest.cs" />
     <Compile Include="API_DIAN\Respons\ConsultarNIT_Respons.cs" />
+    <Compile Include="API_DIAN\Respons\CorreoResponse.cs" />
     <Compile Include="API_DIAN\Respons\FacturaElectronica_Respons.cs" />
     <Compile Include="API_DIAN\Respons\NotaCreditoResponse.cs" />
     <Compile Include="ClassAPI.cs" />
-    <Compile Include="Envio\FacturaElectronicaEnvio.cs" />
-    <Compile Include="Envio\LoginEnviar.cs" />
-    <Compile Include="Envio\UsuarioAdminEnvio.cs" />
+    <Compile Include="Request\CRUD_NotaCreditoRequest.cs" />
+    <Compile Include="Request\FacturaElectronicaEnvio.cs" />
+    <Compile Include="Request\LoginEnviar.cs" />
+    <Compile Include="Request\UsuarioAdminEnvio.cs" />
     <Compile Include="API_DIAN\API_DIAN.cs" />
     <Compile Include="Funciones\ExportarExcelAPI.cs" />
     <Compile Include="Funciones\FacturaElectronicaAPI.cs" />
     <Compile Include="Funciones\FacturaElectronicaJSONAPI.cs" />
     <Compile Include="Funciones\GetDataFactura_JSON_API.cs" />
     <Compile Include="Funciones\HistorialVentasAPI.cs" />
+    <Compile Include="Funciones\NotaCreditoAPI.cs" />
     <Compile Include="Funciones\RespuestaCRUD_api.cs" />
     <Compile Include="Funciones\TablaVentaAPI.cs" />
     <Compile Include="Models\Admin\UsuarioAdmin.cs" />
@@ -111,19 +123,22 @@
     <Compile Include="Models\Cliente\FacturaElectronica.cs" />
     <Compile Include="Models\Cliente\FacturaElectronicaJSON.cs" />
     <Compile Include="Models\Cliente\GetDataFactura_JSON.cs" />
+    <Compile Include="Models\Cliente\NotasCredito.cs" />
     <Compile Include="Models\Cliente\Resolucion.cs" />
     <Compile Include="Models\Cliente\Sede.cs" />
     <Compile Include="Models\Cliente\TablaMeses.cs" />
     <Compile Include="Models\Cliente\TablaVentas.cs" />
     <Compile Include="Models\Cliente\V_Clientes.cs" />
+    <Compile Include="Models\Cliente\V_CorreosCliente.cs" />
     <Compile Include="Models\Cliente\V_DetalleCaja.cs" />
     <Compile Include="Models\Cliente\V_Resoluciones.cs" />
     <Compile Include="Models\Cliente\V_TablaVentas.cs" />
     <Compile Include="Models\Cliente\V_Usuario_Parqueadero.cs" />
     <Compile Include="Models\Cliente\v_Usuario_POS.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Respuesta\LoginRespuesta.cs" />
-    <Compile Include="Respuesta\UsuarioAdminRespuesta.cs" />
+    <Compile Include="Respons\LoginRespuesta.cs" />
+    <Compile Include="Respons\UsuarioAdminRespuesta.cs" />
+    <Compile Include="Utilidades\General_QR.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

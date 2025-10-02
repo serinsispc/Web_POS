@@ -82,7 +82,7 @@ namespace RunApi.API_DIAN.Respons
         public object reference_price_id { get; set; }
         public object free_of_charge_indicator { get; set; }
     }
-    public class billing_reference
+    public class Billing_reference
     {
         public string number { get; set; }
         public string uuid { get; set; }

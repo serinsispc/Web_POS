@@ -35,7 +35,7 @@ namespace RunApi.ApiControlers
                 var aPI = new ClassAPI();
                 var json = new { nombreDB = ClassDBCliente.DBCliente, idResolucion=idresolucion };
                 string json_ = JsonConvert.SerializeObject(json);
-                string result = await aPI.HttpWebRequestPostAsync("HistorialVentas/ListaResoluciones", json_, HttpMethod.Post);
+                string result = await aPI.HttpWebRequestPostAsync("V_Resoluciones/ConsultarIdResolucion", json_, HttpMethod.Post);
                 return JsonConvert.DeserializeObject<V_Resoluciones>(result);
             }
             catch (Exception ex)

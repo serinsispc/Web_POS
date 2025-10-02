@@ -6,6 +6,7 @@ using RunApi.ApiControlers;
 using RunApi.Funciones;
 using RunApi.Funciones.DIAN_API;
 using RunApi.Models.Cliente;
+using RunApi.Request;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -324,7 +325,27 @@ namespace WebCliente.Controllers
         public async Task<ActionResult>Anularfactura(int idventa)
         {
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
+            var respuestaAPI = await API_DIAN.NotaCreditoElectronica(idventa);
+            if(respuestaAPI.estado)
+            {
+                var responsCRUD = JsonConvert.DeserializeObject<NotaCreditoResponse>(respuestaAPI.data);
+                var erroresLimpios =
+                  (responsCRUD?.errors_messages ?? Enumerable.Empty<string>())
+                  .Where(s => !string.IsNullOrWhiteSpace(s))
+                  .Select(s => s.Trim())
+                  .Distinct(StringComparer.OrdinalIgnoreCase)
+                  .ToList();
 
+                string mensajeError = erroresLimpios.Count == 0
+                    ? "Se produjo un error no especificado."
+                    : "Se encontraron los siguientes errores:" + Environment.NewLine +
+                      "• " + string.Join(Environment.NewLine + "• ", erroresLimpios);
+                model.AlertModerno = AlertModerno.CargarAlert(true,responsCRUD.status_message,mensajeError,"success");
+            }
+            else
+            {
+                model.AlertModerno = AlertModerno.CargarAlert(true, "Error", respuestaAPI.mensaje, "success");
+            }
             ModelView(model);
             return View("Index");
         }
