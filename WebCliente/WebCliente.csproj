@@ -46,6 +46,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="QRCoder, Version=1.6.0.0, Culture=neutral, PublicKeyToken=c4ed5b9ae8358a28, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Bin\QRCoder.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -130,6 +134,7 @@
     <Compile Include="Controllers\LoginParqueaderoController.cs" />
     <Compile Include="Controllers\MenuController.cs" />
     <Compile Include="Controllers\ParqueoController.cs" />
+    <Compile Include="Controllers\QRController.cs" />
     <Compile Include="Controllers\TiendaController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -206,6 +211,7 @@
     <Content Include="Views\Shared\_LayoutParqueo.cshtml" />
     <Content Include="Views\Informes\Index.cshtml" />
     <Content Include="Views\HistorialVentas\Index.cshtml" />
+    <Content Include="Views\QR\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RunApi\RunApi.csproj">

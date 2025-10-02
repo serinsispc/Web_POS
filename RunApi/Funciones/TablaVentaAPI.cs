@@ -71,7 +71,7 @@ namespace RunApi.Funciones
                 string json = JsonConvert.SerializeObject(objeto);
                 var api = new ClassAPI();
                 var url = $"TablaVenta/EditarEstadoFactura";
-                var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Put);
+                var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Post);
                 var respapi = JsonConvert.DeserializeObject<RespuestaAPI>(resp);
                 return respapi.estado;
             }

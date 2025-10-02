@@ -594,7 +594,6 @@ namespace RunApi.Funciones.DIAN_API
                     {
                         //en esta parte cambiamos el estado de la factura
                         var tablaventa = TablaVentaAPI.EditarEstadoFactura(IdVenta,"ANULADA");
-
                     }
                     //como la nota crédito fue aprobada por la DIAN entonces enviamos la nota crédito al correo del cliente
                     var correoRequest=new CorreoRequest();

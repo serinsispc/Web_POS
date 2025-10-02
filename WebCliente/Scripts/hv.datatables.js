@@ -106,19 +106,41 @@
             deferRender: true,
             stateSave: true,
 
+            // === COLOREADO: Fila por "Estado" (ANULADA) y celda por "Estado FE" ===
             createdRow: function (row, data) {
                 try {
-                    // data[8] = Estado FE (según orden real)
+                    // Columnas según el orden real:
+                    // data[5] = Estado
+                    // data[8] = Estado FE
+                    var estado = (data[5] || '').toString().trim().toUpperCase();
                     var estadoFE = (data[8] || '').toString().trim().toUpperCase();
-                    var esAceptada = estadoFE.includes('ACEPT');      // ACEPTADA
-                    var esDenegada = estadoFE.includes('DENEG') || estadoFE.includes('RECHAZ'); // DENEGADA / RECHAZADA
-                    if (esDenegada) {
+
+                    // 1) Fila ROJA solo si Estado = ANULADA
+                    //    Reutilizamos 'fila-negativa' que ya tienes en tu CSS (rojo para toda la fila)
+                    if (estado.includes('ANUL')) {
                         row.classList.add('fila-negativa');
-                    } else if (esAceptada) {
-                        row.classList.add('fila-positiva');
+                    } else {
+                        row.classList.remove('fila-negativa');
+                    }
+
+                    // 2) Pintar SOLO la celda de Estado FE (col 8)
+                    var tdFE = row.cells && row.cells[8] ? row.cells[8] : null;
+                    if (tdFE) {
+                        // Limpiar clases anteriores de la celda FE (por si redraw)
+                        tdFE.classList.remove('cell-fe-positiva', 'cell-fe-negativa');
+
+                        var esAceptada = estadoFE.includes('ACEPT'); // ACEPTADA
+                        var esDenegada = estadoFE.includes('DENEG') || estadoFE.includes('RECHAZ'); // DENEGADA/RECHAZADA
+
+                        if (esDenegada) {
+                            tdFE.classList.add('cell-fe-negativa'); // rojo en la CELDA
+                        } else if (esAceptada) {
+                            tdFE.classList.add('cell-fe-positiva'); // verde en la CELDA
+                        }
+                        // Si no es aceptada ni denegada, no se pinta la celda.
                     }
                 } catch (e) {
-                    console.error('createdRow (Estado FE) error:', e);
+                    console.error('createdRow (colores) error:', e);
                 }
             }
         });
