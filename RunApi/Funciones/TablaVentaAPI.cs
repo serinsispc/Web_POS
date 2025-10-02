@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using RunApi.Models;
+using RunApi.Respons;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,6 +50,29 @@ namespace RunApi.Funciones
                 var url = $"TablaVenta/EditarConsecutivo";
                 var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Put);
                 var respapi = JsonConvert.DeserializeObject<RespuestaCRUD_api>(resp);
+                return respapi.estado;
+            }
+            catch (Exception ex)
+            {
+                string msg = ex.Message;
+                return false;
+            }
+        }
+        public static async Task<bool> EditarEstadoFactura(int idventa, string estado)
+        {
+            try
+            {
+                var objeto = new
+                {
+                    nombreDB = ClassDBCliente.DBCliente,
+                    estado = estado,
+                    idventa = idventa
+                };
+                string json = JsonConvert.SerializeObject(objeto);
+                var api = new ClassAPI();
+                var url = $"TablaVenta/EditarEstadoFactura";
+                var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Put);
+                var respapi = JsonConvert.DeserializeObject<RespuestaAPI>(resp);
                 return respapi.estado;
             }
             catch (Exception ex)

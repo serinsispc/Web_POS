@@ -590,7 +590,12 @@ namespace RunApi.Funciones.DIAN_API
                     objNotaCredito.imagenQR =GeneralQR.GenerarQrBase64((string)notaCreditoResponse.qr_data);
                     var crudRequest=new CRUD_NotaCreditoRequest { funcion=0, nombreDB=ClassDBCliente.DBCliente, NotasCredito=objNotaCredito};
                     var respCRUD = await NotaCreditoAPI.CRUD(crudRequest);
+                    if (respCRUD.estado)
+                    {
+                        //en esta parte cambiamos el estado de la factura
+                        var tablaventa = TablaVentaAPI.EditarEstadoFactura(IdVenta,"ANULADA");
 
+                    }
                     //como la nota crédito fue aprobada por la DIAN entonces enviamos la nota crédito al correo del cliente
                     var correoRequest=new CorreoRequest();
                     correoRequest.to = new List<RunApi.API_DIAN.Request.To>();

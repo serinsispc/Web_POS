@@ -5,6 +5,7 @@ using RunApi.API_DIAN.Respons;
 using RunApi.ApiControlers;
 using RunApi.Funciones;
 using RunApi.Funciones.DIAN_API;
+using RunApi.Models;
 using RunApi.Models.Cliente;
 using RunApi.Request;
 using System;
@@ -341,6 +342,7 @@ namespace WebCliente.Controllers
                     : "Se encontraron los siguientes errores:" + Environment.NewLine +
                       "• " + string.Join(Environment.NewLine + "• ", erroresLimpios);
                 model.AlertModerno = AlertModerno.CargarAlert(true,responsCRUD.status_message,mensajeError,"success");
+                model.V_TablaVentas =await V_TablaVentasControler.Filtrar(ClassDBCliente.DBCliente,model.Fecha1,model.Fecha2);
             }
             else
             {

@@ -137,6 +137,7 @@
     <Compile Include="Models\Cliente\v_Usuario_POS.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Respons\LoginRespuesta.cs" />
+    <Compile Include="Respons\RespuestaAPI.cs" />
     <Compile Include="Respons\UsuarioAdminRespuesta.cs" />
     <Compile Include="Utilidades\General_QR.cs" />
   </ItemGroup>
