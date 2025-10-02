@@ -7,6 +7,8 @@ using RunApi.ApiControlers;
 using RunApi.Envio;
 using RunApi.Models;
 using RunApi.Models.Cliente;
+using RunApi.Request;
+using RunApi.Utilidades;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlTypes;
@@ -15,6 +17,7 @@ using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using static RunApi.API_DIAN.Request.NotaCreditoRequest;
 using static System.Runtime.CompilerServices.RuntimeHelpers;
 
 namespace RunApi.Funciones.DIAN_API
@@ -406,7 +409,7 @@ namespace RunApi.Funciones.DIAN_API
                 getDataFactura_JSON = await GetDataFactura_JSON_API.DataFactura(IdVenta);
                 if (getDataFactura_JSON == null)
                 {
-                    return new Respuesta_ApiDIAN { data = null, estado = false, mensaje = $"no se encontro la factura." };
+                    return new Respuesta_ApiDIAN { data = null, estado = false, mensaje = $"no se encontraron los datos de la factura." };
                 }
                 //cargamos el objeto ventas
                 var venta = getDataFactura_JSON.V_TablaVentas;
@@ -419,12 +422,217 @@ namespace RunApi.Funciones.DIAN_API
                 notacredito.discrepancy_response.correction_concept_id = 2;
 
                 //consultamos la resolución
-                var resolucion=V_ResolucionesControler.
+                var resolucion =await V_ResolucionesControler.ConsultarIdResolucion((int)venta.idResolucion);
+                if (resolucion == null)
+                {
+                    return new Respuesta_ApiDIAN { data = null, estado = false, mensaje = $"no se encontró el IdResolucion ({venta.idResolucion})." };
+                }
+                notacredito.resolution.prefix = $"{resolucion.prefijo}";
+                notacredito.resolution.from = Convert.ToInt32(resolucion.desde);
+                notacredito.resolution.to = Convert.ToInt32(resolucion.hasta);
+
+                var facturaElectronica=new FacturaElectronica();
+                var objeto = new { nombreDB=ClassDBCliente.DBCliente, idventa=venta.id };
+                string jsonFE = JsonConvert.SerializeObject(objeto);
+                facturaElectronica =await FacturaElectronicaAPI.ConsultarIdVenta(jsonFE);
+
+                notacredito.billing_reference = new NotaCreditoRequest.BillingReference();
+                notacredito.billing_reference.number = facturaElectronica.numeroFactura;
+                notacredito.billing_reference.uuid = facturaElectronica.cufe;
+                notacredito.billing_reference.issue_date = Convert.ToDateTime(facturaElectronica.fechaEmision).ToString("yyyy-MM-dd");
+
+                notacredito.number = (int)venta.numeroVenta;
+                notacredito.type_document_id = 5;
+
+                /* Metodos de Pago */
+                notacredito.payment_forms = new List<PaymentForms_NC>();
+                PaymentForms_NC paymentForms = new PaymentForms_NC();
+                paymentForms.payment_method_id = Convert.ToInt32(venta.idMedioDePago);
+                if (venta.idFormaDePago == 1)
+                {
+                    paymentForms.payment_form_id = 1;
+                }
+                else
+                {
+                    paymentForms.payment_form_id = 2;
+                }
+                paymentForms.duration_measure = Convert.ToInt32(venta.diasCredito);
+                paymentForms.payment_due_date = Convert.ToDateTime(venta.fechaVenta).ToString("yyyy-MM-dd");
+                notacredito.payment_forms.Add(paymentForms);
+
+                notacredito.customer = new Customer_NC();
+
+                //en esta parte cargamos los datos del cliente
+                var clientes = new V_Clientes();
+                clientes = getDataFactura_JSON.V_Clientes;
+                if (clientes != null)
+                {
+                    notacredito.customer.identification_number = clientes.identificationNumber;
+                    notacredito.customer.name = clientes.nameCliente;
+                    notacredito.customer.phone = clientes.phone;
+                    notacredito.customer.municipality_id = (int)clientes.municipality_id;
+                    notacredito.customer.address = clientes.adress;
+                    notacredito.customer.email = clientes.email;
+                    notacredito.customer.type_document_identification_id = (int)clientes.typeDocumentIdentification_id;
+                    notacredito.customer.type_organization_id = (int)clientes.typeOrganization_id;
+                    notacredito.customer.merchant_registration = "No tiene";
+                }
+
+                notacredito.legal_monetary_totals = new LegalMonetaryTotals_NC();
+
+                notacredito.legal_monetary_totals.line_extension_amount = $"{Convert.ToInt32(venta.subtotalVenta)}.00";
+                notacredito.legal_monetary_totals.tax_exclusive_amount = $"{Convert.ToInt32(venta.basesIva)}.00";
+                notacredito.legal_monetary_totals.tax_inclusive_amount = $"{Convert.ToInt32(venta.subtotalVenta) + Convert.ToInt32(venta.ivaVenta)}.00";
+                notacredito.legal_monetary_totals.payable_amount = $"{Convert.ToInt32(venta.subtotalVenta) + Convert.ToInt32(venta.ivaVenta)}.00";
+
+                notacredito.notes = new List<Notas_NC>();
+
+                if (venta.observacionVenta != string.Empty)
+                {
+                    Notas_NC itemNotas = new Notas_NC();
+                    string NOTA = "";
+                    if (venta.observacionVenta == null)
+                    {
+                        NOTA = "...";
+                    }
+                    else
+                    {
+                        NOTA = venta.observacionVenta;
+                    }
+                    itemNotas.text = NOTA;
+                    notacredito.notes.Add(itemNotas);
+                }
 
 
-                //ahora llamamos la class api
+
+                notacredito.credit_note_lines = new List<CreditNoteLines>();
+
+                //en esta parte tramor el listado de los productos
+                List<V_DetalleCaja> dataTable = new List<V_DetalleCaja>();
+                dataTable = getDataFactura_JSON.V_DetalleCaja;
+                if (dataTable.Count > 0)
+                {
+                    foreach (V_DetalleCaja row in dataTable)
+                    {
+                        CreditNoteLines itemDetalleFactura = new CreditNoteLines();
+
+                        itemDetalleFactura.unit_measure_id = 70;
+                        itemDetalleFactura.invoiced_quantity = Convert.ToString(Convert.ToInt32(row.unidad));
+                        itemDetalleFactura.line_extension_amount = Convert.ToString(Convert.ToInt32(row.subTotalDetalle)) + ".00";
+
+                        itemDetalleFactura.tax_totals = new List<RunApi.API_DIAN.Request.TaxTotal>();
+                        decimal ivaDetalle = Convert.ToDecimal(row.porImpuesto);
+                        if (ivaDetalle > Convert.ToDecimal(0))
+                        {
+
+                            RunApi.API_DIAN.Request.TaxTotal taxTotalItem = new RunApi.API_DIAN.Request.TaxTotal();
+
+                            taxTotalItem.tax_id = Convert.ToInt32(row.impuesto_id);
+                            taxTotalItem.tax_amount = Convert.ToString(Convert.ToInt32(row.valorImpuesto)) + ".00";
+                            taxTotalItem.taxable_amount = Convert.ToString(Convert.ToInt32(row.baseImpuesto)) + ".00";
+                            string iva = Convert.ToString(row.porImpuesto).Replace("0,", "");
+                            taxTotalItem.percent = Convert.ToString(Convert.ToInt32(iva)) + ".00";
+
+                            itemDetalleFactura.tax_totals.Add(taxTotalItem);
+                        }
+
+                        int caracteres = Convert.ToString(row.nombreProducto).Length;
+                        string textoCorto = new string(row.nombreProducto.Take(50).ToArray());
+
+                        itemDetalleFactura.description = textoCorto;
+                        itemDetalleFactura.code = Convert.ToString(row.codigoProducto);
+                        itemDetalleFactura.type_item_identification_id = 3;
+                        itemDetalleFactura.price_amount = Convert.ToString(Convert.ToInt32(row.precioVenta)) + ".00";
+                        itemDetalleFactura.base_quantity = "1.000000";
+
+                        notacredito.credit_note_lines.Add(itemDetalleFactura);
+                    }
+                }
+
+
+                if (venta.descuentoVenta > 0)
+                {
+                    notacredito.allowance_charges = new List<AllowanceCharge_NC>();
+                }
+
+                /****************************************************************************/
+                /****************************************************************************/
+                /****************************************************************************/
+                /****************************************************************************/
                 var api =new ClassAPI();
-                return new Respuesta_ApiDIAN();
+                var url = $"/api/ubl2.1/credit-note/";
+                string jsonNotaCredito = JsonConvert.SerializeObject(notacredito);
+                var token =await HistorialVentasAPI.ConsultarToken();
+                string respuestaNotaCredito = await api.HttpWebRequestPostAsync(url,jsonNotaCredito,HttpMethod.Post,true, token.Replace("\"", ""));
+                var notaCreditoResponse=JsonConvert.DeserializeObject<NotaCreditoResponse>(respuestaNotaCredito);
+
+                if (notaCreditoResponse == null) 
+                {
+                    return new Respuesta_ApiDIAN { data = null, estado = false, mensaje = $"error en el proceso de enviar la nota crédito a la DIAN." };
+                }
+
+                if ((bool)notaCreditoResponse.is_valid)
+                {
+                    //guardamos la data en la base de datos
+                    var objNotaCredito = new NotasCredito();
+                    objNotaCredito.id = 0;
+                    objNotaCredito.idVenta = IdVenta;
+                    objNotaCredito.cufe = (string)notaCreditoResponse.uuid;
+                    objNotaCredito.numeroFactura = notaCreditoResponse.number;
+                    objNotaCredito.fechaEmision = (string)notaCreditoResponse.issue_date;
+                    objNotaCredito.fecahVensimiento = (string)notaCreditoResponse.expedition_date;
+                    objNotaCredito.dataQR = (string)notaCreditoResponse.qr_data;
+                    objNotaCredito.imagenQR =GeneralQR.GenerarQrBase64((string)notaCreditoResponse.qr_data);
+                    var crudRequest=new CRUD_NotaCreditoRequest { funcion=0, nombreDB=ClassDBCliente.DBCliente, NotasCredito=objNotaCredito};
+                    var respCRUD = await NotaCreditoAPI.CRUD(crudRequest);
+                    if (!respCRUD.estado)
+                    {
+
+                    }
+
+                    //como la nota crédito fue aprobada por la DIAN entonces enviamos la nota crédito al correo del cliente
+                    var correoRequest=new CorreoRequest();
+                    correoRequest.to = new List<RunApi.API_DIAN.Request.To>();
+                    RunApi.API_DIAN.Request.To toCorreo = new RunApi.API_DIAN.Request.To();
+                    toCorreo.email = clientes.email;
+                    correoRequest.to.Add(toCorreo);
+
+                    correoRequest.cc = new List<RunApi.API_DIAN.Request.Cc>();
+                    List<V_CorreosCliente> v_CorreosCliente = new List<V_CorreosCliente>();
+                    v_CorreosCliente = await V_CorreosClienteControler.ListaIdCliente(clientes.id);
+                    if (v_CorreosCliente.Count > 0)
+                    {
+                        foreach (V_CorreosCliente correos in v_CorreosCliente)
+                        {
+                            RunApi.API_DIAN.Request.Cc CcCorreo = new RunApi.API_DIAN.Request.Cc();
+                            CcCorreo.email = correos.email;
+                            correoRequest.cc.Add(CcCorreo);
+                        }
+                    }
+
+                    correoRequest.bcc = new List<RunApi.API_DIAN.Request.Bcc>();
+                    RunApi.API_DIAN.Request.Bcc bccCorreo = new RunApi.API_DIAN.Request.Bcc();
+                    bccCorreo.email = "facturacion@serinsispc.com";
+                    correoRequest.bcc.Add(bccCorreo);
+
+                    var respCorreo =await FacturaMail(correoRequest,token, (string)notaCreditoResponse.uuid);
+                    if(respCorreo != null)
+                    {
+                        if (!(bool)respCorreo.is_valid)
+                        {
+                            return new Respuesta_ApiDIAN { data = respuestaNotaCredito, estado = true, mensaje = $"Nota crédito aceptada, pero error en el envió del correo" };
+                        }
+                    }
+                    else
+                    {
+                        return new Respuesta_ApiDIAN { data = respuestaNotaCredito, estado = true, mensaje = $"Nota crédito aceptada, pero error en el envió del correo" };
+                    }
+                }
+                else
+                {
+                    return new Respuesta_ApiDIAN { data = respuestaNotaCredito, estado = false, mensaje = $"La nota crédito no fue aceptada por la DIAN." };
+                }
+                return new Respuesta_ApiDIAN { data = respuestaNotaCredito, estado = true, mensaje = $"proceso de nota crédito finalizado con éxito." };
             }
             catch(Exception ex)
             {
@@ -432,5 +640,22 @@ namespace RunApi.Funciones.DIAN_API
                 return new Respuesta_ApiDIAN { data = null, estado = false, mensaje=$"ocurrió el siguiente error en el proceso del envió de la nota crédito: {msg}" };
             }
         } 
+        public static async Task<CorreoResponse> FacturaMail(CorreoRequest correoRequest,string token,string uuid)
+        {
+            try
+            {
+                var api = new ClassAPI();
+                var url = $"/api/ubl2.1/mail/send/{uuid}";
+                string json=JsonConvert.SerializeObject(correoRequest);
+                json = json.Replace("\"allowance_charges\":null,", "");
+                var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Post,true,token);
+                return JsonConvert.DeserializeObject<CorreoResponse>(resp);
+            }
+            catch (Exception ex) 
+            { 
+                string error=ex.Message;
+                return new CorreoResponse();
+            }
+        }
     }
 }

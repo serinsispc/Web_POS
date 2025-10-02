@@ -324,7 +324,15 @@ namespace WebCliente.Controllers
         public async Task<ActionResult>Anularfactura(int idventa)
         {
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
+            var respuestaAPI = await API_DIAN.NotaCreditoElectronica(idventa);
+            if(respuestaAPI.estado)
+            {
+                var respuestaNotaCredito=JsonConvert.DeserializeObject<NotaCreditoResponse>(respuestaAPI.data);
+            }
+            else
+            {
 
+            }
             ModelView(model);
             return View("Index");
         }
