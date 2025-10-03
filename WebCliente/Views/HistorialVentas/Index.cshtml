@@ -118,6 +118,13 @@
         <input type="hidden" name="idCliente" id="idClienteSeleccionado" value="0" />
         <input type="hidden" name="idventa" id="inp-idventa-seleccion-cliente" value="0" />
     }
+    @* formulario oculto MediosDePago *@
+    @using (Html.BeginForm("MediosDePago", "HistorialVentas", FormMethod.Post, new { id = "formMediosDePago", @class = "d-none" }))
+    {
+        @Html.AntiForgeryToken()
+        <input type="hidden" id="inp-idventa-medios" name="idventa" value="" />
+    }
+
 
     <!-- FILTROS -->
     <div class="card card-filter shadow-sm mb-3">
@@ -204,6 +211,7 @@
                                     <th data-col="tipoFactura">Tipo</th>
                                     <th class="text-end" data-col="total">Total</th>
                                     <th data-col="formaDePago">Forma de Pago</th>
+                                    <th data-col="medioDePago">Medio de Pago</th>
                                     <th data-col="estadoVenta">Estado</th>
                                     <th data-col="nit">NIT</th>
                                     <th data-col="nombreCliente">Cliente</th>
@@ -231,6 +239,7 @@
                                             <td data-col="tipoFactura">@lista.tipoFactura</td>
                                             <td class="text-end" data-col="total">@((lista.totalVenta ?? 0m).ToString("C0", esCO))</td>
                                             <td data-col="formaDePago">@lista.formaDePago</td>
+                                            <td data-col="medioDePago">@lista.medioDePago</td>
                                             <td data-col="estadoVenta">@lista.estadoVenta</td>
                                             <td data-col="nit">@lista.nit</td>
                                             <td data-col="nombreCliente" title="@lista.nombreCliente">@lista.nombreCliente</td>
@@ -311,6 +320,7 @@
                         <div class="d-grid gap-2">
                             <button type="button" id="actDevolucion" class="action-btn btn-light"><i class="bi bi-arrow-counterclockwise"></i> Devolución</button>
                             <button type="button" id="actResolucion" class="action-btn btn-light"><i class="bi bi-gear"></i> Resolución</button>
+                            <button type="button" id="actMediosDePago" class="action-btn btn-light"><i class="bi bi-credit-card"></i> Medios De Dago</button>
                             <button type="button" id="actAumentarNumero" class="action-btn btn-light"><i class="bi bi-plus-square"></i> Aumentar Número</button>
                         </div>
                     </div>

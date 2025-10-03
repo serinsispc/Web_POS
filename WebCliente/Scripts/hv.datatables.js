@@ -1,6 +1,6 @@
 ﻿// hv.datatables.js
 // DataTables para #tablaHV con columnas (ORDEN REAL DEL DOM):
-// 0 Número | 1 Fecha | 2 Tipo | 3 Total | 4 Forma de Pago | 5 Estado | 6 NIT | 7 Cliente | 8 Estado FE (VISIBLE)
+// 0 Número | 1 Fecha | 2 Tipo | 3 Total | 4 Forma de Pago | 5 Medio de Pago | 6 Estado | 7 NIT | 8 Cliente | 9 Estado FE (VISIBLE)
 
 (function () {
     'use strict';
@@ -46,17 +46,18 @@
             lengthMenu: [10, 25, 50, 100],
             order: [[1, 'desc']], // Fecha desc
 
-            // Coincidir 1:1 con los <th> del DOM
+            // Coincidir 1:1 con los <th> del DOM (ahora son 10 columnas)
             columns: [
                 { className: 'all' },                      // 0 Número
                 { className: 'all' },                      // 1 Fecha
                 { className: '' },                         // 2 Tipo
                 { className: 'min-phone-l text-end' },     // 3 Total (alineado derecha)
                 { className: '' },                         // 4 Forma de Pago
-                { className: '' },                         // 5 Estado
-                { className: '' },                         // 6 NIT
-                { className: '' },                         // 7 Cliente
-                { className: 'all' }                       // 8 Estado FE (SIEMPRE visible)
+                { className: '' },                         // 5 Medio de Pago  (NUEVA)
+                { className: '' },                         // 6 Estado
+                { className: '' },                         // 7 NIT
+                { className: '' },                         // 8 Cliente
+                { className: 'all' }                       // 9 Estado FE (SIEMPRE visible)
             ],
 
             columnDefs: [
@@ -64,12 +65,13 @@
                 { responsivePriority: 1, targets: 0 }, // Número
                 { responsivePriority: 2, targets: 1 }, // Fecha
                 { responsivePriority: 3, targets: 3 }, // Total
-                { responsivePriority: 4, targets: 8 }, // Estado FE (además marcado como 'all')
-                { responsivePriority: 5, targets: 7 }, // Cliente
+                { responsivePriority: 4, targets: 9 }, // Estado FE (además marcado como 'all')
+                { responsivePriority: 5, targets: 8 }, // Cliente
                 { responsivePriority: 6, targets: 4 }, // Forma de Pago
-                { responsivePriority: 7, targets: 5 }, // Estado
-                { responsivePriority: 8, targets: 2 }, // Tipo
-                { responsivePriority: 9, targets: 6 }, // NIT
+                { responsivePriority: 7, targets: 5 }, // Medio de Pago (nuevo)
+                { responsivePriority: 8, targets: 6 }, // Estado
+                { responsivePriority: 9, targets: 2 }, // Tipo
+                { responsivePriority: 10, targets: 7 }, // NIT
 
                 // Sort numérico por valor de dinero en "Total"
                 {
@@ -82,7 +84,7 @@
 
                 // Ajustes visuales para texto largo en Cliente
                 {
-                    targets: 7, // Cliente
+                    targets: 8, // Cliente
                     createdCell: function (td) {
                         td.classList.add('text-wrap');
                         td.style.whiteSpace = 'normal';
@@ -92,7 +94,7 @@
 
                 // Forzar visibilidad/búsqueda de ESTADO FE + wrap para no desbordar
                 {
-                    targets: 8,             // Estado FE
+                    targets: 9,             // Estado FE
                     visible: true,
                     searchable: true,
                     createdCell: function (td) {
@@ -109,22 +111,21 @@
             // === COLOREADO: Fila por "Estado" (ANULADA) y celda por "Estado FE" ===
             createdRow: function (row, data) {
                 try {
-                    // Columnas según el orden real:
-                    // data[5] = Estado
-                    // data[8] = Estado FE
-                    var estado = (data[5] || '').toString().trim().toUpperCase();
-                    var estadoFE = (data[8] || '').toString().trim().toUpperCase();
+                    // Columnas según el nuevo orden:
+                    // data[6] = Estado
+                    // data[9] = Estado FE
+                    var estado = (data[6] || '').toString().trim().toUpperCase();
+                    var estadoFE = (data[9] || '').toString().trim().toUpperCase();
 
                     // 1) Fila ROJA solo si Estado = ANULADA
-                    //    Reutilizamos 'fila-negativa' que ya tienes en tu CSS (rojo para toda la fila)
                     if (estado.includes('ANUL')) {
                         row.classList.add('fila-negativa');
                     } else {
                         row.classList.remove('fila-negativa');
                     }
 
-                    // 2) Pintar SOLO la celda de Estado FE (col 8)
-                    var tdFE = row.cells && row.cells[8] ? row.cells[8] : null;
+                    // 2) Pintar SOLO la celda de Estado FE (col 9)
+                    var tdFE = row.cells && row.cells[9] ? row.cells[9] : null;
                     if (tdFE) {
                         // Limpiar clases anteriores de la celda FE (por si redraw)
                         tdFE.classList.remove('cell-fe-positiva', 'cell-fe-negativa');

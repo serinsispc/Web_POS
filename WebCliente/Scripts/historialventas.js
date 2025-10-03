@@ -101,7 +101,8 @@
             "actImprimir", "actVerDetalle", "actAnular", "actCrearFE", "actEnviarCorreo",
             "actEditarCliente", "actDevolucion", "actPosAElectronica", "actClonar",
             "actExportar", "actResolucion", "actAumentarNumero", "actEnviarDIAN", "actDescargarFactura",
-            "actEditarFecha"
+            "actEditarFecha",
+            "actMediosDePago"
         ].forEach(function (id) {
             var allowAlways = (id === "actExportar" || id === "actImprimir");
             setEnabled(id, hasSel || allowAlways);
@@ -318,6 +319,27 @@
         byId("actDevolucion")?.addEventListener("click", function () { if (!requireSel()) return; alert("Devolución (placeholder)"); });
         byId("actPosAElectronica")?.addEventListener("click", function () { if (!requireSel()) return; alert("POS a Electrónica (placeholder)"); });
         byId("actClonar")?.addEventListener("click", function () { if (!requireSel()) return; alert("Clonar (placeholder)"); });
+        byId("actMediosDePago")?.addEventListener("click", function () {
+            if (!requireSel()) return;
+
+            var form = byId("formMediosDePago");
+            var inp = byId("inp-idventa-medios");
+
+            if (!form || !inp) {
+                alert("No se encontró el formulario para Medios de Pago.");
+                return;
+            }
+
+            var idv = selected.idVenta || 0;
+            if (!idv || idv <= 0) {
+                alert("No se pudo determinar el id de la venta seleccionada.");
+                return;
+            }
+
+            inp.value = idv;
+            form.submit();
+        });
+
         byId("actAumentarNumero")?.addEventListener("click", function () { if (!requireSel()) return; alert("Aumentar número (placeholder)"); });
         byId("actDescargarFactura")?.addEventListener("click", function () { if (!requireSel()) return; alert("Descargar Factura (placeholder)"); });
 

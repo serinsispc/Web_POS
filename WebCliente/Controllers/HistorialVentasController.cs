@@ -352,5 +352,20 @@ namespace WebCliente.Controllers
             return View("Index");
 
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> MediosDePago(int idventa)
+        {
+            var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
+            //en ensta parte cargo la session["MediosDePago"] con la lista de los medios de pago que corresponden  a la factura indicada
+            var listaMediosDePago = V_VentasPagosInternosControler.ConsultarIdVenta(idventa);
+            if (listaMediosDePago != null)
+            {
+                Session["MediosDePago"]=JsonConvert.SerializeObject(listaMediosDePago);
+            }
+            ModelView(model);
+            return View("Index");
+        }
     }
 }
