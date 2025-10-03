@@ -71,7 +71,15 @@ namespace RunApi.Funciones
                 var api = new ClassAPI();
                 var url = $"FacturaElectronica/ConsultarIdVenta";
                 var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Post);
-                return JsonConvert.DeserializeObject<FacturaElectronica>(resp);
+                if (resp != null)
+                {
+                    return null;
+                }
+                else
+                {
+                    return JsonConvert.DeserializeObject<FacturaElectronica>(resp);
+                }
+                
             }
             catch (Exception ex)
             {

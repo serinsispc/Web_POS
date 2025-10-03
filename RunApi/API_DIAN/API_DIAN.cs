@@ -295,14 +295,25 @@ namespace RunApi.Funciones.DIAN_API
             var url = $"/api/ubl2.1/invoice/";
             var json = JsonConvert.SerializeObject(facturaNacional);
             var rspuestaAPI = await classAPI.HttpWebRequestPostAsync(url,json,HttpMethod.Post,true,token.Replace("\"", ""));
-
+            int f_facturaJson = 0;
             FacturaElectronica_Respons facturaNacionalRespuesta = JsonConvert.DeserializeObject<FacturaElectronica_Respons>(rspuestaAPI);
             //en esta parte preguntamos si es valido
             if (facturaNacionalRespuesta != null)
             {
                 
                 FacturaElectronicaJSON facturaelectronicaJSON = new FacturaElectronicaJSON();
-                facturaelectronicaJSON.id = 0;
+                //verificamos el idventa
+                var resp= await FacturaElectronicaJSONAPI.ConsultarIdVenta(IdVenta_frm);
+                if (resp !=null && resp.data!= "null")
+                {
+                    facturaelectronicaJSON =JsonConvert.DeserializeObject<FacturaElectronicaJSON>(resp.data);
+                    f_facturaJson = 1;
+                }
+                else
+                {
+                    facturaelectronicaJSON = new FacturaElectronicaJSON();
+                    facturaelectronicaJSON.id = 0;
+                }
                 facturaelectronicaJSON.idventa = (int)venta.id;
                 facturaelectronicaJSON.is_valid = facturaNacionalRespuesta.is_valid;
                 if (facturaNacionalRespuesta.is_restored == null)
@@ -353,9 +364,10 @@ namespace RunApi.Funciones.DIAN_API
 
                 InsertIntoRequest insertIntoRequest = new InsertIntoRequest();
                 insertIntoRequest.nombreDB = ClassDBCliente.DBCliente;
+                insertIntoRequest.Funcion = f_facturaJson;
                 insertIntoRequest.FacturaElectronicaJSON = facturaelectronicaJSON;
 
-                var res2 =await FacturaElectronicaJSONAPI.InsertInto(JsonConvert.SerializeObject(insertIntoRequest));
+                var res2 =await FacturaElectronicaJSONAPI.CRUD(JsonConvert.SerializeObject(insertIntoRequest));
 
                 string jsonxx = JsonConvert.SerializeObject(insertIntoRequest);
 
@@ -387,7 +399,9 @@ namespace RunApi.Funciones.DIAN_API
                 fe.imagenQR = "--";
                 fe.resolucion_id = (int)venta.idResolucion;
                 fe.prefijo = venta.prefijo;
-                fe.numero_factura =Convert.ToInt32(facturaNacionalRespuesta.number.Replace(venta.prefijo, ""));
+                fe.numero_factura = !string.IsNullOrEmpty(facturaNacionalRespuesta?.number)
+    ? Convert.ToInt32(facturaNacionalRespuesta.number.Replace(venta?.prefijo ?? "", ""))
+    : 0;
                 var facturaelectronicaenvio = new FacturaElectronicaEnvio();
                 facturaelectronicaenvio.nombreDB = ClassDBCliente.DBCliente;
                 facturaelectronicaenvio.facturaElectronica = fe;

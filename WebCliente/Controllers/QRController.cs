@@ -1,6 +1,7 @@
 ﻿using QRCoder;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.IO;
 using System.Linq;
 using System.Web;
@@ -15,7 +16,12 @@ namespace WebCliente.Controllers
         {
             string db = Session["db"].ToString();
             // Construimos el link que tendrá el QR
-            string linkQr = "https://serinsispc.com/Comandas/Login?db=" + db;
+            string servidor = Request.Url.GetLeftPart(UriPartial.Authority);
+            // Ejemplo: https://www.serinsispc.com o https://localhost:44302
+
+            string linkQr = servidor + "/Comandas/Login?db=" + db;
+
+
             ViewBag.LinkQr = linkQr;
             ViewBag.Db = db;
 
