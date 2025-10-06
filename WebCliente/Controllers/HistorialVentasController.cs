@@ -362,10 +362,25 @@ namespace WebCliente.Controllers
             var listaMediosDePago = V_VentasPagosInternosControler.ConsultarIdVenta(idventa);
             if (listaMediosDePago != null)
             {
-                Session["MediosDePago"]=JsonConvert.SerializeObject(listaMediosDePago);
+                Session["MediosDePago"] =JsonConvert.SerializeObject(listaMediosDePago);
             }
+
+            // 3) Guardamos también en Session (por si quieres reusar)
+            Session["MediosDePago"] = JsonConvert.SerializeObject(listaMediosDePago);
+
+            // 4) ¿Es admin?
+            bool esAdmin = false;
+            try
+            {
+                if (Session["admin"] is bool b) esAdmin = b;
+                else if (Session["admin"] != null) esAdmin = string.Equals(Session["admin"].ToString(), "true", StringComparison.OrdinalIgnoreCase);
+            }
+            catch { esAdmin = false; }
+            ViewBag.EsAdmin = esAdmin;
+            ViewBag.IdVenta = idventa;
+
             ModelView(model);
-            return View("Index");
+            return View("MediosDePago", listaMediosDePago);
         }
     }
 }

@@ -323,3 +323,15 @@
     #formAnular .action-btn {
         width: 100%;
     }
+
+
+/* Colores solo en la CELDA de Estado FE */
+#tablaHV td.cell-fe-positiva {
+    --bs-table-bg: #d1e7dd; /* verde claro */
+    --bs-table-color: inherit;
+}
+
+#tablaHV td.cell-fe-negativa {
+    --bs-table-bg: #f8d7da; /* rojo claro */
+    --bs-table-color: #58151c;
+}

@@ -177,7 +177,7 @@
         if (!rows || rows.length === 0) { alert("No hay datos para exportar."); return; }
 
         var sep = ";";
-        var headers = ["Número", "Fecha", "Tipo", "Total", "Forma de Pago", "Estado", "NIT", "Cliente", "Estado FE"];
+        var headers = ["Número", "Fecha", "Tipo", "Total", "Forma de Pago", "Medio de Pago", "Estado", "NIT", "Cliente", "Estado FE"];
         var out = [headers.join(sep)];
 
         rows.forEach(function (tr) {
@@ -198,13 +198,15 @@
                 get("tipoFactura", 2),
                 (get("total", 3) || "").replace(/\./g, ","), // opcional
                 get("formaDePago", 4),
-                get("estadoVenta", 5),
-                get("nit", 6),
-                get("nombreCliente", 7),
-                get("estadoFE", 8)
+                get("medioDePago", 5),
+                get("estadoVenta", 6),
+                get("nit", 7),
+                get("nombreCliente", 8),
+                get("estadoFE", 9)
             ];
             out.push(fila.join(sep));
         });
+
 
         var csv = out.join("\n");
         var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });

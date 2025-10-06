@@ -6,23 +6,18 @@ using System.Threading.Tasks;
 
 namespace RunApi.Models.Cliente
 {
-    using System;
-
-    namespace TuProyecto.Models
+    public class V_VentasPagosInternos
     {
-        public class V_VentasPagosInternos
-        {
-            public int id { get; set; }
-            public DateTime fechaVenta { get; set; }
-            public string tipoFactura { get; set; }
-            public int numeroVenta { get; set; }
-            public string medioDePago { get; set; }
-            public int idBaseCaja { get; set; }
-            public string numeroReferenciaPago { get; set; }
-            public int idMedioDePagointerno { get; set; }
-            public string medioPagoInterno { get; set; }
-            public decimal valorPago { get; set; }
-        }
+        public int id { get; set; }
+        public DateTime? fechaVenta { get; set; }
+        public string tipoFactura { get; set; }
+        public int numeroVenta { get; set; }
+        public string medioDePago { get; set; }
+        public int? idBaseCaja { get; set; }
+        public string numeroReferenciaPago { get; set; }
+        public int idMedioDePagointerno { get; set; }
+        public string medioPagoInterno { get; set; }
+        public decimal valorPago { get; set; }
     }
 
 }

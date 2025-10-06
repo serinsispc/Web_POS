@@ -233,7 +233,8 @@
                                         <tr data-idventa="@dataIdVenta"
                                             data-total="@dataTotal"
                                             data-fecha="@dataFechaIso"
-                                            data-numero="@lista.numeroVenta">
+                                            data-numero="@lista.numeroVenta"
+                                            data-prefijo="@lista.prefijo">
                                             <td data-col="numeroVenta">@lista.prefijo @lista.numeroVenta</td>
                                             <td data-col="fechaVenta">@((lista.fechaVenta ?? DateTime.MinValue).ToString("yyyy-MM-dd HH:mm"))</td>
                                             <td data-col="tipoFactura">@lista.tipoFactura</td>
@@ -320,7 +321,7 @@
                         <div class="d-grid gap-2">
                             <button type="button" id="actDevolucion" class="action-btn btn-light"><i class="bi bi-arrow-counterclockwise"></i> Devolución</button>
                             <button type="button" id="actResolucion" class="action-btn btn-light"><i class="bi bi-gear"></i> Resolución</button>
-                            <button type="button" id="actMediosDePago" class="action-btn btn-light"><i class="bi bi-credit-card"></i> Medios De Dago</button>
+                            <button type="button" id="actMediosDePago" class="action-btn btn-light"><i class="bi bi-credit-card"></i> Medios De Pago</button>
                             <button type="button" id="actAumentarNumero" class="action-btn btn-light"><i class="bi bi-plus-square"></i> Aumentar Número</button>
                         </div>
                     </div>

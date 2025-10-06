@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 using RunApi.Models;
-using RunApi.Models.Cliente.TuProyecto.Models;
+using RunApi.Models.Cliente;
 using RunApi.Respons;
 using System;
 using System.Collections.Generic;
