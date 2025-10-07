@@ -142,6 +142,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ViewModels\HistorialVentasViewModels.cs" />
     <Compile Include="ViewModels\InformesViewModels.cs" />
+    <Compile Include="ViewModels\MediosDePagoViewModels.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Archivos\IMG\cajon.png" />

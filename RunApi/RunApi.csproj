@@ -85,11 +85,13 @@
   <ItemGroup>
     <Compile Include="ApiControlers\ConfiguracionDianControler.cs" />
     <Compile Include="ApiControlers\InsertIntoRequest.cs" />
+    <Compile Include="ApiControlers\payment_methodsControler.cs" />
     <Compile Include="ApiControlers\ResolucionControler.cs" />
     <Compile Include="ApiControlers\SedeControler.cs" />
     <Compile Include="ApiControlers\TablaMesesControler.cs" />
     <Compile Include="ApiControlers\V_CorreosClienteControler.cs" />
     <Compile Include="ApiControlers\V_ResolucionesControler.cs" />
+    <Compile Include="ApiControlers\V_R_MediosDePago_MediosDePagoInternosControler.cs" />
     <Compile Include="ApiControlers\V_TablaVentasControler.cs" />
     <Compile Include="ApiControlers\V_VentasPagosInternosControler.cs" />
     <Compile Include="API_DIAN\Objetos\AcquirerDto.cs" />

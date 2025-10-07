@@ -24,7 +24,7 @@
                             <th>Medio de Pago</th>
                             <th>Medio Pago Interno</th>
                             <th>Valor</th>
-                            @if (Session["admin"]!=null)
+                            @if (Session["admin"] != null)
                             {
                                 <th class="text-center">Acciones</th>
                             }
@@ -40,12 +40,28 @@
                                     <td>@(p.medioDePago ?? "-")</td>
                                     <td>@(p.medioPagoInterno ?? "-")</td>
                                     <td>@string.Format(new System.Globalization.CultureInfo("es-CO"), "{0:C0}", p.valorPago)</td>
-                                    @if (Session["admin"]!=null)
+                                    @if (Session["admin"] != null)
                                     {
                                         <td class="text-center">
-                                            <button type="button" class="btn btn-sm btn-outline-primary me-1" title="Editar">
+
+                                            @using System.Globalization
+                                            @{
+                                                var inv = CultureInfo.InvariantCulture;
+                                            }
+
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-primary me-1"
+                                                    title="Editar"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalMediosPago"
+                                                    data-id="@p.id"
+                                                    data-idmediomagodian="@p.i"
+                                                    data-mediodian="@p.medioDePago"
+                                                    data-mediointerno="@p.medioPagoInterno"
+                                                    data-valor="@string.Format(new System.Globalization.CultureInfo("es-CO"), "{0:N0}", p.valorPago)">
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
+
                                             <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar">
                                                 <i class="bi bi-trash"></i>
                                             </button>
@@ -68,3 +84,87 @@
         </div>
     </div>
 </div>
+
+
+
+@* modales *@
+
+<!-- modalMediosPago -->
+<div class="modal fade" id="modalMediosPago" tabindex="-1" aria-labelledby="modalMediosPagoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-sm">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalMediosPagoLabel">Editar medio de pago</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <form id="formMediosPago" method="post" action="/Pagos/GuardarMedio">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <!-- ID oculto -->
+                    <input type="hidden" name="Id" id="mp-id" />
+
+                    <div class="mb-3">
+                        <label class="form-label">Medio de pago DIAN</label>
+                        <input type="text" id="mp-dian" name="MedioPagoDian" class="form-control" readonly />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Medio de pago interno</label>
+                        <input type="text" id="mp-interno" name="MedioPagoInterno" class="form-control" readonly />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Valor</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" id="mp-valor" name="Valor" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@* js para pasar lols datos al modal  modalMediosPago *@
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalEl = document.getElementById('modalMediosPago');
+    const idInput = document.getElementById('mp-id');
+    const dianInput = document.getElementById('mp-dian');
+    const internoInput = document.getElementById('mp-interno');
+    const valorInput = document.getElementById('mp-valor');
+
+    // Evento de Bootstrap cuando el modal se va a mostrar
+    modalEl.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget; // El botón que disparó el modal
+
+        // Extraemos los datos del botón
+        const id = button.getAttribute('data-id') ?? '';
+        const medioDian = button.getAttribute('data-mediodian') ?? '';
+        const medioInterno = button.getAttribute('data-mediointerno') ?? '';
+        let valor = button.getAttribute('data-valor') ?? '';
+
+        // Seguro: si viene con coma, conviértela a punto para type="number"
+        if (typeof valor === 'string') {
+            valor = valor.replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+            // lo de quitar puntos previene miles en algunos formatos "1.234,56"
+        }
+
+        // Cargamos esos valores dentro del modal
+        idInput.value = id;
+        dianInput.value = medioDian;
+        internoInput.value = medioInterno;
+        valorInput.value = valor;
+    });
+});
+</script>
+
+
+
+

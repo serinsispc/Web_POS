@@ -372,8 +372,15 @@ namespace WebCliente.Controllers
                 Session["listaPagos"] =JsonConvert.SerializeObject(listaMediosDePago);
             }
 
+            MediosDePagoViewModels listamodel = new MediosDePagoViewModels();
+
+            listamodel.V_VentasPagosInternos = listaMediosDePago;
+            listamodel.V_R_MediosDePagosInternos = await V_R_MediosDePago_MediosDePagoInternosControler.Lista();
+            listamodel.PaymentMethods=payment_methods
+
+
             ModelView(model);
-            return View("MediosDePago", listaMediosDePago);
+            return View("MediosDePago", listamodel);
         }
     }
 }
