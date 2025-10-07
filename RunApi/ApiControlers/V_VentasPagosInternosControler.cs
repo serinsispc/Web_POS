@@ -13,7 +13,7 @@ namespace RunApi.ApiControlers
 {
     public class V_VentasPagosInternosControler
     {
-        public static async Task<V_VentasPagosInternos> ConsultarIdVenta(int idventa)
+        public static async Task<List<V_VentasPagosInternos>> ConsultarIdVenta(int idventa)
         {
             try
             {
@@ -27,7 +27,7 @@ namespace RunApi.ApiControlers
                 {
                     if (respAPI.data != null)
                     {
-                        return JsonConvert.DeserializeObject<V_VentasPagosInternos>(respAPI.data);
+                        return JsonConvert.DeserializeObject<List<V_VentasPagosInternos>>(respAPI.data);
                     }
                     else
                     {

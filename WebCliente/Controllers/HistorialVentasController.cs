@@ -30,9 +30,16 @@ namespace WebCliente.Controllers
         public async Task<ActionResult> Index()
         {
             var model = new HistorialVentasViewModels();
-            model.Fecha1 = DateTime.Now;
-            model.Fecha2 = DateTime.Now;
-            model.V_TablaVentas = await V_TablaVentasControler.Filtrar(Session["db"].ToString(), DateTime.Now, DateTime.Now);
+            if (Session[""] != null)
+            {
+                model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
+            }
+            else
+            {
+                model.Fecha1 = DateTime.Now;
+                model.Fecha2 = DateTime.Now;
+                model.V_TablaVentas = await V_TablaVentasControler.Filtrar(Session["db"].ToString(), DateTime.Now, DateTime.Now);
+            }
             ModelView(model);
             return View();
         }
@@ -359,25 +366,11 @@ namespace WebCliente.Controllers
         {
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
             //en ensta parte cargo la session["MediosDePago"] con la lista de los medios de pago que corresponden  a la factura indicada
-            var listaMediosDePago = V_VentasPagosInternosControler.ConsultarIdVenta(idventa);
+            var listaMediosDePago = await V_VentasPagosInternosControler.ConsultarIdVenta(idventa);
             if (listaMediosDePago != null)
             {
-                Session["MediosDePago"] =JsonConvert.SerializeObject(listaMediosDePago);
+                Session["listaPagos"] =JsonConvert.SerializeObject(listaMediosDePago);
             }
-
-            // 3) Guardamos también en Session (por si quieres reusar)
-            Session["MediosDePago"] = JsonConvert.SerializeObject(listaMediosDePago);
-
-            // 4) ¿Es admin?
-            bool esAdmin = false;
-            try
-            {
-                if (Session["admin"] is bool b) esAdmin = b;
-                else if (Session["admin"] != null) esAdmin = string.Equals(Session["admin"].ToString(), "true", StringComparison.OrdinalIgnoreCase);
-            }
-            catch { esAdmin = false; }
-            ViewBag.EsAdmin = esAdmin;
-            ViewBag.IdVenta = idventa;
 
             ModelView(model);
             return View("MediosDePago", listaMediosDePago);

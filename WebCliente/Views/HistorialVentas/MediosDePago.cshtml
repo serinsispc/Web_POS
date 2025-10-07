@@ -1,5 +1,5 @@
 ﻿@using System.Globalization
-@model  List<RunApi.Models.Cliente.V_VentasPagosInternos>   @* Ajusta el namespace si aplica *@
+@model List<RunApi.Models.Cliente.V_VentasPagosInternos>
 @{
     ViewBag.Title = "Medios de Pago";
     Layout = "~/Views/Shared/_LayoutMenu.cshtml"; // usa tu layout base
@@ -23,11 +23,12 @@
                         <tr>
                             <th>Medio de Pago</th>
                             <th>Medio Pago Interno</th>
-                            <th class="text-end">Valor</th>
-                            @if (esAdmin)
+                            <th>Valor</th>
+                            @if (Session["admin"]!=null)
                             {
-                                <th class="text-end" style="width:220px;">Acciones</th>
+                                <th class="text-center">Acciones</th>
                             }
+
                         </tr>
                     </thead>
                     <tbody>
@@ -38,42 +39,17 @@
                                 <tr>
                                     <td>@(p.medioDePago ?? "-")</td>
                                     <td>@(p.medioPagoInterno ?? "-")</td>
-
-                                    @if (esAdmin)
+                                    <td>@string.Format(new System.Globalization.CultureInfo("es-CO"), "{0:C0}", p.valorPago)</td>
+                                    @if ((bool)Session["admin"])
                                     {
-                                        <td class="text-end">
-                                            @using (Html.BeginForm("EditarMedioPago", "HistorialVentas", FormMethod.Post, new { @class = "d-inline-flex gap-2 align-items-center justify-content-end w-100" }))
-                                            {
-                                                @Html.AntiForgeryToken()
-                                                @Html.Hidden("id", p.id)
-
-                                                <input type="number"
-                                                       name="valorPago"
-                                                       class="form-control form-control-sm text-end"
-                                                       step="0.01"
-                                                       value="@p.valorPago"
-                                                       style="max-width: 150px;" />
-
-                                                <button type="submit" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-save2"></i> Guardar
-                                                </button>
-                                            }
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-sm btn-outline-primary me-1" title="Editar">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
                                         </td>
-                                        <td class="text-end">
-                                            @using (Html.BeginForm("EliminarMedioPago", "HistorialVentas", FormMethod.Post, new { @class = "d-inline" }))
-                                            {
-                                                @Html.AntiForgeryToken()
-                                                @Html.Hidden("id", p.id)
-                                                <button type="submit" class="btn btn-sm btn-danger"
-                                                        onclick="return confirm('¿Eliminar este medio de pago?');">
-                                                    <i class="bi bi-trash"></i> Eliminar
-                                                </button>
-                                            }
-                                        </td>
-                                    }
-                                    else
-                                    {
-                                        <td class="text-end">@p.valorPago.ToString("C0", esCO)</td>
                                     }
                                 </tr>
                             }

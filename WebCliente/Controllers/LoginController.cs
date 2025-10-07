@@ -2,6 +2,7 @@
 using RunApi;
 using RunApi.Envio;
 using RunApi.Models.Admin;
+using RunApi.Models.Cliente;
 using RunApi.Respuesta;
 using System;
 using System.Collections.Generic;
@@ -63,6 +64,16 @@ namespace WebCliente.Controllers
                         loginEnviar.idTipoSistema = 1;
                         aPI = new ClassAPI();
                         LoginRespuesta respuesta  = await aPI.Login(loginEnviar);
+                        v_Usuario_POS usuarioPOS= new v_Usuario_POS();
+                        usuarioPOS = respuesta.v_Usuario;
+                        if (usuarioPOS.idTipoUsuario == 1)
+                        {
+                            Session["admin"] = true;
+                        }
+                        else
+                        {
+                            Session["admin"] = false;
+                        }
                         Session["db"] = loginEnviar.nombreDB;
                         Session["usuario"] = JsonConvert.SerializeObject(respuesta);
                         return RedirectToAction("Index", "Menu");
