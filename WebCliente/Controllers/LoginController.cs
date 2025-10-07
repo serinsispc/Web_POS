@@ -46,6 +46,7 @@ namespace WebCliente.Controllers
                     if (usuarioAdminRespuesta.v_UsuarioDB.Count > 1)
                     {
                         Session["usuarioAdmin"] = usuarioAdminRespuesta.usuarioAdmin;
+
                         /*mostramos el listado de las bases de datos disponibles*/
                         return View("ListaDB", usuarioAdminRespuesta.v_UsuarioDB);
                     }
@@ -105,6 +106,16 @@ namespace WebCliente.Controllers
 
             ClassAPI aPI = new ClassAPI();
             LoginRespuesta respuesta = await aPI.Login(loginEnviar);
+            v_Usuario_POS usuarioPOS = new v_Usuario_POS();
+            usuarioPOS = respuesta.v_Usuario;
+            if (usuarioPOS.idTipoUsuario == 1)
+            {
+                Session["admin"] = true;
+            }
+            else
+            {
+                Session["admin"] = false;
+            }
             Session["usuario"] = JsonConvert.SerializeObject(respuesta);
             Session["db"] = dbName;
             return RedirectToAction("Index", "Menu");

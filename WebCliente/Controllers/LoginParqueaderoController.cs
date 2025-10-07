@@ -1,12 +1,13 @@
 ﻿using Newtonsoft.Json;
+using RunApi;
 using RunApi.Envio;
 using RunApi.Models.Admin;
+using RunApi.Models.Cliente;
 using RunApi.Respuesta;
-using RunApi;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
-using System.Linq;
 
 namespace WebCliente.Controllers
 {
@@ -57,6 +58,16 @@ namespace WebCliente.Controllers
                         loginEnviar.nombreDB = usuarioAdminRespuesta.v_UsuarioDB.FirstOrDefault().nombreDB;
                         aPI = new ClassAPI();
                         LoginRespuesta respuesta = await aPI.Login(loginEnviar);
+                        v_Usuario_POS v_UsuarioDB = new v_Usuario_POS();
+                        v_UsuarioDB = respuesta.v_Usuario;
+                        if (v_UsuarioDB.idTipoUsuario == 1)
+                        {
+                            Session["admin"] = true;
+                        }
+                        else
+                        {
+                            Session["admin"] = false;
+                        }
                         Session["usuario"] = JsonConvert.SerializeObject(respuesta);
                         return RedirectToAction("Index", "Menu");
                     }
@@ -86,6 +97,16 @@ namespace WebCliente.Controllers
 
             ClassAPI aPI = new ClassAPI();
             LoginRespuesta respuesta = await aPI.Login(loginEnviar);
+            v_Usuario_POS v_UsuarioDB = new v_Usuario_POS();
+            v_UsuarioDB = respuesta.v_Usuario;
+            if (v_UsuarioDB.idTipoUsuario == 1)
+            {
+                Session["admin"] = true;
+            }
+            else
+            {
+                Session["admin"] = false;
+            }
             Session["usuario"] = JsonConvert.SerializeObject(respuesta);
             return RedirectToAction("Index", "Parqueo");
         }

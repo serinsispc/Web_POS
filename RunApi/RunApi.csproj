@@ -103,6 +103,8 @@
     <Compile Include="API_DIAN\Respons\FacturaElectronica_Respons.cs" />
     <Compile Include="API_DIAN\Respons\NotaCreditoResponse.cs" />
     <Compile Include="ClassAPI.cs" />
+    <Compile Include="Models\Cliente\payment_methods.cs" />
+    <Compile Include="Models\Cliente\V_R_MediosDePago_MediosDePagoInternos.cs" />
     <Compile Include="Models\Cliente\V_VentasPagosInternos.cs" />
     <Compile Include="Request\CRUD_NotaCreditoRequest.cs" />
     <Compile Include="Request\FacturaElectronicaEnvio.cs" />
