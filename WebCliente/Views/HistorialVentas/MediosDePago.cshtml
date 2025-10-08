@@ -1,170 +1,222 @@
-﻿@using System.Globalization
-@model List<RunApi.Models.Cliente.V_VentasPagosInternos>
+﻿@model WebCliente.ViewModels.MediosDePagoViewModels
+@using Newtonsoft.Json
 @{
     ViewBag.Title = "Medios de Pago";
-    Layout = "~/Views/Shared/_LayoutMenu.cshtml"; // usa tu layout base
-    var esAdmin = (ViewBag.EsAdmin as bool?) ?? false;
-    var esCO = new CultureInfo("es-CO");
+    Layout = "~/Views/Shared/_LayoutMenu.cshtml";
 }
 
-<div class="container mt-3">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="m-0">Medios de Pago</h4>
-        <a href="@Url.Action("Index", "HistorialVentas")" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Volver al Historial
-        </a>
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Medios de pago de la venta</h5>
     </div>
+    <div class="card-body">
+        @Html.AntiForgeryToken()
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 28%">Medio de pago DIAN</th>
+                        <th style="width: 28%">Medio de pago interno</th>
+                        <th style="width: 20%">Valor</th>
+                        <th style="width: 24%">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-medios">
+                    @foreach (var p in Model.V_VentasPagosInternos)
+                    {
+                        // ==== Deducir id DIAN por nombre (case-insensitive) sin usar ?? entre tipos distintos ====
+                        var dianIdByName = 0;
 
-    <div class="card shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-sm align-middle mb-0" id="tablaMediosPago">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Medio de Pago</th>
-                            <th>Medio Pago Interno</th>
-                            <th>Valor</th>
-                            @if (Session["admin"] != null)
-                            {
-                                <th class="text-center">Acciones</th>
-                            }
+                        var pmMatch = (Model.PaymentMethods != null)
+                            ? Model.PaymentMethods.FirstOrDefault(m =>
+                                string.Equals(
+                                    (m.name ?? "").Trim(),
+                                    (p.medioDePago ?? "").Trim(),
+                                    System.StringComparison.OrdinalIgnoreCase
+                                )
+                              )
+                            : null;
+
+                        if (pmMatch != null)
+                        {
+                            dianIdByName = pmMatch.id;
+                        }
+
+                        <tr data-row-id="@p.id"
+                            data-current-interno-id="@p.idMedioDePagointerno"
+                            data-current-dian-id="@dianIdByName">
+
+                            <td class="text-nowrap">
+                                <select class="form-select form-select-sm sel-dian w-auto" style="min-width:220px">
+                                    <option value="0">-- Selecciona --</option>
+                                    @foreach (var m in Model.PaymentMethods)
+                                    {
+                                        var selected = string.Equals(
+                                            (m.name ?? "").Trim(),
+                                            (p.medioDePago ?? "").Trim(),
+                                            System.StringComparison.OrdinalIgnoreCase
+                                        ) ? "selected" : "";
+                                        <option value="@m.id" @Html.Raw(selected)>@m.name</option>
+                                    }
+                                </select>
+                            </td>
+
+
+                            <td class="text-nowrap">
+                                <div class="d-flex align-items-center flex-nowrap gap-2">
+                                    <select class="form-select form-select-sm sel-interno w-auto" style="min-width:220px">
+                                        <!-- Se llena por JS -->
+                                    </select>
+                                    <small class="text-muted">Actual: <strong>@(p.medioPagoInterno ?? "-")</strong></small>
+                                </div>
+                            </td>
+
+
+                            <td class="text-nowrap">
+                                <div class="input-group input-group-sm w-auto" style="min-width:140px">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control inp-valor"
+                                           value="@(p.valorPago.ToString(System.Globalization.CultureInfo.InvariantCulture))" />
+                                </div>
+                            </td>
+
+
+                            <td class="text-nowrap">
+                                <button type="button" class="btn btn-sm btn-primary btn-guardar">
+                                    <i class="bi bi-save"></i> Guardar cambios
+                                </button>
+                            </td>
 
                         </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model != null && Model.Count > 0)
-                        {
-                            foreach (var p in Model)
-                            {
-                                <tr>
-                                    <td>@(p.medioDePago ?? "-")</td>
-                                    <td>@(p.medioPagoInterno ?? "-")</td>
-                                    <td>@string.Format(new System.Globalization.CultureInfo("es-CO"), "{0:C0}", p.valorPago)</td>
-                                    @if (Session["admin"] != null)
-                                    {
-                                        <td class="text-center">
-
-                                            @using System.Globalization
-                                            @{
-                                                var inv = CultureInfo.InvariantCulture;
-                                            }
-
-                                            <button type="button"
-                                                    class="btn btn-sm btn-outline-primary me-1"
-                                                    title="Editar"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalMediosPago"
-                                                    data-id="@p.id"
-                                                    data-idmediomagodian="@p.i"
-                                                    data-mediodian="@p.medioDePago"
-                                                    data-mediointerno="@p.medioPagoInterno"
-                                                    data-valor="@string.Format(new System.Globalization.CultureInfo("es-CO"), "{0:N0}", p.valorPago)">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </button>
-
-                                            <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </td>
-                                    }
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="@(esAdmin ? 4 : 3)" class="text-center text-muted py-4">
-                                    No hay medios de pago para mostrar.
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-
-
-@* modales *@
-
-<!-- modalMediosPago -->
-<div class="modal fade" id="modalMediosPago" tabindex="-1" aria-labelledby="modalMediosPagoLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content shadow-sm">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalMediosPagoLabel">Editar medio de pago</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-
-            <form id="formMediosPago" method="post" action="/Pagos/GuardarMedio">
-                @Html.AntiForgeryToken()
-                <div class="modal-body">
-                    <!-- ID oculto -->
-                    <input type="hidden" name="Id" id="mp-id" />
-
-                    <div class="mb-3">
-                        <label class="form-label">Medio de pago DIAN</label>
-                        <input type="text" id="mp-dian" name="MedioPagoDian" class="form-control" readonly />
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Medio de pago interno</label>
-                        <input type="text" id="mp-interno" name="MedioPagoInterno" class="form-control" readonly />
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Valor</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="number" id="mp-valor" name="Valor" class="form-control" />
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar cambios</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-@* js para pasar lols datos al modal  modalMediosPago *@
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const modalEl = document.getElementById('modalMediosPago');
-    const idInput = document.getElementById('mp-id');
-    const dianInput = document.getElementById('mp-dian');
-    const internoInput = document.getElementById('mp-interno');
-    const valorInput = document.getElementById('mp-valor');
+(function(){
+    // === Datos del modelo convertidos a JSON para el JS (con fallback a []) ===
+    const paymentMethods = (@Html.Raw(JsonConvert.SerializeObject(Model.PaymentMethods)) ) || [];
+    const mapInternos    = (@Html.Raw(JsonConvert.SerializeObject(Model.V_R_MediosDePagosInternos)) ) || [];
 
-    // Evento de Bootstrap cuando el modal se va a mostrar
-    modalEl.addEventListener('show.bs.modal', function (event) {
-        const button = event.relatedTarget; // El botón que disparó el modal
+    // === AntiForgery Token ===
+    const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+    const AF_TOKEN = tokenInput ? tokenInput.value : "";
 
-        // Extraemos los datos del botón
-        const id = button.getAttribute('data-id') ?? '';
-        const medioDian = button.getAttribute('data-mediodian') ?? '';
-        const medioInterno = button.getAttribute('data-mediointerno') ?? '';
-        let valor = button.getAttribute('data-valor') ?? '';
+    // === Funciones auxiliares ===
+    function filtrarInternosPorDian(dianId){
+        dianId = parseInt(dianId || 0, 10);
+        return (mapInternos || []).filter(x => parseInt(x.idMedioDePago || 0, 10) === dianId);
+    }
 
-        // Seguro: si viene con coma, conviértela a punto para type="number"
-        if (typeof valor === 'string') {
-            valor = valor.replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
-            // lo de quitar puntos previene miles en algunos formatos "1.234,56"
+    function normalizarValorParaNumero(v){
+        if (v == null) return "";
+        let s = String(v).trim();
+        s = s.replace(/[^\d.,-]/g, "");
+        if (s.includes(".") && s.includes(",")){
+            s = s.replace(/\./g, "").replace(",", ".");
+        } else if (!s.includes(".") && s.includes(",")){
+            s = s.replace(",", ".");
+        } else {
+            const onlyDots = s.includes(".") && !s.includes(",");
+            if (onlyDots) s = s.replace(/\./g, "");
         }
+        return s;
+    }
 
-        // Cargamos esos valores dentro del modal
-        idInput.value = id;
-        dianInput.value = medioDian;
-        internoInput.value = medioInterno;
-        valorInput.value = valor;
+    function poblarInternosSelect(row){
+        const selDian = row.querySelector(".sel-dian");
+        const selInterno = row.querySelector(".sel-interno");
+        const currentInternoId = parseInt(row.getAttribute("data-current-interno-id") || "0", 10);
+
+        const dianId = parseInt(selDian.value || "0", 10);
+        const opciones = filtrarInternosPorDian(dianId);
+
+        selInterno.innerHTML = `<option value="0">-- Selecciona --</option>`;
+        opciones.forEach(op => {
+            const opt = document.createElement("option");
+            opt.value = op.idMediosDePagoInternos;
+            opt.textContent = op.nombreRMPI;
+            selInterno.appendChild(opt);
+        });
+
+        if (currentInternoId > 0) {
+            const existe = opciones.some(x => parseInt(x.idMediosDePagoInternos,10) === currentInternoId);
+            selInterno.value = existe ? String(currentInternoId) : "0";
+        }
+    }
+
+    function inicializarFila(row){
+        const selDian = row.querySelector(".sel-dian");
+        if (!selDian.value || selDian.value === "0"){
+            const fallbackDian = row.getAttribute("data-current-dian-id");
+            if (fallbackDian && [...selDian.options].some(o => o.value === fallbackDian)){
+                selDian.value = fallbackDian;
+            }
+        }
+        poblarInternosSelect(row);
+    }
+
+    async function postGuardarCambios(formFields){
+        const body = new URLSearchParams(formFields);
+        const resp = await fetch("/Pagos/GuardarMedio", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+            body
+        });
+        return resp.json();
+    }
+
+    // === Inicialización de filas ===
+    const tbody = document.getElementById("tbody-medios");
+    [...tbody.querySelectorAll("tr[data-row-id]")].forEach(tr => {
+        inicializarFila(tr);
+
+        // Cambio de DIAN => recargar internos dependientes
+        tr.querySelector(".sel-dian").addEventListener("change", () => {
+            tr.setAttribute("data-current-interno-id", "0");
+            poblarInternosSelect(tr);
+        });
+
+        // Guardar cambios
+        tr.querySelector(".btn-guardar").addEventListener("click", async () => {
+            const idFila   = parseInt(tr.getAttribute("data-row-id") || "0", 10);
+            const dianId   = parseInt(tr.querySelector(".sel-dian").value || "0", 10);
+            const internoId= parseInt(tr.querySelector(".sel-interno").value || "0", 10);
+            const valorRaw = tr.querySelector(".inp-valor").value;
+            const valorNum = parseFloat(normalizarValorParaNumero(valorRaw) || "0");
+
+            if (!idFila){ alert("No se encontró el ID de la fila."); return; }
+            if (!dianId){ alert("Selecciona el medio de pago DIAN."); return; }
+            if (!internoId){ alert("Selecciona el medio de pago interno."); return; }
+            if (isNaN(valorNum) || valorNum < 0){ alert("Ingresa un valor válido."); return; }
+
+            const formFields = {
+                "__RequestVerificationToken": AF_TOKEN,
+                "id": idFila,
+                "idMedioPagoDian": dianId,
+                "idMedioPagoInterno": internoId,
+                "valor": valorNum.toString()
+            };
+
+            const btn = tr.querySelector(".btn-guardar");
+            btn.disabled = true;
+            try{
+                const r = await postGuardarCambios(formFields);
+                if (r && r.estado === 1){
+                    tr.setAttribute("data-current-interno-id", String(internoId));
+                    alert("✅ Cambios guardados: " + (r.mensaje || "OK"));
+                } else {
+                    alert("⚠️ No se pudo guardar: " + (r?.mensaje || "Error desconocido."));
+                }
+            }catch(e){
+                alert("❌ Error al guardar: " + e.message);
+            }finally{
+                btn.disabled = false;
+            }
+        });
     });
-});
+})();
 </script>
-
-
-
-

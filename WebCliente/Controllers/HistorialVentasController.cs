@@ -376,11 +376,44 @@ namespace WebCliente.Controllers
 
             listamodel.V_VentasPagosInternos = listaMediosDePago;
             listamodel.V_R_MediosDePagosInternos = await V_R_MediosDePago_MediosDePagoInternosControler.Lista();
-            listamodel.PaymentMethods=payment_methods
+            listamodel.PaymentMethods = await payment_methodsControler.Lista_payment();
 
+
+            string jsonmodel= JsonConvert.SerializeObject(listamodel);
+            Session["listamodel"] = jsonmodel;
 
             ModelView(model);
             return View("MediosDePago", listamodel);
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> GuardarMedio(int id, int idMedioPagoDian, int idMedioPagoInterno, decimal valor)
+        {
+            try
+            {
+                // Ajusta nombres según tu SP y columnas reales:
+                var obj = new
+                {
+                    id = id,                          // id del pago/registro
+                    idMedioPagoDian = idMedioPagoDian,
+                    idMedioPagoInterno = idMedioPagoInterno,
+                    valorPago = valor
+                };
+                var json = JsonConvert.SerializeObject(obj);
+
+                // Tu convención: 1 = UPDATE
+                // Reemplaza por tu controlador/SP real:
+                var resp = await V_VentasPagosInternosControler.Crud(json, 1);
+
+                return Json(resp, JsonRequestBehavior.AllowGet); // {estado, idAfectado, mensaje}
+            }
+            catch (Exception ex)
+            {
+                return Json(new { estado = 0, idAfectado = 0, mensaje = ex.Message },
+                            JsonRequestBehavior.AllowGet);
+            }
+        }
+
+
     }
 }
