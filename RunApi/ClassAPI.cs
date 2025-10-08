@@ -29,47 +29,6 @@ namespace RunApi
             _httpClient = new HttpClient();
         }
 
-        //public async Task<string> HttpWebRequestPostAsync(string url, string json, HttpMethod httpMethod, [Optional] bool dian, [Optional]string tokenDIAN)
-        //{
-        //    try
-        //    {
-        //        string token_=string.Empty;
-        //        var request = new HttpRequestMessage();
-        //        if (dian)
-        //        {
-        //            request = new HttpRequestMessage(httpMethod, UrlEndPintDIAN + url);
-        //            token_ = tokenDIAN;
-        //        }
-        //        else
-        //        {
-        //            request = new HttpRequestMessage(httpMethod, UrlEndPoint + url);
-        //            token_ = token;
-        //        }
-               
-
-        //        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-        //        if (!string.IsNullOrEmpty(token_))
-        //        {
-        //            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token_);
-        //        }
-
-        //        if ((httpMethod == HttpMethod.Post || httpMethod == HttpMethod.Put) && json != null)
-        //        {
-        //            request.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-        //        }
-
-        //        HttpResponseMessage response = await _httpClient.SendAsync(request);
-
-        //        string result = await response.Content.ReadAsStringAsync();
-
-        //        return response.IsSuccessStatusCode ? result : $"Error {(int)response.StatusCode}: {result}";
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return $"Excepción: {ex.Message}";
-        //    }
-        //}
 
         public Task<string> HttpWebRequestPostAsync(string Url, string Json, HttpMethod httpMethod, [Optional] bool dian, [Optional] string token)
         {
