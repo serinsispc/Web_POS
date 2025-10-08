@@ -382,6 +382,7 @@ namespace WebCliente.Controllers
             string jsonmodel= JsonConvert.SerializeObject(listamodel);
             Session["listamodel"] = jsonmodel;
 
+            Session["idventaMedioPago"] = idventa;
             ModelView(model);
             return View("MediosDePago", listamodel);
         }
@@ -391,28 +392,37 @@ namespace WebCliente.Controllers
         {
             try
             {
-                // Ajusta nombres según tu SP y columnas reales:
-                var obj = new
+                int funcion = 0;
+                PagosVenta pagosVenta = new PagosVenta();
+                pagosVenta = await PagosVentaControler.ConsultarID(id);
+                if (pagosVenta != null)
                 {
-                    id = id,                          // id del pago/registro
-                    idMedioPagoDian = idMedioPagoDian,
-                    idMedioPagoInterno = idMedioPagoInterno,
-                    valorPago = valor
-                };
-                var json = JsonConvert.SerializeObject(obj);
+                    funcion = 1;
+                }
+                else
+                {
+                    pagosVenta = new PagosVenta();
+                    pagosVenta.id = 0;
+                }
+                pagosVenta.idVenta = (int)Session["idventaMedioPago"];
+                pagosVenta.payment_methods_id = idMedioPagoDian;
+                pagosVenta.idMedioDePagointerno = idMedioPagoInterno;
+                pagosVenta.valorPago = valor;
+                //llamamos la funcion del crud
+                var respCRUD=await PagosVentaControler
+                // Simulación OK:
+                var resp = new { estado = 1, idAfectado = id, mensaje = "Medio actualizado correctamente." };
 
-                // Tu convención: 1 = UPDATE
-                // Reemplaza por tu controlador/SP real:
-                var resp = await V_VentasPagosInternosControler.Crud(json, 1);
-
-                return Json(resp, JsonRequestBehavior.AllowGet); // {estado, idAfectado, mensaje}
+                Response.ContentType = "application/json; charset=utf-8";
+                return Json(resp, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
-                return Json(new { estado = 0, idAfectado = 0, mensaje = ex.Message },
-                            JsonRequestBehavior.AllowGet);
+                Response.StatusCode = 500;
+                return Json(new { estado = 0, idAfectado = 0, mensaje = ex.Message }, JsonRequestBehavior.AllowGet);
             }
         }
+
 
 
     }

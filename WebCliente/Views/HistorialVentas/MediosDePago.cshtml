@@ -75,10 +75,13 @@
                             <td class="text-nowrap">
                                 <div class="input-group input-group-sm w-auto" style="min-width:140px">
                                     <span class="input-group-text">$</span>
-                                    <input type="number" step="0.01" class="form-control inp-valor"
-                                           value="@(p.valorPago.ToString(System.Globalization.CultureInfo.InvariantCulture))" />
+                                    <input type="text"
+                                           class="form-control inp-valor text-end"
+                                           inputmode="numeric" autocomplete="off"
+                                           value="@(string.Format(new System.Globalization.CultureInfo("es-CO"), "{0:N0}", p.valorPago))" />
                                 </div>
                             </td>
+
 
 
                             <td class="text-nowrap">
@@ -159,15 +162,39 @@
         poblarInternosSelect(row);
     }
 
-    async function postGuardarCambios(formFields){
-        const body = new URLSearchParams(formFields);
-        const resp = await fetch("/Pagos/GuardarMedio", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
-            body
-        });
-        return resp.json();
+  async function postGuardarCambios(formFields){
+   // Después (mismo controller donde estás: HistorialVentas):
+const url = '@Url.Action("GuardarMedio", "HistorialVentas", new { area = "" })';
+    const body = new URLSearchParams(formFields);
+
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        // También por cabecera (útil en algunos setups):
+        "RequestVerificationToken": formFields["__RequestVerificationToken"]
+      },
+      body,
+      credentials: "same-origin" // asegura envío de cookies (antiforgery/auth)
+    });
+
+    const contentType = resp.headers.get("content-type") || "";
+    const text = await resp.text();
+
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status} ${resp.statusText}: ${text.slice(0,200)}`);
     }
+    if (contentType.indexOf("application/json") >= 0) {
+      return JSON.parse(text);
+    }
+
+    // Llegó HTML -> casi seguro login, antiforgery inválido o View devuelta
+    if (text.toLowerCase().includes("<!doctype") || text.toLowerCase().includes("<html")) {
+      throw new Error("El servidor devolvió HTML (¿redirección a login, antiforgery inválido o la acción devolvió una View?).");
+    }
+    throw new Error("Respuesta no-JSON: " + text.slice(0,200));
+  }
+
 
     // === Inicialización de filas ===
     const tbody = document.getElementById("tbody-medios");
