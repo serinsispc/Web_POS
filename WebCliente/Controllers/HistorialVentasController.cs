@@ -490,9 +490,21 @@ namespace WebCliente.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult> VerDetalle(int idventa)
+        [OutputCache(NoStore = true, Duration = 0, VaryByParam = "*")]
+        public ActionResult VerDetalle(int idventa)
         {
-            return View("Index");
+            try
+            {
+                // TODO: reemplaza por tu acceso real a datos
+                // var items = _repoVentas.ConsultarDetalle(idventa);
+                var items = new List<V_DetalleCaja>(); // <--- stub/demo
+
+                return Json(new { ok = true, items }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { ok = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
         }
     }
 }
