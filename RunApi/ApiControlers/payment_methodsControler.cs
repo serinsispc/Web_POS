@@ -18,10 +18,8 @@ namespace RunApi.ApiControlers
             try
             {
                 var api = new ClassAPI();
-                var objeto = new { nombreDB=ClassDBCliente.DBCliente };
-                string json=JsonConvert.SerializeObject(objeto);
-                var url = $"payment_methods/Lista_payment";
-                var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Post);
+                var url = $"payment_methods";
+                var resp = await api.HttpWebRequestPostAsync(url, null, HttpMethod.Get,ClassDBCliente.DBCliente);
                 var respApi = JsonConvert.DeserializeObject<RespuestaAPI>(resp);
                 if (respApi.estado == true)
                 {

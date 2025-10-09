@@ -76,6 +76,47 @@
     <!-- JSON base64 SOLO para Resoluciones -->
     <div id="hv-resol" data-json="@resolBase64"></div>
 
+    <!-- Carrier de clientes (sin JS) -->
+    <div id="hv-clientes"
+         data-clientes-b64="@jsonClientesBase64"
+         data-autoshow="@(debeMostrarModalClientes ? "true" : "false")">
+    </div>
+
+    @* Carrier para alert moderno (sin JS) *@
+    @{
+        var sessionString = Session["HistorialVentasJson"] as string ?? "{}";
+        var viewmodels = Newtonsoft.Json.JsonConvert
+            .DeserializeObject<WebCliente.ViewModels.HistorialVentasViewModels>(sessionString)
+            ?? new WebCliente.ViewModels.HistorialVentasViewModels();
+
+        var alertModerno = viewmodels.AlertModerno ?? new WebCliente.ViewModels.AlertModerno();
+
+        string icono = (alertModerno.tipoAlert ?? "").Trim().ToLowerInvariant();
+        switch (icono)
+        {
+            case "success":
+            case "exito":
+            case "ok":
+                icono = "success"; break;
+            case "error":
+            case "danger":
+            case "fail":
+                icono = "error"; break;
+            case "warning":
+            case "warn":
+            case "alerta":
+                icono = "warning"; break;
+            default:
+                icono = "info"; break;
+        }
+    }
+    <div id="hv-alert"
+         data-show="@((alertModerno.mostrar ? "true" : "false"))"
+         data-icon="@icono"
+         data-title="@((alertModerno.titulo ?? "").Replace("\"","\\\""))"
+         data-text="@((alertModerno.mensaje ?? "").Replace("\"","\\\""))">
+    </div>
+
     <!-- === FORM oculto para Resolver (POST + AntiForgeryToken) -> ListaResoluciones === -->
     @using (Html.BeginForm("ListaResoluciones", "HistorialVentas", FormMethod.Post, new { id = "formResolucion", style = "display:none;" }))
     {
@@ -118,13 +159,13 @@
         <input type="hidden" name="idCliente" id="idClienteSeleccionado" value="0" />
         <input type="hidden" name="idventa" id="inp-idventa-seleccion-cliente" value="0" />
     }
-    @* formulario oculto MediosDePago *@
+
+    @* >>> LEGACY: MediosDePago (Vista). No se usa ya, pero no estorba *@
     @using (Html.BeginForm("MediosDePago", "HistorialVentas", FormMethod.Post, new { id = "formMediosDePago", @class = "d-none" }))
     {
         @Html.AntiForgeryToken()
         <input type="hidden" id="inp-idventa-medios" name="idventa" value="" />
     }
-
 
     <!-- FILTROS -->
     <div class="card card-filter shadow-sm mb-3">
@@ -373,7 +414,7 @@
     </div>
 </div>
 
-<!-- Modal: Seleccionar cliente -->
+<!-- ========= MODAL: Seleccionar cliente ========= -->
 <div class="modal fade" id="modalClientes" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
@@ -485,39 +526,53 @@
     </div>
 </div>
 
-<form id="formAcquirer" class="d-none" data-acq-form>
-    <div class="row g-3">
-        <div class="col-12 col-md-6">
-            <label class="form-label">NIT</label>
-            <input type="text" class="form-control" id="acqNit" data-acq-field="Nit">
-        </div>
-        <div class="col-12 col-md-6">
-            <label class="form-label">Nombre / Razón social</label>
-            <input type="text" class="form-control" id="acqName" data-acq-field="Name">
-        </div>
-        <div class="col-12 col-md-6">
-            <label class="form-label">Nombre comercial</label>
-            <input type="text" class="form-control" id="acqCommercial" data-acq-field="NombreComercial">
-        </div>
-        <div class="col-12 col-md-6">
-            <label class="form-label">Correo</label>
-            <input type="email" class="form-control" id="acqEmail" data-acq-field="Email">
-        </div>
-        <div class="col-12 col-md-6">
-            <label class="form-label">Teléfono</label>
-            <input type="text" class="form-control" id="acqPhone" data-acq-field="Telefono">
-        </div>
-        <div class="col-12">
-            <label class="form-label">Dirección</label>
-            <input type="text" class="form-control" id="acqAddress" data-acq-field="Direccion">
+<!-- ========= MODAL: Medios de Pago ========= -->
+<div class="modal fade" id="modalMediosPago" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    Medios de pago <small class="text-muted">Venta <span id="mp-idventa"></span></small>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width:30%">Medio DIAN</th>
+                                <th style="width:30%">Medio interno</th>
+                                <th style="width:20%">Valor</th>
+                                <th style="width:20%">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mp-tbody"><!-- filas por JS --></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg"></i> Cerrar
+                </button>
+            </div>
         </div>
     </div>
-</form>
+</div>
 
-<script>
-    window.ClientesBase64 = "@jsonClientesBase64";
-    window.DebeMostrarModalClientes = @(debeMostrarModalClientes ? "true" : "false");
-</script>
+@* Portadores de datos para el JS *@
+@using System.Text
+@{
+    var rawAcquirer = (string)(Session["acquirer"] ?? "{}");
+    var acquirerB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(rawAcquirer));
+}
+<div id="acquirerData" data-acquirer-json-b64="@acquirerB64"></div>
+<div id="acquirerTemp"
+     data-acquirer-b64="@(TempData["AcquirerB64"] ?? "")"
+     data-acquirer-msg="@( (TempData["AcquirerMsg"]?.ToString() ?? "").Replace("'", "\\'") )">
+</div>
 
 <!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
@@ -533,92 +588,30 @@
 <!-- Inicialización específica para #tablaHV -->
 <script src="~/Scripts/hv.datatables.js?v=1.0.8"></script>
 
-@if (TempData["AcquirerB64"] != null || TempData["AcquirerMsg"] != null)
-{
-    <script>
-        window.DebeMostrarModalClientes = true;
-        @* objeto base64 cuando encontró *@
-        @if (TempData["AcquirerB64"] != null)
-        {
-          <text>window.AcquirerB64 = '@TempData["AcquirerB64"]';</text>
-        }
-        @* mensaje de no-encontrado *@
-        @if (TempData["AcquirerMsg"] != null)
-        {
-          <text>window.AcquirerMsg = '@(TempData["AcquirerMsg"]?.ToString()?.Replace("'", "\\'"))';</text>
-        }
-    </script>
-}
-
-@using System.Web
-@{
-    var sessionString = Session["HistorialVentasJson"] as string ?? "{}";
-    var viewmodels = Newtonsoft.Json.JsonConvert
-        .DeserializeObject<WebCliente.ViewModels.HistorialVentasViewModels>(sessionString)
-        ?? new WebCliente.ViewModels.HistorialVentasViewModels();
-
-    var alertModerno = viewmodels.AlertModerno ?? new WebCliente.ViewModels.AlertModerno();
-}
-
-@if (alertModerno.mostrar)
-{
-    var icono = (alertModerno.tipoAlert ?? "").Trim().ToLowerInvariant();
-    switch (icono)
-    {
-        case "success":
-        case "exito":
-        case "ok":
-            icono = "success"; break;
-        case "error":
-        case "danger":
-        case "fail":
-            icono = "error"; break;
-        case "warning":
-        case "warn":
-        case "alerta":
-            icono = "warning"; break;
-        default:
-            icono = "info"; break;
-    }
-
-    var tituloJs = HttpUtility.JavaScriptStringEncode(alertModerno.titulo ?? "", true);
-    var mensajeJs = HttpUtility.JavaScriptStringEncode(alertModerno.mensaje ?? "", true);
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            Swal.fire({
-                icon: '@icono',
-                title: @Html.Raw(tituloJs),
-                text:  @Html.Raw(mensajeJs),
-                confirmButtonText: 'Aceptar'
-            });
-        });
-    </script>
-    alertModerno = new WebCliente.ViewModels.AlertModerno();
-    viewmodels.AlertModerno = new WebCliente.ViewModels.AlertModerno();
-    Session["HistorialVentasJson"] = Newtonsoft.Json.JsonConvert.SerializeObject(viewmodels);
-
-}
-
-@using System.Text
-@{
-    var rawAcquirer = (string)(Session["acquirer"] ?? "{}");
-    var acquirerB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(rawAcquirer));
-}
-<!-- Portador de datos para el JS -->
-<div id="acquirerData" data-acquirer-json-b64="@acquirerB64"></div>
-
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- Tu JS corregido (bust cache con v=1.14.8) -->
-<script src="~/Scripts/historialventas.js?v=1.14.9"></script>
+@*
+    /Scripts/hv.core.js                    // utilidades, selección, helpers comunes
+    /Scripts/hv.modals.js                  // abrir/cerrar modales con cleanup
+    /Scripts/hv.btn.anular.js              // botón Anular
+    /Scripts/hv.btn.mediospago.js          // botón Medios de Pago (AJAX + render + guardar)
+    /Scripts/hv.btn.resolucion.js          // botón Resolución (y tabla)
+    /Scripts/hv.btn.cliente.js             // botón Editar/Agregar Cliente + modal Clientes
+    /Scripts/hv.btn.dian.js                // botón Enviar DIAN
+    /Scripts/hv.btn.misc.js                // Descargar, Imprimir, Ver Detalle, Aumentar número, Clonar, etc.
+    /Scripts/hv.init.js                    // orquestación al DOMContentLoaded
+*@
 
-<!-- Limpieza de URL si vienes de POST /Anularfactura -->
-<script>
-document.addEventListener('DOMContentLoaded', function(){
-  var p = location.pathname.toLowerCase();
-  if (p.indexOf('/historialventas/anularfactura') >= 0) {
-    history.replaceState(null, '', '@Url.Action("Index", "HistorialVentas")');
-  }
-});
-</script>
+<!-- Modular JS para Historial Ventas -->
+<script src="~/Scripts/hv.core.js?v=1.0.0"></script>
+<script src="~/Scripts/hv.modals.js?v=1.0.0"></script>
+
+<script src="~/Scripts/hv.btn.anular.js?v=1.0.0"></script>
+<script src="~/Scripts/hv.btn.mediospago.js?v=1.0.0"></script>
+<script src="~/Scripts/hv.btn.resolucion.js?v=1.0.0"></script>
+<script src="~/Scripts/hv.btn.cliente.js?v=1.0.0"></script>
+<script src="~/Scripts/hv.btn.dian.js?v=1.0.0"></script>
+<script src="~/Scripts/hv.btn.misc.js?v=1.0.0"></script>
+
+<script src="~/Scripts/hv.init.js?v=1.0.0"></script>

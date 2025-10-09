@@ -364,57 +364,87 @@ namespace WebCliente.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> MediosDePago(int idventa)
         {
-            var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
-            //en ensta parte cargo la session["MediosDePago"] con la lista de los medios de pago que corresponden  a la factura indicada
-            var listaMediosDePago = await V_VentasPagosInternosControler.ConsultarIdVenta(idventa);
-            if (listaMediosDePago != null)
+            try
             {
-                Session["listaPagos"] =JsonConvert.SerializeObject(listaMediosDePago);
+                if (idventa <= 0)
+                {
+                    Response.StatusCode = 400;
+                    return Json(new { estado = 0, mensaje = "idventa inválido." }, JsonRequestBehavior.AllowGet);
+                }
+
+                var pagosTask = V_VentasPagosInternosControler.ConsultarIdVenta(idventa);
+                var internosTask = V_R_MediosDePago_MediosDePagoInternosControler.Lista();
+                var methodsTask = payment_methodsControler.Lista_payment();
+                await Task.WhenAll(pagosTask, internosTask, methodsTask);
+
+                var pagos = pagosTask.Result;
+                var internos = internosTask.Result;
+                var methods = methodsTask.Result;
+
+                Session["idventaMedioPago"] = idventa;
+
+                // Si es AJAX (fetch), retorna JSON; si no, redirige al Index.
+                if (Request.IsAjaxRequest())
+                {
+                    Response.StatusCode = 200;
+                    return Json(new { estado = 1, data = new { pagos, internos, paymentMethods = methods } },
+                                JsonRequestBehavior.AllowGet);
+                }
+
+                TempData["AutoOpenMediosPago"] = true;
+                return RedirectToAction("Index");
             }
-
-            MediosDePagoViewModels listamodel = new MediosDePagoViewModels();
-
-            listamodel.V_VentasPagosInternos = listaMediosDePago;
-            listamodel.V_R_MediosDePagosInternos = await V_R_MediosDePago_MediosDePagoInternosControler.Lista();
-            listamodel.PaymentMethods = await payment_methodsControler.Lista_payment();
-
-
-            string jsonmodel= JsonConvert.SerializeObject(listamodel);
-            Session["listamodel"] = jsonmodel;
-
-            Session["idventaMedioPago"] = idventa;
-            ModelView(model);
-            return View("MediosDePago", listamodel);
+            catch (Exception ex)
+            {
+                if (Request.IsAjaxRequest())
+                {
+                    Response.StatusCode = 500;
+                    return Json(new { estado = 0, mensaje = ex.Message }, JsonRequestBehavior.AllowGet);
+                }
+                return RedirectToAction("Index");
+            }
         }
+
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<JsonResult> GuardarMedio(int id, int idMedioPagoDian, int idMedioPagoInterno, decimal valor)
         {
             try
             {
+                // Validación de sesión requerida por tu flujo
+                if (Session["idventaMedioPago"] == null || !int.TryParse(Session["idventaMedioPago"].ToString(), out var idVentaSesion))
+                {
+                    Response.StatusCode = 400;
+                    return Json(new { estado = 0, idAfectado = 0, mensaje = "No se encontró idventa en sesión." }, JsonRequestBehavior.AllowGet);
+                }
+
+                // Determinar INSERT / UPDATE
                 int funcion = 0;
-                PagosVenta pagosVenta = new PagosVenta();
-                pagosVenta = await PagosVentaControler.ConsultarID(id);
+                var pagosVenta = await PagosVentaControler.ConsultarID(id);
                 if (pagosVenta != null)
                 {
-                    funcion = 1;
+                    funcion = 1; // UPDATE
                 }
                 else
                 {
-                    pagosVenta = new PagosVenta();
-                    pagosVenta.id = 0;
+                    pagosVenta = new PagosVenta { id = 0 }; // INSERT
                 }
-                pagosVenta.idVenta = (int)Session["idventaMedioPago"];
+
+                // Mapear campos
+                pagosVenta.idVenta = idVentaSesion;
                 pagosVenta.payment_methods_id = idMedioPagoDian;
                 pagosVenta.idMedioDePagointerno = idMedioPagoInterno;
                 pagosVenta.valorPago = valor;
-                //llamamos la funcion del crud
-                var respCRUD=await PagosVentaControler
-                // Simulación OK:
-                var resp = new { estado = 1, idAfectado = id, mensaje = "Medio actualizado correctamente." };
 
-                Response.ContentType = "application/json; charset=utf-8";
-                return Json(resp, JsonRequestBehavior.AllowGet);
+                // Ejecutar CRUD
+                var respCRUD = await PagosVentaControler.CRUD(pagosVenta, funcion);
+
+                // Status HTTP coherente
+                Response.StatusCode = (respCRUD?.estado == true) ? 200 : 400;
+
+                // Evita doble serialización: devuelve el objeto directamente
+                return Json(respCRUD, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
@@ -422,6 +452,7 @@ namespace WebCliente.Controllers
                 return Json(new { estado = 0, idAfectado = 0, mensaje = ex.Message }, JsonRequestBehavior.AllowGet);
             }
         }
+
 
 
 

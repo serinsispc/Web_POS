@@ -6,9 +6,18 @@
 }
 
 <div class="card">
-    <div class="card-header">
-        <h5 class="mb-0">Medios de pago de la venta</h5>
+    <div class="card-header py-2">
+        <div class="d-flex align-items-center">
+            <h5 class="mb-0">Medios de pago de la venta</h5>
+
+            <a href="@Url.Action("Index","HistorialVentas", new { area = "" })"
+               class="btn btn-sm btn-outline-secondary ms-auto">
+                <i class="bi bi-arrow-left-circle"></i>
+                Volver al historial
+            </a>
+        </div>
     </div>
+
     <div class="card-body">
         @Html.AntiForgeryToken()
         <div class="table-responsive">
@@ -24,7 +33,7 @@
                 <tbody id="tbody-medios">
                     @foreach (var p in Model.V_VentasPagosInternos)
                     {
-                        // ==== Deducir id DIAN por nombre (case-insensitive) sin usar ?? entre tipos distintos ====
+                        // ==== Deducir id DIAN por nombre (case-insensitive) ====
                         var dianIdByName = 0;
 
                         var pmMatch = (Model.PaymentMethods != null)
@@ -61,7 +70,6 @@
                                 </select>
                             </td>
 
-
                             <td class="text-nowrap">
                                 <div class="d-flex align-items-center flex-nowrap gap-2">
                                     <select class="form-select form-select-sm sel-interno w-auto" style="min-width:220px">
@@ -70,7 +78,6 @@
                                     <small class="text-muted">Actual: <strong>@(p.medioPagoInterno ?? "-")</strong></small>
                                 </div>
                             </td>
-
 
                             <td class="text-nowrap">
                                 <div class="input-group input-group-sm w-auto" style="min-width:140px">
@@ -81,8 +88,6 @@
                                            value="@(string.Format(new System.Globalization.CultureInfo("es-CO"), "{0:N0}", p.valorPago))" />
                                 </div>
                             </td>
-
-
 
                             <td class="text-nowrap">
                                 <button type="button" class="btn btn-sm btn-primary btn-guardar">
@@ -98,84 +103,133 @@
     </div>
 </div>
 
+<!-- Toast container (Bootstrap 5) -->
+<div id="toast-root" class="position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+    <div id="app-toast" class="toast shadow" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <span id="toast-badge" class="badge rounded-pill me-2 bg-secondary">&nbsp;</span>
+            <strong id="toast-title" class="me-auto">Aviso</strong>
+            <small class="text-muted">ahora</small>
+            <button type="button" class="btn-close ms-2 mb-1" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div id="toast-body" class="toast-body">Mensaje</div>
+    </div>
+</div>
+
 <script>
-(function(){
-    // === Datos del modelo convertidos a JSON para el JS (con fallback a []) ===
-    const paymentMethods = (@Html.Raw(JsonConvert.SerializeObject(Model.PaymentMethods)) ) || [];
-    const mapInternos    = (@Html.Raw(JsonConvert.SerializeObject(Model.V_R_MediosDePagosInternos)) ) || [];
+(function () {
+  // ========= Helper de notificaciones (Bootstrap Toast) =========
+    // Notificador moderno con Bootstrap Toast + callbacks
+    function notify(variant, message, title, opts) {
+        opts = opts || {};
+        try {
+            const toastEl = document.getElementById('app-toast');
+            const badgeEl = document.getElementById('toast-badge');
+            const titleEl = document.getElementById('toast-title');
+            const bodyEl = document.getElementById('toast-body');
 
-    // === AntiForgery Token ===
-    const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
-    const AF_TOKEN = tokenInput ? tokenInput.value : "";
+            const titleMap = { success: 'Éxito', danger: 'Error', warning: 'Atención', info: 'Información', secondary: 'Aviso' };
+            const v = variant || 'secondary';
 
-    // === Funciones auxiliares ===
-    function filtrarInternosPorDian(dianId){
-        dianId = parseInt(dianId || 0, 10);
-        return (mapInternos || []).filter(x => parseInt(x.idMedioDePago || 0, 10) === dianId);
-    }
+            titleEl.textContent = title || titleMap[v] || 'Aviso';
+            bodyEl.textContent = message || '';
+            badgeEl.className = 'badge rounded-pill me-2 bg-' + v;
 
-    function normalizarValorParaNumero(v){
-        if (v == null) return "";
-        let s = String(v).trim();
-        s = s.replace(/[^\d.,-]/g, "");
-        if (s.includes(".") && s.includes(",")){
-            s = s.replace(/\./g, "").replace(",", ".");
-        } else if (!s.includes(".") && s.includes(",")){
-            s = s.replace(",", ".");
-        } else {
-            const onlyDots = s.includes(".") && !s.includes(",");
-            if (onlyDots) s = s.replace(/\./g, "");
-        }
-        return s;
-    }
+            const delay = typeof opts.delay === 'number' ? opts.delay : 3500;
+            const toast = bootstrap.Toast.getOrCreateInstance(toastEl, { delay, autohide: true });
 
-    function poblarInternosSelect(row){
-        const selDian = row.querySelector(".sel-dian");
-        const selInterno = row.querySelector(".sel-interno");
-        const currentInternoId = parseInt(row.getAttribute("data-current-interno-id") || "0", 10);
-
-        const dianId = parseInt(selDian.value || "0", 10);
-        const opciones = filtrarInternosPorDian(dianId);
-
-        selInterno.innerHTML = `<option value="0">-- Selecciona --</option>`;
-        opciones.forEach(op => {
-            const opt = document.createElement("option");
-            opt.value = op.idMediosDePagoInternos;
-            opt.textContent = op.nombreRMPI;
-            selInterno.appendChild(opt);
-        });
-
-        if (currentInternoId > 0) {
-            const existe = opciones.some(x => parseInt(x.idMediosDePagoInternos,10) === currentInternoId);
-            selInterno.value = existe ? String(currentInternoId) : "0";
-        }
-    }
-
-    function inicializarFila(row){
-        const selDian = row.querySelector(".sel-dian");
-        if (!selDian.value || selDian.value === "0"){
-            const fallbackDian = row.getAttribute("data-current-dian-id");
-            if (fallbackDian && [...selDian.options].some(o => o.value === fallbackDian)){
-                selDian.value = fallbackDian;
+            // Redirigir / callback cuando el toast termine de ocultarse (autohide o ❌)
+            if (opts.onHidden || opts.redirectTo) {
+                const handler = () => {
+                    toastEl.removeEventListener('hidden.bs.toast', handler);
+                    if (typeof opts.onHidden === 'function') opts.onHidden();
+                    if (opts.redirectTo) window.location.href = opts.redirectTo;
+                };
+                toastEl.addEventListener('hidden.bs.toast', handler, { once: true });
             }
+
+            toast.show();
+        } catch (e) {
+            // Fallback si Bootstrap no está disponible
+            alert((title ? (title + ': ') : '') + (message || ''));
+            if (opts && opts.redirectTo) window.location.href = opts.redirectTo;
         }
-        poblarInternosSelect(row);
     }
+
+  // === Datos del modelo convertidos a JSON para el JS (con fallback a []) ===
+  const paymentMethods = (@Html.Raw(JsonConvert.SerializeObject(Model.PaymentMethods)) ) || [];
+  const mapInternos    = (@Html.Raw(JsonConvert.SerializeObject(Model.V_R_MediosDePagosInternos)) ) || [];
+
+  // === AntiForgery Token ===
+  const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+  const AF_TOKEN = tokenInput ? tokenInput.value : "";
+
+  // === Funciones auxiliares ===
+  function filtrarInternosPorDian(dianId){
+    dianId = parseInt(dianId || 0, 10);
+    return (mapInternos || []).filter(x => parseInt(x.idMedioDePago || 0, 10) === dianId);
+  }
+
+  function normalizarValorParaNumero(v){
+    if (v == null) return "";
+    let s = String(v).trim();
+    s = s.replace(/[^\d.,-]/g, "");
+    if (s.includes(".") && s.includes(",")){
+      s = s.replace(/\./g, "").replace(",", ".");
+    } else if (!s.includes(".") && s.includes(",")){
+      s = s.replace(",", ".");
+    } else {
+      const onlyDots = s.includes(".") && !s.includes(",");
+      if (onlyDots) s = s.replace(/\./g, "");
+    }
+    return s;
+  }
+
+  function poblarInternosSelect(row){
+    const selDian = row.querySelector(".sel-dian");
+    const selInterno = row.querySelector(".sel-interno");
+    const currentInternoId = parseInt(row.getAttribute("data-current-interno-id") || "0", 10);
+
+    const dianId = parseInt(selDian.value || "0", 10);
+    const opciones = filtrarInternosPorDian(dianId);
+
+    selInterno.innerHTML = `<option value="0">-- Selecciona --</option>`;
+    opciones.forEach(op => {
+      const opt = document.createElement("option");
+      opt.value = op.idMediosDePagoInternos;
+      opt.textContent = op.nombreRMPI;
+      selInterno.appendChild(opt);
+    });
+
+    if (currentInternoId > 0) {
+      const existe = opciones.some(x => parseInt(x.idMediosDePagoInternos,10) === currentInternoId);
+      selInterno.value = existe ? String(currentInternoId) : "0";
+    }
+  }
+
+  function inicializarFila(row){
+    const selDian = row.querySelector(".sel-dian");
+    if (!selDian.value || selDian.value === "0"){
+      const fallbackDian = row.getAttribute("data-current-dian-id");
+      if (fallbackDian && [...selDian.options].some(o => o.value === fallbackDian)){
+        selDian.value = fallbackDian;
+      }
+    }
+    poblarInternosSelect(row);
+  }
 
   async function postGuardarCambios(formFields){
-   // Después (mismo controller donde estás: HistorialVentas):
-const url = '@Url.Action("GuardarMedio", "HistorialVentas", new { area = "" })';
+    const url = '@Url.Action("GuardarMedio", "HistorialVentas", new { area = "" })';
     const body = new URLSearchParams(formFields);
 
     const resp = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        // También por cabecera (útil en algunos setups):
         "RequestVerificationToken": formFields["__RequestVerificationToken"]
       },
       body,
-      credentials: "same-origin" // asegura envío de cookies (antiforgery/auth)
+      credentials: "same-origin"
     });
 
     const contentType = resp.headers.get("content-type") || "";
@@ -188,62 +242,66 @@ const url = '@Url.Action("GuardarMedio", "HistorialVentas", new { area = "" })';
       return JSON.parse(text);
     }
 
-    // Llegó HTML -> casi seguro login, antiforgery inválido o View devuelta
     if (text.toLowerCase().includes("<!doctype") || text.toLowerCase().includes("<html")) {
       throw new Error("El servidor devolvió HTML (¿redirección a login, antiforgery inválido o la acción devolvió una View?).");
     }
     throw new Error("Respuesta no-JSON: " + text.slice(0,200));
   }
 
+  // === Inicialización de filas ===
+  const tbody = document.getElementById("tbody-medios");
+  [...tbody.querySelectorAll("tr[data-row-id]")].forEach(tr => {
+    inicializarFila(tr);
 
-    // === Inicialización de filas ===
-    const tbody = document.getElementById("tbody-medios");
-    [...tbody.querySelectorAll("tr[data-row-id]")].forEach(tr => {
-        inicializarFila(tr);
-
-        // Cambio de DIAN => recargar internos dependientes
-        tr.querySelector(".sel-dian").addEventListener("change", () => {
-            tr.setAttribute("data-current-interno-id", "0");
-            poblarInternosSelect(tr);
-        });
-
-        // Guardar cambios
-        tr.querySelector(".btn-guardar").addEventListener("click", async () => {
-            const idFila   = parseInt(tr.getAttribute("data-row-id") || "0", 10);
-            const dianId   = parseInt(tr.querySelector(".sel-dian").value || "0", 10);
-            const internoId= parseInt(tr.querySelector(".sel-interno").value || "0", 10);
-            const valorRaw = tr.querySelector(".inp-valor").value;
-            const valorNum = parseFloat(normalizarValorParaNumero(valorRaw) || "0");
-
-            if (!idFila){ alert("No se encontró el ID de la fila."); return; }
-            if (!dianId){ alert("Selecciona el medio de pago DIAN."); return; }
-            if (!internoId){ alert("Selecciona el medio de pago interno."); return; }
-            if (isNaN(valorNum) || valorNum < 0){ alert("Ingresa un valor válido."); return; }
-
-            const formFields = {
-                "__RequestVerificationToken": AF_TOKEN,
-                "id": idFila,
-                "idMedioPagoDian": dianId,
-                "idMedioPagoInterno": internoId,
-                "valor": valorNum.toString()
-            };
-
-            const btn = tr.querySelector(".btn-guardar");
-            btn.disabled = true;
-            try{
-                const r = await postGuardarCambios(formFields);
-                if (r && r.estado === 1){
-                    tr.setAttribute("data-current-interno-id", String(internoId));
-                    alert("✅ Cambios guardados: " + (r.mensaje || "OK"));
-                } else {
-                    alert("⚠️ No se pudo guardar: " + (r?.mensaje || "Error desconocido."));
-                }
-            }catch(e){
-                alert("❌ Error al guardar: " + e.message);
-            }finally{
-                btn.disabled = false;
-            }
-        });
+    // Cambio de DIAN => recargar internos dependientes
+    tr.querySelector(".sel-dian").addEventListener("change", () => {
+      tr.setAttribute("data-current-interno-id", "0");
+      poblarInternosSelect(tr);
     });
+
+    // Guardar cambios
+    tr.querySelector(".btn-guardar").addEventListener("click", async () => {
+      const idFila    = parseInt(tr.getAttribute("data-row-id") || "0", 10);
+      const dianId    = parseInt(tr.querySelector(".sel-dian").value || "0", 10);
+      const internoId = parseInt(tr.querySelector(".sel-interno").value || "0", 10);
+      const valorRaw  = tr.querySelector(".inp-valor").value;
+      const valorNum  = parseFloat(normalizarValorParaNumero(valorRaw) || "0");
+
+      if (!idFila){    notify('warning', "No se encontró el ID de la fila."); return; }
+      if (!dianId){    notify('warning', "Selecciona el medio de pago DIAN."); return; }
+      if (!internoId){ notify('warning', "Selecciona el medio de pago interno."); return; }
+      if (isNaN(valorNum) || valorNum < 0){ notify('warning', "Ingresa un valor válido."); return; }
+
+      const formFields = {
+        "__RequestVerificationToken": AF_TOKEN,
+        "id": idFila,
+        "idMedioPagoDian": dianId,
+        "idMedioPagoInterno": internoId,
+        "valor": valorNum.toString()
+      };
+
+      const btn = tr.querySelector(".btn-guardar");
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...';
+
+      try{
+        const r = await postGuardarCambios(formFields);
+
+        const ok = r && (r.estado === 1 || r.estado === true || r.estado === "1" || r.estado === "true");
+        if (ok){
+          tr.setAttribute("data-current-interno-id", String(internoId));
+          notify('success', "Cambios guardados: " + (r.mensaje || "OK"));
+        } else {
+          notify('warning', "No se pudo guardar: " + ((r && r.mensaje) ? r.mensaje : "Error desconocido."));
+        }
+      }catch(e){
+        notify('danger', "Error al guardar: " + e.message);
+      }finally{
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
+    });
+  });
 })();
 </script>

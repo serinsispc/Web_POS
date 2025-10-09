@@ -31,7 +31,7 @@ namespace RunApi.Funciones.DIAN_API
                 var api =new ClassAPI();
                 string json=JsonConvert.SerializeObject(request);
                 var url = $"/api/ubl2.1/status/acquirer";
-                var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Post, true, token.Replace("\"",""));
+                var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Post,null,true, token.Replace("\"",""));
                 return JsonConvert.DeserializeObject<ConsultarNIT_Respons>(resp);
             }
             catch(Exception ex)
@@ -294,7 +294,7 @@ namespace RunApi.Funciones.DIAN_API
             /****************************************************************************/
             var url = $"/api/ubl2.1/invoice/";
             var json = JsonConvert.SerializeObject(facturaNacional);
-            var rspuestaAPI = await classAPI.HttpWebRequestPostAsync(url,json,HttpMethod.Post,true,token.Replace("\"", ""));
+            var rspuestaAPI = await classAPI.HttpWebRequestPostAsync(url,json,HttpMethod.Post,null,true,token.Replace("\"", ""));
             int f_facturaJson = 0;
             FacturaElectronica_Respons facturaNacionalRespuesta = JsonConvert.DeserializeObject<FacturaElectronica_Respons>(rspuestaAPI);
             //en esta parte preguntamos si es valido
@@ -582,7 +582,7 @@ namespace RunApi.Funciones.DIAN_API
                 var url = $"/api/ubl2.1/credit-note/";
                 string jsonNotaCredito = JsonConvert.SerializeObject(notacredito);
                 var token =await HistorialVentasAPI.ConsultarToken();
-                string respuestaNotaCredito = await api.HttpWebRequestPostAsync(url,jsonNotaCredito,HttpMethod.Post,true, token.Replace("\"", ""));
+                string respuestaNotaCredito = await api.HttpWebRequestPostAsync(url,jsonNotaCredito,HttpMethod.Post,null,true, token.Replace("\"", ""));
                 var notaCreditoResponse=JsonConvert.DeserializeObject<NotaCreditoResponse>(respuestaNotaCredito);
 
                 if (notaCreditoResponse == null) 
@@ -668,7 +668,7 @@ namespace RunApi.Funciones.DIAN_API
                 var url = $"/api/ubl2.1/mail/send/{uuid}";
                 string json=JsonConvert.SerializeObject(correoRequest);
                 json = json.Replace("\"allowance_charges\":null,", "");
-                var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Post,true,token);
+                var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Post,null,true,token);
                 return JsonConvert.DeserializeObject<CorreoResponse>(resp);
             }
             catch (Exception ex) 

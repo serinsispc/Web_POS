@@ -1,19 +1,17 @@
 ﻿using Newtonsoft.Json;
 using RunApi;
 using RunApi.Envio;
+using RunApi.Funciones;
 using RunApi.Models.Admin;
 using RunApi.Models.Cliente;
 using RunApi.Respuesta;
-using System;
+
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
+
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
-using System.Web.UI.WebControls;
-using System.Xml.Linq;
-
 namespace WebCliente.Controllers
 {
     public class LoginController : Controller
@@ -28,7 +26,7 @@ namespace WebCliente.Controllers
             return View();
         }
         [HttpPost]
-        public async Task<ActionResult> Index(string usuario,string clave)
+        public async Task<ActionResult> Index(string usuario,string clave, ClassLogin classLogin)
         {
             if (usuario != null && clave != null) 
             {
@@ -38,8 +36,8 @@ namespace WebCliente.Controllers
                 usuarioAdminEnvio.clave = clave;
                 usuarioAdminEnvio.idTipoSistema = 1;
                 UsuarioAdminRespuesta usuarioAdminRespuesta = new UsuarioAdminRespuesta();
-                ClassAPI aPI = new ClassAPI();
-                usuarioAdminRespuesta=await aPI.LoginAdmin(usuarioAdminEnvio);
+                ClassAPI classapi = new ClassAPI();
+                usuarioAdminRespuesta=await ClassLogin.LoginAdmin(usuarioAdminEnvio);
                 if(usuarioAdminRespuesta != null && usuarioAdminRespuesta.v_UsuarioDB!=null)
                 {
                     Session["usuario"] = usuarioAdminRespuesta;
@@ -63,8 +61,8 @@ namespace WebCliente.Controllers
                         loginEnviar.idTipoUSuario = usuarioAdminRespuesta.usuarioAdmin.idTipoUSuario;
                         loginEnviar.nombreDB = usuarioAdminRespuesta.v_UsuarioDB.FirstOrDefault().nombreDB;
                         loginEnviar.idTipoSistema = 1;
-                        aPI = new ClassAPI();
-                        LoginRespuesta respuesta  = await aPI.Login(loginEnviar);
+                        classapi = new ClassAPI();
+                        LoginRespuesta respuesta  = await ClassLogin.Login(loginEnviar);
                         v_Usuario_POS usuarioPOS= new v_Usuario_POS();
                         usuarioPOS = respuesta.v_Usuario;
                         if (usuarioPOS.idTipoUsuario == 1)
@@ -105,7 +103,7 @@ namespace WebCliente.Controllers
             loginEnviar.idTipoSistema = 1;
 
             ClassAPI aPI = new ClassAPI();
-            LoginRespuesta respuesta = await aPI.Login(loginEnviar);
+            LoginRespuesta respuesta = await ClassLogin.Login(loginEnviar);
             v_Usuario_POS usuarioPOS = new v_Usuario_POS();
             usuarioPOS = respuesta.v_Usuario;
             if (usuarioPOS.idTipoUsuario == 1)

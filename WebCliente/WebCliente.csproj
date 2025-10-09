@@ -167,8 +167,16 @@
     <Content Include="Scripts\caja.js" />
     <Content Include="Scripts\carrito.js" />
     <Content Include="Scripts\funciones.js" />
-    <Content Include="Scripts\historialventas.js" />
+    <Content Include="Scripts\hv.btn.anular.js" />
+    <Content Include="Scripts\hv.btn.cliente.js" />
+    <Content Include="Scripts\hv.btn.dian.js" />
+    <Content Include="Scripts\hv.btn.mediospago.js" />
+    <Content Include="Scripts\hv.btn.misc.js" />
+    <Content Include="Scripts\hv.btn.resolucion.js" />
+    <Content Include="Scripts\hv.core.js" />
     <Content Include="Scripts\hv.datatables.js" />
+    <Content Include="Scripts\hv.init.js" />
+    <Content Include="Scripts\hv.modals.js" />
     <Content Include="Scripts\login.js" />
     <Content Include="Scripts\parqueo.js" />
     <Content Include="Scripts\menu.js" />

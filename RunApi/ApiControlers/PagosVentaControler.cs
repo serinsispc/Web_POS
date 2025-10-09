@@ -18,11 +18,10 @@ namespace RunApi.ApiControlers
         {
             try
             {
-                var objeto = new { nombreDB=ClassDBCliente.DBCliente, PagosVentas=pagosVenta, Funcion=funcion };
-                string json= JsonConvert.SerializeObject(objeto);
-                var url = $"PagosVenta/CRUDPagosVentas";
+                string json= JsonConvert.SerializeObject(pagosVenta);
+                var url = $"PagosVenta";
                 var api = new ClassAPI();
-                var resp = await api.HttpWebRequestPostAsync(url,json,HttpMethod.Post);
+                var resp = await api.HttpWebRequestPostAsync(url,json,HttpMethod.Put,ClassDBCliente.DBCliente);
                 var respApi=JsonConvert.DeserializeObject<RespuestaCRUD_api>(resp);
                 return respApi;
             }
@@ -36,11 +35,9 @@ namespace RunApi.ApiControlers
         {
             try
             {
-                var objeto = new { nombreDB=ClassDBCliente.DBCliente, idpago=id };
-                string json=JsonConvert.SerializeObject(objeto);
-                var url = $"PagosVenta/ConsultarIdPago";
+                var url = $"PagosVenta/{id}";
                 var api = new ClassAPI();
-                var resp=await api.HttpWebRequestPostAsync(url, json, HttpMethod.Post);
+                var resp=await api.HttpWebRequestPostAsync(url,null, HttpMethod.Get,ClassDBCliente.DBCliente);
                 var respAPI = JsonConvert.DeserializeObject<RespuestaAPI>(resp);
                 if (respAPI.estado == true)
                 {

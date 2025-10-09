@@ -1,4 +1,5 @@
 ﻿using RunApi.Envio;
+using RunApi.Models;
 using RunApi.Respuesta;
 using System;
 using System.Collections.Generic;
@@ -30,7 +31,7 @@ namespace RunApi
         }
 
 
-        public Task<string> HttpWebRequestPostAsync(string Url, string Json, HttpMethod httpMethod, [Optional] bool dian, [Optional] string token)
+        public Task<string> HttpWebRequestPostAsync(string Url, string Json, HttpMethod httpMethod, [Optional] string NombreDB, [Optional] bool dian, [Optional] string token)
         {
             string UrlEndPoint_ = UrlEndPoint;
            
@@ -66,6 +67,12 @@ namespace RunApi
                         httpWebRequest.Headers.Add("Authorization", "Bearer " + token);
 
                     }
+
+                    if (!string.IsNullOrEmpty(NombreDB))
+                    {
+                        httpWebRequest.Headers.Add("X-NombreDB", NombreDB);
+                    }
+
 
                     if ((httpMethod == HttpMethod.Post || httpMethod == HttpMethod.Put) && Json != null)
                     {
@@ -113,43 +120,6 @@ namespace RunApi
             return task;
         }
 
-        public async Task<UsuarioAdminRespuesta> LoginAdmin(UsuarioAdminEnvio envio)
-        {
-            try
-            {
-                string url = "UsuariosAdmin/ConsultarUsuario";
 
-                // Serializar el objeto a JSON
-                string json = JsonSerializer.Serialize(envio);
-                // Llamar a la API
-                ClassAPI api = new ClassAPI();
-                string respuesta = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Post);
-                return JsonSerializer.Deserialize<UsuarioAdminRespuesta>(respuesta);
-            }
-            catch(Exception ex)
-            {
-                string error = ex.Message;
-                return new UsuarioAdminRespuesta();
-            }
-        }
-        public async Task<LoginRespuesta> Login(LoginEnviar envio)
-        {
-            try
-            {
-                string url = "Login/Login";
-
-                // Serializar el objeto a JSON
-                string json = JsonSerializer.Serialize(envio);
-                // Llamar a la API
-                ClassAPI api = new ClassAPI();
-                string respuesta = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Post);
-                return JsonSerializer.Deserialize<LoginRespuesta>(respuesta);
-            }
-            catch (Exception ex)
-            {
-                string error = ex.Message;
-                return new LoginRespuesta();
-            }
-        }
     }
 }

@@ -17,11 +17,9 @@ namespace RunApi.ApiControlers
         {
             try
             {
-                var objeto = new { nombreDB=ClassDBCliente.DBCliente, idventa=idventa };
-                string json=JsonConvert.SerializeObject(objeto);
                 var api = new ClassAPI();
-                var url = $"V_VentasPagosInternos/ConsultarIdVenta";
-                var resp=await api.HttpWebRequestPostAsync(url, json, HttpMethod.Post);
+                var url = $"V_VentasPagosInternos/{idventa}";
+                var resp=await api.HttpWebRequestPostAsync(url, null, HttpMethod.Get, ClassDBCliente.DBCliente);
                 var respAPI = JsonConvert.DeserializeObject<RespuestaAPI>(resp);
                 if (respAPI != null) 
                 {
