@@ -489,6 +489,7 @@ namespace WebCliente.Controllers
             }
         }
 
+        // En tu HistorialVentasController (o donde corresponda)
         [HttpGet]
         [OutputCache(NoStore = true, Duration = 0, VaryByParam = "*")]
         public ActionResult VerDetalle(int idventa)
@@ -496,15 +497,43 @@ namespace WebCliente.Controllers
             try
             {
                 // TODO: reemplaza por tu acceso real a datos
-                // var items = _repoVentas.ConsultarDetalle(idventa);
-                var items = new List<V_DetalleCaja>(); // <--- stub/demo
+                // Ej: var items = V_DetalleCajaRepo.ConsultarPorVenta(idventa);
+                var items = new List<V_DetalleCaja>(); // demo
 
-                return Json(new { ok = true, items }, JsonRequestBehavior.AllowGet);
+                var planos = items.Select(x => new
+                {
+                    id = x.id,
+                    idVenta = x.idVenta,
+                    codigoProducto = x.codigoProducto ?? "",
+                    nombreProducto = x.nombreProducto ?? "",
+                    presentacion = x.presentacion ?? "",
+                    unidad = x.unidad ?? 0m,
+                    preVentaNeto = x.preVentaNeto ?? 0m,
+                    precioVenta = x.precioVenta ?? 0m,
+                    descuentoDetalle = x.descuentoDetalle ?? 0m,
+                    porImpuesto = x.porImpuesto ?? 0m,
+                    baseImpuesto = x.baseImpuesto ?? 0m,
+                    valorImpuesto = x.valorImpuesto ?? 0m,
+                    subTotalDetalleNeto = x.subTotalDetalleNeto ?? 0m,
+                    subTotalDetalle = x.subTotalDetalle ?? 0m,
+                    totalDetalle = x.totalDetalle ?? 0m,
+                    costoUnidad = x.costoUnidad ?? 0m,
+                    contenido = x.contenido ?? 0m,
+                    costoTotal = x.costoTotal ?? 0m,
+                    observacion = x.observacion ?? "",
+                    opciones = x.opciones ?? "",
+                    adiciones = x.adiciones ?? "",
+                    // cálculo auxiliar si subTotalDetalle vino nulo/0
+                    subtotal_calc = (x.unidad ?? 0m) * (x.precioVenta ?? 0m) - (x.descuentoDetalle ?? 0m)
+                }).ToList();
+
+                return Json(new { ok = true, items = planos }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 return Json(new { ok = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
             }
         }
+
     }
 }

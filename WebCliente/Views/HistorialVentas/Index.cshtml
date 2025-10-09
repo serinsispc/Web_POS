@@ -567,6 +567,59 @@
     </div>
 </div>
 
+@* modal detalle venta *@
+<div class="modal fade" id="modalVerDetalle" tabindex="-1" aria-labelledby="mdDetalleLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="mdDetalleLabel" class="modal-title">
+                    Detalle de la venta <span id="mdDet-idventa" class="text-muted"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <div class="modal-body">
+                <div id="mdDet-loader" class="text-center py-4 d-none">
+                    <div class="spinner-border" role="status"><span class="visually-hidden">Cargando…</span></div>
+                </div>
+
+                <div id="mdDet-error" class="alert alert-danger d-none"></div>
+
+                <div id="mdDet-tablewrap" class="table-responsive d-none">
+                    <table class="table table-sm align-middle" id="tablaDetalleVenta">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Código</th>
+                                <th>Producto</th>
+                                <th>Presentación</th>
+                                <th class="text-end">Cant.</th>
+                                <th class="text-end">Precio</th>
+                                <th class="text-end">Desc.</th>
+                                <th class="text-end">Imp. %</th>
+                                <th class="text-end">Subtotal</th>
+                                <th class="text-end">Total</th>
+                                <th>Obs.</th>
+                            </tr>
+                        </thead>
+                        <tbody><!-- filas por JS --></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="me-auto">
+                    <span class="fw-semibold me-3">Subtotal: <span id="mdDet-subtotal" class="text-primary"></span></span>
+                    <span class="fw-semibold me-3">Impuestos: <span id="mdDet-impuestos" class="text-primary"></span></span>
+                    <span class="fw-bold">Total: <span id="mdDet-total" class="text-success"></span></span>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 @* Portadores de datos para el JS *@
 @using System.Text
 @{
@@ -630,6 +683,6 @@
 <script src="~/Scripts/hv.btn.dian.js?v=1.0.0"></script>
 <script src="~/Scripts/hv.btn.misc.js?v=1.0.0"></script>
 <script src="~/Scripts/hv.btn.descargar.js?v=1.0.0"></script>
-
+<script src="~/Scripts/hv.detalleventa.js"></script>
 
 <script src="~/Scripts/hv.init.js?v=1.0.0"></script>

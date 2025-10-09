@@ -176,6 +176,7 @@
     <Content Include="Scripts\hv.btn.resolucion.js" />
     <Content Include="Scripts\hv.core.js" />
     <Content Include="Scripts\hv.datatables.js" />
+    <Content Include="Scripts\hv.detalleventa.js" />
     <Content Include="Scripts\hv.init.js" />
     <Content Include="Scripts\hv.modals.js" />
     <Content Include="Scripts\login.js" />
