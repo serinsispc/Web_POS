@@ -169,6 +169,7 @@
     <Content Include="Scripts\funciones.js" />
     <Content Include="Scripts\hv.btn.anular.js" />
     <Content Include="Scripts\hv.btn.cliente.js" />
+    <Content Include="Scripts\hv.btn.descargar.js" />
     <Content Include="Scripts\hv.btn.dian.js" />
     <Content Include="Scripts\hv.btn.mediospago.js" />
     <Content Include="Scripts\hv.btn.misc.js" />
@@ -221,7 +222,6 @@
     <Content Include="Views\Informes\Index.cshtml" />
     <Content Include="Views\HistorialVentas\Index.cshtml" />
     <Content Include="Views\QR\Index.cshtml" />
-    <Content Include="Views\HistorialVentas\MediosDePago.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RunApi\RunApi.csproj">

@@ -10,10 +10,13 @@ using RunApi.Models.Cliente;
 using RunApi.Request;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Helpers;
@@ -283,7 +286,7 @@ namespace WebCliente.Controllers
                       "• " + string.Join(Environment.NewLine + "• ", erroresLimpios);
                 if (resp_proceso.is_valid)
                 {
-                    model.AlertModerno = AlertModerno.CargarAlert(true, resp_proceso.status_message, mensajeError,"success");
+                    model.AlertModerno = AlertModerno.CargarAlert(true, resp_proceso.status_message, mensajeError, "success");
                 }
                 else
                 {
@@ -330,11 +333,11 @@ namespace WebCliente.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult>Anularfactura(int idventa)
+        public async Task<ActionResult> Anularfactura(int idventa)
         {
             var model = JsonConvert.DeserializeObject<HistorialVentasViewModels>(Session["HistorialVentasJson"].ToString());
             var respuestaAPI = await API_DIAN.NotaCreditoElectronica(idventa);
-            if(respuestaAPI.estado)
+            if (respuestaAPI.estado)
             {
                 var responsCRUD = JsonConvert.DeserializeObject<NotaCreditoResponse>(respuestaAPI.data);
                 var erroresLimpios =
@@ -348,8 +351,8 @@ namespace WebCliente.Controllers
                     ? "Se produjo un error no especificado."
                     : "Se encontraron los siguientes errores:" + Environment.NewLine +
                       "• " + string.Join(Environment.NewLine + "• ", erroresLimpios);
-                model.AlertModerno = AlertModerno.CargarAlert(true,responsCRUD.status_message,mensajeError,"success");
-                model.V_TablaVentas =await V_TablaVentasControler.Filtrar(ClassDBCliente.DBCliente,model.Fecha1,model.Fecha2);
+                model.AlertModerno = AlertModerno.CargarAlert(true, responsCRUD.status_message, mensajeError, "success");
+                model.V_TablaVentas = await V_TablaVentasControler.Filtrar(ClassDBCliente.DBCliente, model.Fecha1, model.Fecha2);
             }
             else
             {
@@ -364,47 +367,30 @@ namespace WebCliente.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> MediosDePago(int idventa)
         {
-            try
-            {
-                if (idventa <= 0)
-                {
-                    Response.StatusCode = 400;
-                    return Json(new { estado = 0, mensaje = "idventa inválido." }, JsonRequestBehavior.AllowGet);
-                }
-
-                var pagosTask = V_VentasPagosInternosControler.ConsultarIdVenta(idventa);
-                var internosTask = V_R_MediosDePago_MediosDePagoInternosControler.Lista();
-                var methodsTask = payment_methodsControler.Lista_payment();
-                await Task.WhenAll(pagosTask, internosTask, methodsTask);
-
-                var pagos = pagosTask.Result;
-                var internos = internosTask.Result;
-                var methods = methodsTask.Result;
-
-                Session["idventaMedioPago"] = idventa;
-
-                // Si es AJAX (fetch), retorna JSON; si no, redirige al Index.
-                if (Request.IsAjaxRequest())
-                {
-                    Response.StatusCode = 200;
-                    return Json(new { estado = 1, data = new { pagos, internos, paymentMethods = methods } },
-                                JsonRequestBehavior.AllowGet);
-                }
-
-                TempData["AutoOpenMediosPago"] = true;
-                return RedirectToAction("Index");
-            }
-            catch (Exception ex)
+            if (idventa <= 0)
             {
                 if (Request.IsAjaxRequest())
-                {
-                    Response.StatusCode = 500;
-                    return Json(new { estado = 0, mensaje = ex.Message }, JsonRequestBehavior.AllowGet);
-                }
+                    return Json(new { estado = 0, mensaje = "Id de venta inválido." }, JsonRequestBehavior.AllowGet);
+                TempData["Alert"] = "Id de venta inválido.";
                 return RedirectToAction("Index");
             }
+
+            var pagos = await V_VentasPagosInternosControler.ConsultarIdVenta(idventa);
+            var internos = await V_R_MediosDePago_MediosDePagoInternosControler.Lista();
+            var methods = await payment_methodsControler.Lista_payment();
+
+            // <-- Si algún día llamas por AJAX, devuelve los datos reales (ahora mismo devolvías arrays vacíos)
+            if (Request.IsAjaxRequest())
+                return Json(new { estado = 1, data = new { pagos, internos, paymentMethods = methods } }, JsonRequestBehavior.AllowGet);
+
+            // --- Flujo POST-back: guarda datos en Session y haz que la vista abra el modal ---
+            var payload = new { pagos, internos, paymentMethods = methods };
+            Session["MediosDePago_json"] = Newtonsoft.Json.JsonConvert.SerializeObject(payload);
+            Session["idventaMedioPago"] = idventa;
+            TempData["AutoOpenMediosPago"] = true;
+
+            return RedirectToAction("Index");
         }
-
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -454,7 +440,59 @@ namespace WebCliente.Controllers
         }
 
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> Retour(int idventa, CancellationToken ct)
+        {
+            if (idventa <= 0)
+                return new HttpStatusCodeResult(400, "Id de venta inválido.");
 
+            try
+            {
+                // TODO: trae tu base64 real desde BD/servicio
+                /* en esta parte consultamos el pdfbase64 de la factura con respecto al id de la venta */
+                var fejson=await FacturaElectronicaJSONAPI.ConsultarIdVenta(idventa);
+                var pdfBase64 = "";
+                if (fejson != null)
+                {
+                    pdfBase64 = fejson.pdf_base64_bytes;
+                }
+                else
+                {
+                    return new HttpStatusCodeResult(500, "Error obteniendo PDF: ");
+                }
 
+                if (string.IsNullOrWhiteSpace(pdfBase64))
+                    return new HttpStatusCodeResult(404, "No se encontró PDF para esta venta.");
+
+                // Limpia prefijo data-uri si existiera y espacios
+                pdfBase64 = System.Text.RegularExpressions.Regex
+                    .Replace(pdfBase64, @"^data:.*;base64,", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase)
+                    .Trim();
+
+                // Devuelve JSON sin escapar las barras "/"
+                var payload = new { ok = true, fileName = $"Factura_{idventa}.pdf", base64 = pdfBase64 };
+                var json = JsonConvert.SerializeObject(payload, new JsonSerializerSettings
+                {
+                    StringEscapeHandling = StringEscapeHandling.Default // evita "\/"
+                });
+
+                return Content(json, "application/json"); // en vez de JsonResult estándar
+            }
+            catch (OperationCanceledException)
+            {
+                return new HttpStatusCodeResult(499, "Solicitud cancelada.");
+            }
+            catch (Exception ex)
+            {
+                return new HttpStatusCodeResult(500, "Error obteniendo PDF: " + ex.Message);
+            }
+        }
+
+        [HttpGet]
+        public async Task<ActionResult> VerDetalle(int idventa)
+        {
+            return View("Index");
+        }
     }
 }

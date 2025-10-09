@@ -93,7 +93,7 @@
         });
 
         // Placeholders (ajusta cuando tengas endpoints finales)
-        HV.byId("actDescargarFactura")?.addEventListener("click", function () { if (!requireSel()) return; alert("Descargar Factura (por implementar)"); });
+        /*HV.byId("actDescargarFactura")?.addEventListener("click", function () { if (!requireSel()) return; alert("Descargar Factura (por implementar)"); });*/
         HV.byId("actAumentarNumero")?.addEventListener("click", function () { if (!requireSel()) return; alert("Aumentar número (por implementar)"); });
         HV.byId("actClonar")?.addEventListener("click", function () { if (!requireSel()) return; alert("Clonar (por implementar)"); });
         HV.byId("actDevolucion")?.addEventListener("click", function () { if (!requireSel()) return; alert("Devolución (por implementar)"); });

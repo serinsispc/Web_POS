@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using RunApi.Models;
+using RunApi.Models.Cliente;
 using RunApi.Respons;
 using System;
 using System.Collections.Generic;
@@ -27,21 +28,26 @@ namespace RunApi.Funciones
                 return new RespuestaCRUD_api() { estado=false, idAfectado=0, mensaje=msg };
             }
         }
-        public static async Task<RespuestaAPI> ConsultarIdVenta(int idventa)
+        public static async Task<FacturaElectronicaJSON> ConsultarIdVenta(int idventa)
         {
             try
             {
-                var objeto = new { nombreDB=ClassDBCliente.DBCliente, idventa=idventa };
-                string json= JsonConvert.SerializeObject(objeto);
                 var api = new ClassAPI();
-                var url = $"FacturaElectronicaJSON/ConsultarIdVenta";
-                var resp = await api.HttpWebRequestPostAsync(url, json, HttpMethod.Post);
-                return JsonConvert.DeserializeObject<RespuestaAPI>(resp);
+                var url = $"FacturaElectronicaJSON/{idventa}";
+                var resp = await api.HttpWebRequestPostAsync(url, null, HttpMethod.Get,ClassDBCliente.DBCliente);
+                if (resp != null) 
+                {
+                    return JsonConvert.DeserializeObject<FacturaElectronicaJSON>(resp);
+                }
+                else
+                {
+                    return null;
+                }
             }
             catch (Exception ex)
             {
                 string msg = ex.Message;
-                return new RespuestaAPI() { estado = false, mensaje = msg, data=null };
+                return null;
             }
         }
     }

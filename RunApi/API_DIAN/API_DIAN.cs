@@ -304,9 +304,9 @@ namespace RunApi.Funciones.DIAN_API
                 FacturaElectronicaJSON facturaelectronicaJSON = new FacturaElectronicaJSON();
                 //verificamos el idventa
                 var resp= await FacturaElectronicaJSONAPI.ConsultarIdVenta(IdVenta_frm);
-                if (resp !=null && resp.data!= "null")
+                if (resp !=null)
                 {
-                    facturaelectronicaJSON =JsonConvert.DeserializeObject<FacturaElectronicaJSON>(resp.data);
+                    facturaelectronicaJSON = resp;
                     f_facturaJson = 1;
                 }
                 else

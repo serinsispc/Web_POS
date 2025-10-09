@@ -160,11 +160,16 @@
         <input type="hidden" name="idventa" id="inp-idventa-seleccion-cliente" value="0" />
     }
 
-    @* >>> LEGACY: MediosDePago (Vista). No se usa ya, pero no estorba *@
     @using (Html.BeginForm("MediosDePago", "HistorialVentas", FormMethod.Post, new { id = "formMediosDePago", @class = "d-none" }))
     {
         @Html.AntiForgeryToken()
         <input type="hidden" id="inp-idventa-medios" name="idventa" value="" />
+    }
+
+    @using (Html.BeginForm("Retour", "HistorialVentas", FormMethod.Post, new { id = "formDescargarFactura", target = "_blank", @class = "d-none" }))
+    {
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="idventa" id="inp-idventa-descargar" value="" />
     }
 
     <!-- FILTROS -->
@@ -568,6 +573,17 @@
     var rawAcquirer = (string)(Session["acquirer"] ?? "{}");
     var acquirerB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(rawAcquirer));
 }
+
+@{
+    var autoMp = (TempData["AutoOpenMediosPago"] as bool?) == true ? "true" : "false";
+    var mpJson = Session["MediosDePago_json"] as string ?? "";                 // <-- lo que guardó el Action
+    var mpB64 = string.IsNullOrEmpty(mpJson) ? "" : Convert.ToBase64String(Encoding.UTF8.GetBytes(mpJson));
+    var idventaMP = (Session["idventaMedioPago"] ?? "").ToString();
+}
+<div id="hv-mp" data-auto="@autoMp" data-json-b64="@mpB64" data-idventa="@idventaMP"></div>
+
+
+
 <div id="acquirerData" data-acquirer-json-b64="@acquirerB64"></div>
 <div id="acquirerTemp"
      data-acquirer-b64="@(TempData["AcquirerB64"] ?? "")"
@@ -608,10 +624,12 @@
 <script src="~/Scripts/hv.modals.js?v=1.0.0"></script>
 
 <script src="~/Scripts/hv.btn.anular.js?v=1.0.0"></script>
-<script src="~/Scripts/hv.btn.mediospago.js?v=1.0.0"></script>
+<script src="~/Scripts/hv.btn.mediospago.js"></script>
 <script src="~/Scripts/hv.btn.resolucion.js?v=1.0.0"></script>
 <script src="~/Scripts/hv.btn.cliente.js?v=1.0.0"></script>
 <script src="~/Scripts/hv.btn.dian.js?v=1.0.0"></script>
 <script src="~/Scripts/hv.btn.misc.js?v=1.0.0"></script>
+<script src="~/Scripts/hv.btn.descargar.js?v=1.0.0"></script>
+
 
 <script src="~/Scripts/hv.init.js?v=1.0.0"></script>

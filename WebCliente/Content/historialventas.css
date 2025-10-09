@@ -335,3 +335,41 @@
     --bs-table-bg: #f8d7da; /* rojo claro */
     --bs-table-color: #58151c;
 }
+
+
+
+
+/* Modal Medios de Pago: columnas compactas y sin scroll horizontal */
+#modalMediosPago .modal-dialog {
+    max-width: 860px;
+}
+/* un poco más ancho */
+#modalMediosPago table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+#modalMediosPago th:nth-child(1) {
+    width: 32%;
+}
+
+#modalMediosPago th:nth-child(2) {
+    width: 32%;
+}
+
+#modalMediosPago th:nth-child(3) {
+    width: 18%;
+}
+
+#modalMediosPago th:nth-child(4) {
+    width: 18%;
+}
+
+#modalMediosPago td {
+    vertical-align: middle;
+}
+
+#modalMediosPago .form-select,
+#modalMediosPago .inp-valor {
+    max-width: 100%;
+}
