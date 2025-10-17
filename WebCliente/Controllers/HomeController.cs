@@ -26,7 +26,25 @@ namespace WebCliente.Controllers
 
             return View();
         }
+        [HttpGet]
+        public ActionResult Inversion()
+        {
+            return View("Inversion"); // devuelve la vista anterior
+        }
 
+        [HttpPost]
+        public ActionResult Postular(string Nombre, string Email, string Telefono, decimal? Monto, string Mensaje)
+        {
+            // TODO: guarda en DB o envía correo
+            TempData["ok"] = "¡Gracias! Tu postulación fue enviada. Te contactaremos pronto.";
+            return RedirectToAction("Inversion");
+        }
+
+        [HttpGet]
+        public ActionResult DescargarContrato()
+        {
+            return View();
+        }
 
     }
 }

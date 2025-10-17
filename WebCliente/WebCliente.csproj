@@ -223,6 +223,7 @@
     <Content Include="Views\Informes\Index.cshtml" />
     <Content Include="Views\HistorialVentas\Index.cshtml" />
     <Content Include="Views\QR\Index.cshtml" />
+    <Content Include="Views\Home\Inversion.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RunApi\RunApi.csproj">

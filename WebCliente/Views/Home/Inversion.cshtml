@@ -1,0 +1,248 @@
+﻿@{
+    ViewBag.Title = "Inversión";
+}
+
+@section styles{
+    <style>
+        :root {
+            --brand: #1e237e;
+            --brand-2: #111655;
+            --ink: #0f172a;
+        }
+
+        /* ===== HERO con glass + patrones suaves ===== */
+        .hero-inversion {
+            position: relative;
+            border-radius: 1.25rem;
+            background: radial-gradient(1200px 400px at -10% -50%, rgba(30,35,126,.10), transparent 60%), radial-gradient(800px 300px at 120% 0%, rgba(30,35,126,.08), transparent 60%), linear-gradient(135deg, rgba(30,35,126,.12), rgba(30,35,126,.03));
+            border: 1px solid rgba(17,23,42,.08);
+            box-shadow: 0 20px 40px rgba(17,23,42,.07);
+            backdrop-filter: saturate(120%) blur(6px);
+        }
+
+        /* ===== Tarjetas elevadas & hover ===== */
+        .card-elev {
+            border: 1px solid rgba(17,23,42,.06);
+            border-radius: 1rem;
+            box-shadow: 0 8px 26px rgba(17,23,42,.08);
+            transition: transform .25s ease, box-shadow .25s ease;
+        }
+
+            .card-elev:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 18px 40px rgba(17,23,42,.12);
+            }
+
+        /* ===== Encabezado pequeño de cards ===== */
+        .cap {
+            letter-spacing: .12em;
+            font-size: .78rem;
+            font-weight: 700;
+            color: #8a94a6;
+            text-transform: uppercase;
+        }
+
+        /* ===== Icono redondo con borde y brillo ===== */
+        .icon-circle {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(90px 90px at 30% 30%, #f1f3ff, #ffffff);
+            color: var(--brand);
+            border: 1px solid rgba(17,23,42,.08);
+            box-shadow: inset 0 0 0 3px rgba(30,35,126,.06);
+        }
+
+        /* ===== Tabla más elegante ===== */
+        .table-clean thead th {
+            border-bottom: 1px solid rgba(17,23,42,.15) !important;
+            color: var(--ink);
+            font-weight: 700;
+        }
+
+        .table-clean tbody tr + tr td {
+            border-top: 1px dashed rgba(17,23,42,.10);
+        }
+
+        .table-clean .badge {
+            font-weight: 600;
+            padding: .35rem .6rem;
+            border: 1px solid rgba(17,23,42,.08);
+            background: linear-gradient(180deg,#fff, #f6f7ff);
+        }
+
+        /* ===== CTA ===== */
+        .cta {
+            position: relative;
+            border-radius: 1.1rem;
+            background: radial-gradient(600px 200px at -10% -20%, rgba(30,35,126,.13), transparent 60%), radial-gradient(600px 220px at 120% 30%, rgba(30,35,126,.08), transparent 60%), linear-gradient(135deg, rgba(30,35,126,.08), rgba(30,35,126,.03));
+            border: 1px solid rgba(30,35,126,.18);
+            overflow: hidden;
+        }
+
+        @@keyframes shine {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            40% {
+                transform: translateX(120%);
+            }
+
+            100% {
+                transform: translateX(120%);
+            }
+        }
+
+        /* ===== Botón de marca ===== */
+        .btn-brand {
+            background: linear-gradient(135deg, var(--brand), var(--brand-2));
+            border: 0;
+            color: #fff;
+            box-shadow: 0 8px 22px rgba(30,35,126,.25);
+        }
+
+            .btn-brand:hover {
+                filter: brightness(1.05);
+                box-shadow: 0 12px 28px rgba(30,35,126,.32);
+            }
+
+        h1.display-6 {
+            color: var(--ink);
+        }
+
+        .text-secondary {
+            color: #64748b !important;
+        }
+    </style>
+}
+
+<div class="container my-4">
+
+    <!-- Encabezado -->
+    <div class="row">
+        <div class="col-12">
+            <div class="hero-inversion p-4 p-md-5 rounded-4">
+                <h1 class="display-6 mb-2">Convocatoria de Inversión – SERINSIS PC S.A.S.</h1>
+                <p class="text-muted mb-0">
+                    Modelo de inversión tipo <strong>préstamo privado</strong> con tasa inicial del <strong>2% mensual</strong>,
+                    <strong>contrato anual renovable</strong> y <strong>incremento de 0.5%</strong> sobre la tasa para cada renovación anual.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen rápido -->
+    <div class="row g-3 mt-3">
+        <div class="col-md-4">
+            <div class="card card-elev h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <div class="icon-circle"><i class="bi bi-shield-check"></i></div>
+                        <div class="cap">TIPO</div>
+                    </div>
+                    <h5 class="card-title mb-2">Préstamo privado</h5>
+                    <p class="mb-0 text-secondary">Contrato de mutuo mercantil con intereses, por un (1) año, renovable anualmente.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-elev h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <div class="icon-circle"><i class="bi bi-graph-up-arrow"></i></div>
+                        <div class="cap">TASA INICIAL</div>
+                    </div>
+                    <h5 class="card-title mb-2">2% mensual</h5>
+                    <p class="mb-0 text-secondary">Pago de intereses mensual, dentro de los primeros 5 días hábiles del mes siguiente.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-elev h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <div class="icon-circle"><i class="bi bi-arrow-repeat"></i></div>
+                        <div class="cap">INCREMENTO POR RENOVACIÓN</div>
+                    </div>
+                    <h5 class="card-title mb-2">+0.5% / año</h5>
+                    <p class="mb-0 text-secondary">Se aplica solo al inversionista que renueva por otro año.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Condiciones principales + Tabla -->
+    <div class="row mt-4">
+        <div class="col-lg-7">
+            <div class="card card-elev">
+                <div class="card-body">
+                    <h4 class="card-title mb-3"><i class="bi bi-journal-text me-2"></i>Condiciones de la convocatoria</h4>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>Tipo de inversión:</strong> préstamo privado (mutuo mercantil con intereses).</li>
+                        <li class="list-group-item"><strong>Duración del contrato:</strong> 1 año, renovable automáticamente por períodos iguales.</li>
+                        <li class="list-group-item"><strong>Renovación:</strong> automática salvo aviso por escrito con al menos 30 días de anticipación.</li>
+                        <li class="list-group-item"><strong>Tasa de interés:</strong> 2% mensual el primer año. Si renueva, aumenta 0.5% para el año siguiente.</li>
+                        <li class="list-group-item"><strong>Pago de intereses:</strong> mensual, dentro de los primeros 5 días hábiles.</li>
+                        <li class="list-group-item"><strong>Retiro sin renovación:</strong> devolución del 100% del capital dentro de los 30 días calendario siguientes al vencimiento.</li>
+                        <li class="list-group-item"><strong>Garantía:</strong> activos y flujo operativo de la empresa; se pueden pactar garantías adicionales (pagaré/otros).</li>
+                        <li class="list-group-item"><strong>Monto mínimo sugerido:</strong> COP $1.000.000.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de progresión de tasa -->
+        <div class="col-lg-5 mt-4 mt-lg-0">
+            <div class="card card-elev h-100">
+                <div class="card-body">
+                    <h4 class="card-title mb-3"><i class="bi bi-speedometer2 me-2"></i>Progresión de tasa por renovación</h4>
+                    <div class="table-responsive">
+                        <table class="table table-clean table-hover align-middle mb-2">
+                            <thead>
+                                <tr>
+                                    <th>Año</th>
+                                    <th>Tasa mensual</th>
+                                    <th>Tasa anual</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>1</td><td><span class="badge text-bg-light">2.0%</span></td><td>24%</td></tr>
+                                <tr><td>2</td><td><span class="badge text-bg-light">2.5%</span></td><td>30%</td></tr>
+                                <tr><td>3</td><td><span class="badge text-bg-light">3.0%</span></td><td>36%</td></tr>
+                                <tr><td>4</td><td><span class="badge text-bg-light">3.5%</span></td><td>42%</td></tr>
+                                <tr><td>5</td><td><span class="badge text-bg-light">4.0%</span></td><td>48%</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="small text-muted mb-0">*El incremento del 0.5% aplica únicamente si el inversionista renueva por un nuevo período anual.*</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Marco legal resumido -->
+    <div class="row mt-4 mb-5">
+        <div class="col-12">
+            <div class="card card-elev">
+                <div class="card-body">
+                    <h4 class="card-title mb-3"><i class="bi bi-balance-scale me-2"></i>Marco legal resumido</h4>
+                    <p class="mb-3 text-secondary">
+                        La relación se formaliza mediante <strong>Contrato de Mutuo Mercantil con Intereses</strong>,
+                        regido por las leyes de la República de Colombia. Contendrá cláusulas sobre objeto, monto, plazo,
+                        intereses, pagos, renovación, garantías, confidencialidad, terminación anticipada y jurisdicción.
+                    </p>
+                    @*<a class="btn btn-outline-primary" href="@Url.Action("DescargarContrato","Convocatoria")">
+                        <i class="bi bi-file-earmark-word me-1"></i> Descargar modelo de contrato (Word)
+                    </a>*@
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section scripts { }

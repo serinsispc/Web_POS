@@ -15,6 +15,8 @@ namespace WebCliente.App_Start
             bool accesoLibre =
                 (controller.Equals("Home", StringComparison.OrdinalIgnoreCase) && action.Equals("Index", StringComparison.OrdinalIgnoreCase)) ||
                 (controller.Equals("Home", StringComparison.OrdinalIgnoreCase) && action.Equals("ElegirSistema", StringComparison.OrdinalIgnoreCase)) ||
+                (controller.Equals("Home", StringComparison.OrdinalIgnoreCase) && action.Equals("Inversion", StringComparison.OrdinalIgnoreCase)) ||
+                (controller.Equals("Tienda", StringComparison.OrdinalIgnoreCase) && action.Equals("Index", StringComparison.OrdinalIgnoreCase)) ||
                 (controller.Equals("Login", StringComparison.OrdinalIgnoreCase)) ||
                 (controller.Equals("LoginParqueadero", StringComparison.OrdinalIgnoreCase));
 
